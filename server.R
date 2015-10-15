@@ -183,6 +183,111 @@ shinyServer(function(input, output){
   }
   )
   
+  
+  
+  output$rp_plot <- renderPlot({
+    
+    genes <- data()
+    
+    pvalList       <- NA
+    pvalList2      <- NA
+    splitList      <- NA
+    splitList2     <- NA
+    highIsGoodList <- NA
+    accList <- NA
+    gg <- alist()
+    
+    for(i in 1:length(genes)){
+      combined.data <- taylor %>% filter(Gene %in% genes[i]) %>% 
+        filter(!is.na(Event) & !is.na(Time))
+      
+      if(nrow(combined.data) > 0){
+        
+        surv.xfs <- Surv((combined.data$Time/12), as.numeric(combined.data$Event))
+        
+        ctree_xfs   <- ctree(surv.xfs~Expression, data=combined.data)
+        pvalue      <- 1 - ctree_xfs@tree$criterion$maxcriterion
+        newPval     <- signif(pvalue, digits = 2)
+        pvalList[i] <- newPval
+        ps3         <- NA
+        highIsGood  <- NA
+        accList[i] <- as.character(combined.data$GB_ACC[1])
+        
+        if(newPval<0.05) {
+          #        rp_pngfile <- paste(pngprefix, "rp.png", sep="_")
+          #       png(filename=paste(outfile_path, rp_pngfile, sep="/"))
+          #      plot(ctree(surv.xfs~geneexp, data=combined.data), xlab=xlabel, ylab=ylabel, main=paste(title, geneid))
+          #     dev.off()
+          
+          ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
+          ps  <- signif(ps2[1], digits = 3)
+          
+          if(length(ps2)==1) {
+            combined.data$geneexp_cp <- combined.data$Expression<=ps2[1]
+            nt                       <- table(combined.data$geneexp_cp)
+            geneexp.survfit.xfs      <- survfit(surv.xfs~combined.data$geneexp_cp)
+            gg[[i]] <- ggsurv(geneexp.survfit.xfs) + ggtitle(genes[i])
+            newPval2                 <- NA
+            
+          }
+          
+          if(length(ps2)==2) {
+            if(ps2[1]>ps2[2]) {
+              ps3                       <- round(ps2[2], digits=3)
+              combined.data$geneexp_cp1 <- combined.data$Expression<=ps2[1]
+              combined.data$geneexp_cp2 <- combined.data$Expression<=ps2[2]
+              combined.data$geneexp_cp3 <- combined.data$geneexp_cp1+combined.data$geneexp_cp2
+              nt                        <- table(combined.data$geneexp_cp3)
+              geneexp.survfit.xfs       <- survfit(surv.xfs~combined.data$geneexp_cp3)
+              pvalue2                   <- 1 - ctree_xfs@tree$left[[3]][[2]]
+              newPval2                  <- signif(pvalue2, digits=2)
+              
+            } else {
+              ps3                       <- round(ps2[2], digits=3)
+              combined.data$geneexp_cp1 <- combined.data$geneexp<=ps2[1]
+              combined.data$geneexp_cp2 <- combined.data$geneexp<=ps2[2]
+              combined.data$geneexp_cp3 <- combined.data$geneexp_cp1+combined.data$geneexp_cp2
+              nt                        <- table(combined.data$geneexp_cp3)
+              geneexp.survfit.xfs       <- survfit(surv.xfs~combined.data$geneexp_cp3)
+              pvalue2                   <- 1 - ctree_xfs@tree$right[[3]][[2]]
+              newPval2                  <- signif(pvalue2, digits=2)
+              
+              
+            }
+          }
+          
+          combined.data$geneexp_cp <- combined.data$geneexp <= ps2[1]
+          coxphRegressionModel     <- coxph(surv.xfs~combined.data$geneexp_cp)
+          hazardRatio              <- exp(coxphRegressionModel$coefficients)
+          highIsGood               <- hazardRatio > 1
+          
+        }
+        
+        if(newPval>=0.05) {
+          ps       <- NA
+          newPval2 <- NA
+        }
+        
+        pvalList2[i]      <- newPval2
+        splitList[i]      <- ps
+        splitList2[i]     <- ps3
+        highIsGoodList[i] <- highIsGood
+      }
+      else {
+        accList[i] <- NA
+        pvalList[i] <- NA
+        pvalList2[i]      <- NA
+        splitList[i]      <- NA
+        splitList2[i]     <- NA
+        highIsGoodList[i] <- NA
+      }
+      
+    }
+    
+  pp <- do.call(grid.arrange,gg)
+  pp   
+  })
+  
 
   output$rp <- renderPrint({
     
@@ -194,6 +299,7 @@ shinyServer(function(input, output){
     splitList2     <- NA
     highIsGoodList <- NA
     accList <- NA
+    gg <- alist()
     
     for(i in 1:length(genes)){
       combined.data <- taylor %>% filter(Gene %in% genes[i]) %>% 
@@ -224,6 +330,7 @@ shinyServer(function(input, output){
             combined.data$geneexp_cp <- combined.data$Expression<=ps2[1]
             nt                       <- table(combined.data$geneexp_cp)
             geneexp.survfit.xfs      <- survfit(surv.xfs~combined.data$geneexp_cp)
+            gg[[i]] <- ggsurv(geneexp.survfit.xfs) + ggtitle(genes[i])
             newPval2                 <- NA
             
           }
