@@ -4,12 +4,12 @@ library(shiny)
 
 shinyUI(pageWithSidebar(
   
-  headerPanel("T-test Example"),
+  headerPanel("Explore the Taylor Prostate Cancer dataset...."),
   
   sidebarPanel(
     h2("Data Import Parameters"),
     fileInput('file1', 'Gene List',
-              accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv'))
+              accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')),helpText("Your gene list must tab-delimited, with gene names in the first column")
     ),
   
   mainPanel(
@@ -32,6 +32,13 @@ tabPanel("Data Distribution", helpText("The boxplot and histogram of the data ar
 tabPanel("Heatmap", helpText("A heatmap showing the clustering of the samples according to your selected genes"),
          plotOutput("heatmap")
 ),
+
+tabPanel("Recursive Partitioning", helpText("Recursive Partitioning....."),
+
+         verbatimTextOutput("rp"),
+         plotOutput("rp_plot")
+)
+,
 
       tabPanel("R code",
                helpText("You will be able to re-run this analysis in R by downloading the R code below"),
