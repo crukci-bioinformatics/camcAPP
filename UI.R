@@ -4,7 +4,7 @@ library(shiny)
 
 shinyUI(pageWithSidebar(
   
-  headerPanel("Explore the Taylor Prostate Cancer dataset...."),
+  headerPanel("camcAPP"),
   
   sidebarPanel(
     h2("Data Import Parameters"),
@@ -36,6 +36,7 @@ tabPanel("Heatmap", helpText("A heatmap showing the clustering of the samples ac
 tabPanel("Recursive Partitioning", helpText("Recursive Partitioning....."),
 
          verbatimTextOutput("rp"),
+         helpText("Survival Curves for any genes where a signifcant partitioning could be found will be displayed below"),
          plotOutput("rp_plot")
 )
 ,

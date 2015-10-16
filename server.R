@@ -329,7 +329,7 @@ output$rp_plot <- reactivePlot(function(){
           combined.data$geneexp_cp <- combined.data$Expression<=ps2[1]
           nt                       <- table(combined.data$geneexp_cp)
           geneexp.survfit.xfs      <- survfit(surv.xfs~combined.data$geneexp_cp)
-          gg[[pCount]] <- ggsurv(geneexp.survfit.xfs) + ggtitle(genes[i])
+          gg[[pCount]] <- ggsurv(geneexp.survfit.xfs) + ggtitle(genes[i]) + ylim(0,1)
           newPval2                 <- NA
           pCount <- pCount +1 
         }
