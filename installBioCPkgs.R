@@ -1,4 +1,4 @@
-install.packages(c("devtools","shiny")
+install.packages(c("devtools","shiny"))
 library(devtools)
 source("http://www.bioconductor.org/biocLite.R")
 biocLite(c("ggplot2","dplyr","tidyr","gridExtra","heatmap.plus","RColorBrewer","party","survival","knitr"))
