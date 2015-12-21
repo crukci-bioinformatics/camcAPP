@@ -1,3 +1,4 @@
+options(repos = c("CRAN" = "http://cran.ma.imperial.ac.uk"))
 install.packages(c("devtools","shiny"))
 library(devtools)
 source("http://www.bioconductor.org/biocLite.R")

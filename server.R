@@ -304,8 +304,18 @@ output$rp_plot <- reactivePlot(function(){
   
   
   for(i in 1:length(genes)){
+    
+        varProbes <- taylor %>% group_by(Gene) %>% 
+       summarise(Probe = Probe[which.max(IQR)])
+    
     combined.data <- taylor %>% filter(Gene %in% genes[i]) %>% 
       filter(!is.na(Event) & !is.na(Time))
+    
+    
+    
+    
+    combined.data <- inner_join(combined.data, varProbes,by="Probe") %>% rename(Gene = Gene.x) %>% select(-c(Gene.y))
+    
     
     if(nrow(combined.data) > 0){
       
@@ -396,11 +406,18 @@ output$rp_plot <- reactivePlot(function(){
     
     genes <- data()
     
-    p1 <- taylor %>% filter(Gene %in% genes) %>% 
+    taylor <- taylor %>% filter(Gene %in% genes)
+    
+    varProbes <- taylor %>% group_by(Gene) %>% 
+      summarise(Probe = Probe[which.max(IQR)])
+    
+    taylor <- inner_join(taylor, varProbes,by="Probe") %>% rename(Gene = Gene.x) %>% select(-c(Gene.y))
+    
+    p1 <- taylor %>% 
       filter(Sample_Group %in% c("prostate cancer","normal adjacent benign prostate")) %>% 
       ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot() + facet_wrap(~Gene)
     
-    p2 <- taylor %>% filter(Gene %in% genes) %>% 
+    p2 <- taylor  %>% 
       filter(Sample_Group %in% c("prostate cancer","normal adjacent benign prostate")) %>% 
       filter(!(is.na(Gleason))) %>% 
       ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() + facet_wrap(~Gene)
@@ -416,6 +433,14 @@ output$rp_plot <- reactivePlot(function(){
   output$heatmap<- reactivePlot(function(){
     
     genes <- data()
+    
+    taylor <- taylor %>% filter(Gene %in% genes)
+    
+    
+    varProbes <- taylor %>% group_by(Gene) %>% 
+      summarise(Probe = Probe[which.max(IQR)])
+    
+    taylor <- inner_join(taylor, varProbes,by="Probe") %>% rename(Gene = Gene.x) %>% select(-c(Gene.y))
     
     geneMatrix <- taylor %>% filter(Gene %in% genes) %>% 
       filter(Sample_Group %in% c("prostate cancer","normal adjacent benign prostate")) %>% 
@@ -562,39 +587,6 @@ output$downloadMarkdown <- downloadHandler(
 )
 
 
-output$thecode <- renderPrint({
-  
-  inFile <- input$file1
-  
-  print(as.name(paste0('myfile <- \"' , inFile$name,'\"')))
-  
-  print(as.name(paste0('sep <- \'', input$sep,'\'')))
-  print(as.name(paste0('quote <- \'', input$quote,'\'')))
-  print(as.name(paste('header <- ', input$header)))
-  print(as.name(paste('skip <- ', input$skip)))
-  print(as.name("data <- read.csv(myfile, header=header, sep=sep, quote=quote,skip=skip)"))
-  
-  #dump <- dput(data)
-  #print(as.name(paste("data <-", capture.output(dput(data)))))
-  print(as.name("head(data)"))
-  
-  print(as.name(paste("datacol <- ", input$dataCol)))
-  print(as.name("X <- data[,datacol]"))
-  print(as.name("summary(X)"))
-  print(as.name("boxplot(X,horizontal=TRUE)"))
-  
-  print(as.name("colnames(data)[datacol] <- 'X'"))
-  print(as.name("library(ggplot2)"))
-  print(as.name("ggplot(data, aes(x=X)) + geom_histogram(aes(y=..density..),binwidth=.5,colour='black', fill='white')+ stat_function(fun=dnorm,color='red',arg=list(mean=mean(data$X), sd=sd(data$X)))"))
-  
-  
-  print(as.name(paste0('alternative <- \'', input$alternative,'\'')))
-  print(as.name(paste("mu <- ", input$mu)))
-  print(as.name("t.test(X,mu=mu,alternative=alternative)"))
-  print(as.name("sessionInfo()"))
-}
-)
-  
   
 }
 )
