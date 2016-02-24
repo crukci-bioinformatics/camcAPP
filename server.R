@@ -352,12 +352,10 @@ output$anovaTaylor <- renderPrint({
   taylor <- filter(taylor, ID== mostVarProbe)
   taylor <- full_join(taylor,pd_taylor)
   
-  var <- getStockholmVariable()
+  var <- getTaylorVariable()
   switch(var,
-         CopyNumberCluster = summary(aov(lm(Expression~Copy.Number.Cluster,taylor))),
-         
+         CopyNumberCluster = summary(aov(lm(Expression~Copy.number.Cluster,taylor))),
          Gleason = summary(aov(lm(Expression~Gleason,taylor)))
-         
   )
   
   

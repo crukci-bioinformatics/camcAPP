@@ -88,7 +88,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
              )
     ),
     
-    tabPanel("Heatamp",
+    tabPanel("Heatmap",
             sidebarLayout(
              sidebarPanel(
                  selectInput("heatmapDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC"),selected = "MSKCC")
