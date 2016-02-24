@@ -462,22 +462,140 @@ output$rpPlot <- reactivePlot(function(){
         
         ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
         ps  <- signif(ps2[1], digits = 3)
+
         par(mfrow=c(2,1))
-        
         plot(ctree(surv.xfs~Expression, data=combined.data))
         
         if(length(ps2)==1) {
           combined.data$geneexp_cp <- combined.data$Expression<=ps2[1]
           nt                       <- table(combined.data$geneexp_cp)
           geneexp.survfit.xfs      <- survfit(surv.xfs~combined.data$geneexp_cp)
-          plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(2,4))
-          legend("bottomleft", c(paste(currentGene, ">", ps, "n=", nt[[1]]), paste(currentGene, "<=", ps, "n=", nt[[2]])), col=c(2,4), lty=1, lwd=1.5, bty="n")
+#          plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(2,4))
+ #         legend("bottomleft", c(paste(currentGene, ">", ps, "n=", nt[[1]]), paste(currentGene, "<=", ps, "n=", nt[[2]])), col=c(2,4), lty=1, lwd=1.5, bty="n")
           newPval2                 <- NA
         }
         
       }
       
     }
+})
+
+
+
+output$survivalPlot <- reactivePlot(function(){
+  message("I am doing survival now....")
+  currentGene <- getCurrentGene()
+  dataset <- getRpDataset()
+  
+  if(dataset == "MSKCC"){
+    
+    probes <- fd_taylor %>% filter(Gene == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+    
+    taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
+      gather(geo_accession,Expression,-ID)
+    
+    summary_stats <- taylor %>% group_by(ID) %>% 
+      summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+    
+    mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
+    mu <- summary_stats$mean[which.max(summary_stats$iqr)]
+    sd <- summary_stats$sd[which.max(summary_stats$iqr)]
+    
+    taylor <- filter(taylor, ID== mostVarProbe)
+    
+    taylor <- full_join(taylor,pd_taylor)
+    
+    
+    combined.data <- taylor %>% 
+      filter(!is.na(Event) & !is.na(Time))
+    
+  } else if (dataset == "Cambridge"){
+    
+    probes <- fd_camcap %>% filter(Symbol == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+    
+    camcap<- exp_camcap  %>% filter(ID %in% probes) %>% 
+      gather(geo_accession,Expression,-ID)
+    
+    summary_stats <- camcap %>% group_by(ID) %>% 
+      summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+    
+    mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
+    mu <- summary_stats$mean[which.max(summary_stats$iqr)]
+    sd <- summary_stats$sd[which.max(summary_stats$iqr)]
+    
+    camcap <- filter(camcap, ID== mostVarProbe)
+    
+    camcap <- full_join(camcap,pd_camcap) %>% 
+      mutate(Time = FollowUpTime, Event = ifelse(BCR=="Y",1,0))
+    
+    combined.data <- camcap %>% 
+      filter(!is.na(Time) & !is.na(Event))
+    
+    
+  } else{
+    
+    probes <- fd_stockholm %>% filter(Symbol == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+    
+    stockholm <- exp_stockholm  %>% filter(ID %in% probes) %>% 
+      gather(geo_accession,Expression,-ID)
+    
+    summary_stats <- stockholm %>% group_by(ID) %>% 
+      summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+    
+    mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
+    mu <- summary_stats$mean[which.max(summary_stats$iqr)]
+    sd <- summary_stats$sd[which.max(summary_stats$iqr)]
+    
+    stockholm <- filter(stockholm, ID== mostVarProbe)
+    
+    stockholm <- full_join(stockholm,pd_stockholm) %>% 
+      mutate(Time = FollowUpTime, Event = ifelse(BCR=="Y",1,0))
+    
+    combined.data <- camcap %>% 
+      filter(!is.na(Time) & !is.na(Event))
+    
+  }
+  
+  pvalList       <- NA
+  pvalList2      <- NA
+  splitList      <- NA
+  splitList2     <- NA
+  highIsGoodList <- NA
+  accList <- NA
+  
+  i <- 1
+  
+  if(nrow(combined.data) > 0){
+    
+    surv.xfs <- Surv((as.numeric(as.character(combined.data$Time))/12), combined.data$Event)
+    combined.data$surv.xfs <- surv.xfs
+    ctree_xfs   <- ctree(surv.xfs~Expression,data=combined.data)
+    pvalue      <- 1 - ctree_xfs@tree$criterion$maxcriterion
+    newPval     <- signif(pvalue, digits = 2)
+    pvalList[i] <- newPval
+    ps3         <- NA
+    highIsGood  <- NA
+    accList[i] <- as.character(currentGene)
+    
+    if(newPval<0.05) {
+      
+      
+      ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
+      ps  <- signif(ps2[1], digits = 3)
+      
+      
+      if(length(ps2)==1) {
+        combined.data$geneexp_cp <- combined.data$Expression<=ps2[1]
+        nt                       <- table(combined.data$geneexp_cp)
+        geneexp.survfit.xfs      <- survfit(surv.xfs~combined.data$geneexp_cp)
+                  plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(2,4))
+                 legend("bottomleft", c(paste(currentGene, ">", ps, "n=", nt[[1]]), paste(currentGene, "<=", ps, "n=", nt[[2]])), col=c(2,4), lty=1, lwd=1.5, bty="n")
+        newPval2                 <- NA
+      }
+      
+    }
+    
+  }
 })
 
 
