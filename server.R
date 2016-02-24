@@ -103,6 +103,24 @@ shinyServer(function(input, output){
   getHeatmapDataset <- reactive({
     input$heatmapDataset
   })
+
+  getDistFun <- reactive({
+    input$distfun
+    
+  })
+  
+  getReordRows <- reactive({
+    input$reordRows
+  })
+  
+  getHclustMethod <- reactive({
+    input$hclustfun
+  })
+  
+  getScaleMethod <- reactive({
+    input$scale
+  })
+  
   
   getGeneList <- reactive({inFile <- input$file1
   
@@ -413,26 +431,26 @@ output$rpPlot <- reactivePlot(function(){
     
     
   } else{
+    probes <- fd_stockholm %>% filter(Symbol == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
     
-      probes <- fd_stockholm %>% filter(Symbol == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-      
-      stockholm <- exp_stockholm  %>% filter(ID %in% probes) %>% 
-        gather(geo_accession,Expression,-ID)
-      
-      summary_stats <- stockholm %>% group_by(ID) %>% 
-        summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
-      
-      mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
-      mu <- summary_stats$mean[which.max(summary_stats$iqr)]
-      sd <- summary_stats$sd[which.max(summary_stats$iqr)]
-      
-      stockholm <- filter(stockholm, ID== mostVarProbe)
-      
-      stockholm <- full_join(stockholm,pd_stockholm) %>% 
-        mutate(Time = FollowUpTime, Event = ifelse(BCR=="Y",1,0))
-      
-      combined.data <- camcap %>% 
-        filter(!is.na(Time) & !is.na(Event))
+    stockholm <- exp_stockholm  %>% filter(ID %in% probes) %>% 
+      gather(geo_accession,Expression,-ID)
+    
+    summary_stats <- stockholm %>% group_by(ID) %>% 
+      summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+    
+    mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
+    mu <- summary_stats$mean[which.max(summary_stats$iqr)]
+    sd <- summary_stats$sd[which.max(summary_stats$iqr)]
+    
+    stockholm <- filter(stockholm, ID== mostVarProbe)
+    
+    stockholm <- full_join(stockholm,pd_stockholm) %>% 
+      mutate(Time = FollowUpTime, Event = ifelse(BCR=="Y",1,0))
+    
+    combined.data <- stockholm %>% 
+      filter(!is.na(Time) & !is.na(Event))
+
     
   }
   
@@ -551,7 +569,7 @@ output$survivalPlot <- reactivePlot(function(){
     stockholm <- full_join(stockholm,pd_stockholm) %>% 
       mutate(Time = FollowUpTime, Event = ifelse(BCR=="Y",1,0))
     
-    combined.data <- camcap %>% 
+    combined.data <- stockholm %>% 
       filter(!is.na(Time) & !is.na(Event))
     
   }
@@ -722,12 +740,71 @@ output$survivalPlot <- reactivePlot(function(){
         
     } else{
       
+      probes <- fd_stockholm %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+      
+      #      taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
+      #       gather(geo_accession,Expression,-ID)
+      stockholm <- exp_stockholm  %>% filter(ID %in% probes) %>% 
+        gather(geo_accession,Expression,-ID)
+      
+      summary_stats <- stockholm %>% group_by(ID) %>% 
+        summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+      
+      mostVarProbes <- left_join(summary_stats,fd_stockholm) %>% 
+        arrange(Symbol,desc(iqr)) %>% 
+        distinct(Symbol) %>% 
+        select(ID) %>%  as.matrix %>%  as.character
+      
+      
+      
+      
+      samples <-  select(pd_stockholm,geo_accession) %>% as.matrix %>% as.character
+      
+      stockholm <- filter(stockholm, ID %in% mostVarProbes,geo_accession %in% samples) 
+      
+      geneMatrix <- stockholm %>% 
+        spread(geo_accession,Expression) %>% data.frame
+      
+      geneMatrix <- as.matrix(geneMatrix[,-1])
+      
+      symbols <- filter(fd_stockholm, ID %in% mostVarProbes) %>% 
+        select(Symbol) %>% as.matrix %>% as.character
+      
+      rownames(geneMatrix) <- symbols
+      
+      
+      pd <- left_join(stockholm,pd_stockholm) %>% distinct(geo_accession)
+      
+      colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)
+      grp <- pd$iCluster
+      cols <- brewer.pal(5,"Set1")[1:length(levels(factor(as.character(grp))))]
+      
+      grp <- as.factor(as.character(grp))
+      levels(grp) <- cols
+      
+      colMatrix[,1] <- as.character(grp)
+      
+      grp <- pd$Gleason
+      cols <- brewer.pal(8,"Set2")[1:length(levels(factor(as.character(grp))))]
+      
+      grp <- as.factor(as.character(grp))
+      levels(grp) <- cols
+      colMatrix[,2] <- as.character(grp)
       
       
     }
-    hmcol <- brewer.pal(11 , "RdBu")
-    heatmap.plus(geneMatrix,ColSideColors = colMatrix,col=hmcol)
     
+    
+    hmcol <- brewer.pal(11 , "RdBu")
+    
+    if(getDistFun() == "Correlation") distfun <- function(x) as.dist(1 - cor(t(x)))
+    else distfun <- dist
+    
+    hclustfun <- function(x) hclust(x,method=getHclustMethod())
+    scale <- getScaleMethod()
+    
+    if(getReordRows() == "Yes") heatmap.plus(geneMatrix,ColSideColors = colMatrix,col=hmcol,distfun=distfun,hclustfun = hclustfun,scale=scale)
+    else heatmap.plus(geneMatrix,ColSideColors = colMatrix,col=hmcol,distfun=distfun,Rowv=NA,hclustfun = hclustfun,scale=scale)
   }
   )
   
