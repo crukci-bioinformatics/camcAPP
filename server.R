@@ -11,7 +11,7 @@ library(survival)
 library(knitr)
 library(Biobase)
 
-library(dplyr)
+
 
 #if(!require(prostateCancerTaylor)) install_github("crukci-bioinformatics/prostateCancerTaylor");library(prostateCancerTaylor)
 #if(!require(prostateCancerCamcap)) install_github("crukci-bioinformatics/prostateCancerCamcap");library(prostateCancerCamcap)
@@ -33,24 +33,30 @@ pd_taylor <- tbl_df(pData(taylor))
 fd_taylor <- tbl_df(fData(taylor))
 exp_taylor <- tbl_df(data.frame(ID=as.character(featureNames(taylor)),log2(exprs(taylor))))
 
-
+## dplyr needs to be the last package loaded, otherwise the 'select' function seems to be over-written
+library(dplyr)
+select <- dplyr::select
 iclusPal <- brewer.pal(5, "Set1")
 
 message("READY FOR INPUT")
 
 shinyServer(function(input, output){
   
-  getCambridgeGene <- reactive({
-    input$currentGene_cambridge
-  })
-
-  getStockholmGene <- reactive({
-    input$currentGene_stockholm
+  getCurrentGene <- reactive({
+    input$currentGene
   })
   
-  getTaylorGene <- reactive({
-    input$currentGene_taylor
-  })
+#  getCurrentGene <- reactive({
+ #   input$currentGene_cambridge
+#  })
+
+ # getCurrentGene <- reactive({
+#    input$currentGene_stockholm
+#  })
+  
+#  getCurrentGene <- reactive({
+#    input$currentGene_taylor
+#  })
   
   
     
@@ -90,13 +96,30 @@ shinyServer(function(input, output){
   })
 
   
+  getRpDataset <- reactive({
+    input$rpDataset
+  })
   
+  getHeatmapDataset <- reactive({
+    input$heatmapDataset
+  })
   
+  getGeneList <- reactive({inFile <- input$file1
   
+    if (is.null(inFile))
+      return(c("STAT3","ESR1","AR"))
+    
+    
+    print(inFile$name)
+    genes <- read.delim(inFile$datapath)[,1]
+    print(dim(genes))
+    genes
+    #read.csv("GraphPad Course Data/diseaseX.csv")
+  })
   
   output$boxplotCambridge <- reactivePlot(function(){
     
-    currentGene <- getCambridgeGene()
+    currentGene <- getCurrentGene()
     message(paste("Plotting gene", currentGene))
     probes <- fd_camcap %>% filter(Symbol == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
     
@@ -145,7 +168,7 @@ shinyServer(function(input, output){
 
 
 output$boxplotStockholm <- reactivePlot(function(){
-  currentGene <- getStockholmGene()
+  currentGene <- getCurrentGene()
   
   message(paste("Plotting gene", currentGene))
   probes <- fd_stockholm %>% filter(Symbol == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
@@ -195,7 +218,7 @@ output$boxplotStockholm <- reactivePlot(function(){
 
 
 output$boxplotTaylor <- reactivePlot(function(){
-  currentGene <- getTaylorGene()
+  currentGene <- getCurrentGene()
   
   message(paste("Plotting gene", currentGene))
   probes <- fd_taylor %>% filter(Gene == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
@@ -248,7 +271,7 @@ output$boxplotTaylor <- reactivePlot(function(){
 
 output$anovaCambridge <- renderPrint({
   
-  currentGene <- getCambridgeGene()
+  currentGene <- getCurrentGene()
   
   probes <- fd_camcap %>% filter(Symbol == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
   
@@ -280,7 +303,7 @@ output$anovaCambridge <- renderPrint({
 
 output$anovaStockholm <- renderPrint({
   
-  currentGene <- getStockholmGene()
+  currentGene <- getCurrentGene()
   
   probes <- fd_stockholm %>% filter(Symbol == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
   
@@ -312,7 +335,7 @@ output$anovaStockholm <- renderPrint({
 
 output$anovaTaylor <- renderPrint({
   
-  currentGene <- getTaylorGene()
+  currentGene <- getCurrentGene()
   
   probes <- fd_taylor %>% filter(Gene == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
   
@@ -341,150 +364,79 @@ output$anovaTaylor <- renderPrint({
 }
 )
 
-output$rpCambridge <- renderPrint({
+output$rpPlot <- reactivePlot(function(){
+  message("I am doing survival now....")
+  currentGene <- getCurrentGene()
+  dataset <- getRpDataset()
+  
+  if(dataset == "MSKCC"){
+  
+    probes <- fd_taylor %>% filter(Gene == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
     
-    genes <- data()
-    print(genes)
+    taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
+      gather(geo_accession,Expression,-ID)
     
-    pvalList       <- NA
-    pvalList2      <- NA
-    splitList      <- NA
-    splitList2     <- NA
-    highIsGoodList <- NA
-    accList <- NA
-    gg <- alist()
-
-    for(i in 1:length(genes)){
-      combined.data <- taylor %>% filter(Gene %in% genes[i]) %>% 
-        filter(!is.na(Event) & !is.na(Time))
+    summary_stats <- taylor %>% group_by(ID) %>% 
+      summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+    
+    mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
+    mu <- summary_stats$mean[which.max(summary_stats$iqr)]
+    sd <- summary_stats$sd[which.max(summary_stats$iqr)]
+    
+    taylor <- filter(taylor, ID== mostVarProbe)
+  
+    taylor <- full_join(taylor,pd_taylor)
+    
+  
+    combined.data <- taylor %>% 
+      filter(!is.na(Event) & !is.na(Time))
+    
+  } else if (dataset == "Cambridge"){
+    
+      probes <- fd_camcap %>% filter(Symbol == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
       
+      camcap<- exp_camcap  %>% filter(ID %in% probes) %>% 
+        gather(geo_accession,Expression,-ID)
       
-      if(nrow(combined.data) > 0){
-        surv.xfs <- Surv((combined.data$Time/12), as.numeric(combined.data$Event))
-        combined.data$surv.xfs <- surv.xfs
-
-        ctree_xfs   <- ctree(surv.xfs~Expression,data=combined.data)
-        pvalue      <- 1 - ctree_xfs@tree$criterion$maxcriterion
-        newPval     <- signif(pvalue, digits = 2)
-        pvalList[i] <- newPval
-        print(newPval)
-        ps3         <- NA
-        highIsGood  <- NA
-        accList[i] <- as.character(combined.data$GB_ACC[1])
-        
-        if(newPval<0.05) {
-
-          ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
-          ps  <- signif(ps2[1], digits = 3)
-          
-          if(length(ps2)==1) {
-            combined.data$geneexp_cp <- combined.data$Expression<=ps2[1]
-            nt                       <- table(combined.data$geneexp_cp)
-            geneexp.survfit.xfs      <- survfit(surv.xfs~combined.data$geneexp_cp)
-            gg[[i]] <- ggsurv(geneexp.survfit.xfs) + ggtitle(genes[i])
-            newPval2                 <- NA
-            
-          }
-          
-          if(length(ps2)==2) {
-            if(ps2[1]>ps2[2]) {
-              ps3                       <- round(ps2[2], digits=3)
-              combined.data$geneexp_cp1 <- combined.data$Expression<=ps2[1]
-              combined.data$geneexp_cp2 <- combined.data$Expression<=ps2[2]
-              combined.data$geneexp_cp3 <- combined.data$geneexp_cp1+combined.data$geneexp_cp2
-              nt                        <- table(combined.data$geneexp_cp3)
-              geneexp.survfit.xfs       <- survfit(surv.xfs~combined.data$geneexp_cp3)
-              pvalue2                   <- 1 - ctree_xfs@tree$left[[3]][[2]]
-              newPval2                  <- signif(pvalue2, digits=2)
-              
-            } else {
-              ps3                       <- round(ps2[2], digits=3)
-              combined.data$geneexp_cp1 <- combined.data$geneexp<=ps2[1]
-              combined.data$geneexp_cp2 <- combined.data$geneexp<=ps2[2]
-              combined.data$geneexp_cp3 <- combined.data$geneexp_cp1+combined.data$geneexp_cp2
-              nt                        <- table(combined.data$geneexp_cp3)
-              geneexp.survfit.xfs       <- survfit(surv.xfs~combined.data$geneexp_cp3)
-              pvalue2                   <- 1 - ctree_xfs@tree$right[[3]][[2]]
-              newPval2                  <- signif(pvalue2, digits=2)
-              
-              
-            }
-          }
-          
-          combined.data$geneexp_cp <- combined.data$geneexp <= ps2[1]
-          coxphRegressionModel     <- coxph(surv.xfs~combined.data$geneexp_cp)
-          hazardRatio              <- exp(coxphRegressionModel$coefficients)
-          highIsGood               <- hazardRatio > 1
-          
-        } else {
-          ps       <- NA
-          newPval2 <- NA
-        }
-        
-        
-        
-        
-        
-        pvalList2[i]      <- newPval2
-        splitList[i]      <- ps
-        splitList2[i]     <- ps3
-        highIsGoodList[i] <- highIsGood
-        
-      }   else {
-        accList[i] <- NA
-        pvalList[i] <- NA
-        pvalList2[i]      <- NA
-        splitList[i]      <- NA
-        splitList2[i]     <- NA
-        highIsGoodList[i] <- NA
-      }
+      summary_stats <- camcap %>% group_by(ID) %>% 
+        summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
       
+      mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
+      mu <- summary_stats$mean[which.max(summary_stats$iqr)]
+      sd <- summary_stats$sd[which.max(summary_stats$iqr)]
       
-    }
-    
-    Accession  <- accList
-    PValue1    <- pvalList
-    PValue2    <- pvalList2
-    CutOff1    <- splitList
-    CutOff2    <- splitList2
-    HighIsGood <- highIsGoodList
-    
-    xfsList <- data.frame(GeneName= as.character(genes), Accession = accList,CutOff1, CutOff2, PValue1, PValue2, HighIsGood)
-    kable(xfsList)
+      camcap <- filter(camcap, ID== mostVarProbe)
+      
+      camcap <- full_join(camcap,pd_camcap) %>% 
+        mutate(Time = FollowUpTime, Event = ifelse(BCR=="Y",1,0))
+      
+      combined.data <- camcap %>% 
+        filter(!is.na(Time) & !is.na(Event))
     
     
+  } else{
     
-  })
-  
-
-
-
-output$rp_plotCambridge <- reactivePlot(function(){
-  
-  currentGene <- getCambridgeGene()
-  message(paste("Plotting gene", currentGene))
-  probes <- fd_camcap %>% filter(Symbol == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-  
-  camcap<- exp_camcap  %>% filter(ID %in% probes) %>% 
-    gather(geo_accession,Expression,-ID)
-  
-  summary_stats <- camcap%>% group_by(ID) %>% 
-    summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
-  
-  mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
-  mu <- summary_stats$mean[which.max(summary_stats$iqr)]
-  sd <- summary_stats$sd[which.max(summary_stats$iqr)]
-  
-  camcap <- filter(camcap, ID== mostVarProbe) %>%
-    mutate(Z = (Expression -mu) /sd)
-  
-  camcap <- full_join(camcap,pd_camcap)
-  
-
-  combined.data <- camcap %>% 
-    filter(!is.na(BCR) & !is.na(FollowUpTime)) %>% mutate(BCR=ifelse(BCR=="Y",1,0))
+      probes <- fd_stockholm %>% filter(Symbol == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+      
+      stockholm <- exp_stockholm  %>% filter(ID %in% probes) %>% 
+        gather(geo_accession,Expression,-ID)
+      
+      summary_stats <- stockholm %>% group_by(ID) %>% 
+        summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+      
+      mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
+      mu <- summary_stats$mean[which.max(summary_stats$iqr)]
+      sd <- summary_stats$sd[which.max(summary_stats$iqr)]
+      
+      stockholm <- filter(stockholm, ID== mostVarProbe)
+      
+      stockholm <- full_join(stockholm,pd_stockholm) %>% 
+        mutate(Time = FollowUpTime, Event = ifelse(BCR=="Y",1,0))
+      
+      combined.data <- camcap %>% 
+        filter(!is.na(Time) & !is.na(Event))
     
-  
+  }
   
   pvalList       <- NA
   pvalList2      <- NA
@@ -492,13 +444,12 @@ output$rp_plotCambridge <- reactivePlot(function(){
   splitList2     <- NA
   highIsGoodList <- NA
   accList <- NA
-  gg <- alist()
-  
+
   i <- 1
   
     if(nrow(combined.data) > 0){
       
-      surv.xfs <- Surv((as.numeric(as.character(combined.data$FollowUpTime))/12), combined.data$BCR)
+      surv.xfs <- Surv((as.numeric(as.character(combined.data$Time))/12), combined.data$Event)
       combined.data$surv.xfs <- surv.xfs
       ctree_xfs   <- ctree(surv.xfs~Expression,data=combined.data)
       pvalue      <- 1 - ctree_xfs@tree$criterion$maxcriterion
@@ -521,12 +472,14 @@ output$rp_plotCambridge <- reactivePlot(function(){
           combined.data$geneexp_cp <- combined.data$Expression<=ps2[1]
           nt                       <- table(combined.data$geneexp_cp)
           geneexp.survfit.xfs      <- survfit(surv.xfs~combined.data$geneexp_cp)
-          plot(geneexp.survfit.xfs, xlab=xlabel, ylab=ylabel, main=paste(geneid,", p=", newPval), col=c(2,4))
+          plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(2,4))
+          legend("bottomleft", c(paste(currentGene, ">", ps, "n=", nt[[1]]), paste(currentGene, "<=", ps, "n=", nt[[2]])), col=c(2,4), lty=1, lwd=1.5, bty="n")
           newPval2                 <- NA
-          pCount <- pCount +1 
         }
         
       }
+      
+    }
 })
 
 
@@ -534,41 +487,130 @@ output$rp_plotCambridge <- reactivePlot(function(){
   
   output$heatmap<- reactivePlot(function(){
     
-    genes <- data()
+    genes <- getGeneList()
+    dataset <- getHeatmapDataset()
     
-    taylor <- taylor %>% filter(Gene %in% genes)
+    if(dataset == "MSKCC"){
+      
+      probes <- fd_taylor %>% filter(Gene %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+      
+#      taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
+ #       gather(geo_accession,Expression,-ID)
+      taylor <- exp_taylor  %>% filter(ID %in% probes) %>% 
+        gather(geo_accession,Expression,-ID)
+      
+      summary_stats <- taylor %>% group_by(ID) %>% 
+        summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+      
+      mostVarProbes <- left_join(summary_stats,fd_taylor) %>% 
+       arrange(Gene,desc(iqr)) %>% 
+        distinct(Gene) %>% 
+        select(ID) %>%  as.matrix %>%  as.character
+       
     
-    
-    varProbes <- taylor %>% group_by(Gene) %>% 
-      summarise(Probe = Probe[which.max(IQR)])
-    
-    taylor <- inner_join(taylor, varProbes,by="Probe") %>% rename(Gene = Gene.x) %>% select(-c(Gene.y))
-    
-    geneMatrix <- taylor %>% filter(Gene %in% genes) %>% 
-      filter(Sample_Group %in% c("prostate cancer","normal adjacent benign prostate")) %>% 
-    select(Expression, Sample,Gene) %>% 
-    spread(Sample, Expression) %>% data.frame
-    
-    rownames(geneMatrix) <- geneMatrix$Gene
-    geneMatrix <- as.matrix(geneMatrix[,-1])
-    
-    colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)
-    grp <- taylor$Sample_Group[match(colnames(geneMatrix),taylor$Sample)]
-    cols <- brewer.pal(9,"Set1")[1:length(levels(factor(as.character(grp))))]
-    
-    grp <- as.factor(as.character(grp))
-    levels(grp) <- cols
-    
-    colMatrix[,1] <- as.character(grp)
+      
+      samples <- filter(pd_taylor, Sample_Group == "prostate cancer") %>% 
+        select(geo_accession) %>% as.matrix %>% as.character
+      
 
-    grp <- taylor$Gleason[match(colnames(geneMatrix),taylor$Sample)]
-    cols <- brewer.pal(8,"Set2")[1:length(levels(factor(as.character(grp))))]
-    
-    grp <- as.factor(as.character(grp))
-    levels(grp) <- cols
-    colMatrix[,2] <- as.character(grp)
+      
+      taylor <- filter(taylor, ID %in% mostVarProbes,geo_accession %in% samples)
+      geneMatrix <- taylor %>% 
+        spread(geo_accession,Expression) %>% data.frame
+  
+        geneMatrix <- as.matrix(geneMatrix[,-1])
+  
+
+      symbols <- filter(fd_taylor, ID %in% mostVarProbes) %>% 
+                  select(Gene) %>% as.matrix %>% as.character
         
-    heatmap.plus(geneMatrix,ColSideColors = colMatrix)
+      rownames(geneMatrix) <- symbols
+
+      pd <- left_join(taylor,pd_taylor) %>% distinct(geo_accession)
+      
+      colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)
+      grp <- pd$Copy.number.Cluster
+      cols <- brewer.pal(9,"Set1")[1:length(levels(factor(as.character(grp))))]
+      
+      grp <- as.factor(as.character(grp))
+      levels(grp) <- cols
+      
+      colMatrix[,1] <- as.character(grp)
+      
+      grp <- pd$Gleason
+      cols <- brewer.pal(8,"Set2")[1:length(levels(factor(as.character(grp))))]
+      
+      grp <- as.factor(as.character(grp))
+      levels(grp) <- cols
+      colMatrix[,2] <- as.character(grp)
+      
+      
+    } else if(dataset == "Cambridge"){
+      
+      probes <- fd_camcap %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+      
+      #      taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
+      #       gather(geo_accession,Expression,-ID)
+      camcap <- exp_camcap  %>% filter(ID %in% probes) %>% 
+        gather(geo_accession,Expression,-ID)
+      
+      summary_stats <- camcap %>% group_by(ID) %>% 
+        summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+      
+      mostVarProbes <- left_join(summary_stats,fd_camcap) %>% 
+        arrange(Symbol,desc(iqr)) %>% 
+        distinct(Symbol) %>% 
+        select(ID) %>%  as.matrix %>%  as.character
+      
+      
+      
+      
+      samples <- filter(pd_camcap, Sample_Group == "Tumour") %>% 
+                select(geo_accession) %>% as.matrix %>% as.character
+      
+      camcap <- filter(camcap, ID %in% mostVarProbes,geo_accession %in% samples) 
+      
+      geneMatrix <- camcap %>% 
+        spread(geo_accession,Expression) %>% data.frame
+      
+      geneMatrix <- as.matrix(geneMatrix[,-1])
+      
+      symbols <- filter(fd_camcap, ID %in% mostVarProbes) %>% 
+        select(Symbol) %>% as.matrix %>% as.character
+      
+      rownames(geneMatrix) <- symbols
+      
+      
+      pd <- left_join(camcap,pd_camcap) %>% distinct(geo_accession)
+      
+      colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)
+      grp <- pd$iCluster
+      cols <- brewer.pal(5,"Set1")[1:length(levels(factor(as.character(grp))))]
+      
+      grp <- as.factor(as.character(grp))
+      levels(grp) <- cols
+      
+      colMatrix[,1] <- as.character(grp)
+      
+      grp <- pd$Gleason
+      cols <- brewer.pal(8,"Set2")[1:length(levels(factor(as.character(grp))))]
+      
+      grp <- as.factor(as.character(grp))
+      levels(grp) <- cols
+      colMatrix[,2] <- as.character(grp)
+      
+      
+      
+
+
+        
+    } else{
+      
+      
+      
+    }
+    hmcol <- brewer.pal(11 , "RdBu")
+    heatmap.plus(geneMatrix,ColSideColors = colMatrix,col=hmcol)
     
   }
   )
