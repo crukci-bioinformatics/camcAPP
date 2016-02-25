@@ -240,9 +240,7 @@ shinyServer(function(input, output){
     plotType <- input$inputType_cambridge
     if(plotType == "Single Gene") {
       camcap <- getSelectedGeneCambridge()
-    } else 
-      
-    camcap <- getSelectedGeneListCambridge()
+    } else  camcap <- getSelectedGeneListCambridge()
         
     doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
     
@@ -480,10 +478,11 @@ output$boxplotGrasso <- reactivePlot(function(){
 
 output$anovaCambridge <- renderPrint({
   
-  cambridge <- getSelectedGeneCambridge()   
-  
-  cambridge <- full_join(cambridge,pd_camcap)
-  
+  plotType <- input$inputType_cambridge
+  if(plotType == "Single Gene") {
+    camcap <- getSelectedGeneCambridge()
+  } else  camcap <- getSelectedGeneListCambridge()
+
   var <- getCambridgeVariable()
   switch(var,
          iCluster = group_by(camcap, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.))),
