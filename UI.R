@@ -36,10 +36,17 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
 
                      selectInput("clinvar_cambridge", "Choose a Clinical Covariate",choices=c("iCluster","Gleason"),selected="iCluster"),
                      radioButtons("z_cambridge","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
-                     radioButtons("overlay_cambridge","Overlay individual points?",choices=c("Yes","No"),selected="Yes")
+                     radioButtons("overlay_cambridge","Overlay individual points?",choices=c("Yes","No"),selected="Yes"),
+                     textInput("outfile", "What to call the output R script",value="analysis")
                    ),
                    mainPanel(
-                     plotOutput("boxplotCambridge"),verbatimTextOutput("anovaCambridge")
+                     plotOutput("boxplotCambridge"),verbatimTextOutput("anovaCambridge"), h4("R Script"),
+                     
+                     helpText("You will be able to re-run this analysis in R by downloading the R code below"),
+                     helpText("In order to compile the report in RStudio, you will need to install the ggplot2, rmarkdown, reshape2,gridExtra and knitr packages"),br(),
+                     code("install.packages(c('ggplot2','tidyr','dplyr','gridExtra'))"),
+                     br(),
+                     downloadLink('cambridgeProfileScript', 'Download R Script')
                    )
                    
                  )

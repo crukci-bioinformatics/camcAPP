@@ -16,7 +16,7 @@ library(Biobase)
 #if(!require(prostateCancerTaylor)) install_github("crukci-bioinformatics/prostateCancerTaylor");library(prostateCancerTaylor)
 #if(!require(prostateCancerCamcap)) install_github("crukci-bioinformatics/prostateCancerCamcap");library(prostateCancerCamcap)
 #if(!require(prostateCancerStockholm)) install_github("crukci-bioinformatics/prostateCancerStockholm");library(prostateCancerStockholm)
-
+library(dplyr)
 
 data(camcap,package = "prostateCancerCamcap")
 pd_camcap <- tbl_df(pData(camcap))
@@ -34,7 +34,7 @@ fd_taylor <- tbl_df(fData(taylor))
 exp_taylor <- tbl_df(data.frame(ID=as.character(featureNames(taylor)),log2(exprs(taylor))))
 
 ## dplyr needs to be the last package loaded, otherwise the 'select' function seems to be over-written
-library(dplyr)
+
 select <- dplyr::select
 iclusPal <- brewer.pal(5, "Set1")
 
@@ -168,19 +168,19 @@ shinyServer(function(input, output){
     p1 <- switch(var,
                  iCluster = {camcap %>% 
                    filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
-                   ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) + ggtitle(currentGene)
+                   ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal)
                    },
                  
                  Gleason = {camcap  %>% 
                    filter(Sample_Group == "Tumour") %>% 
                    filter(!(is.na(Gleason))) %>% 
-                   ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() +  ggtitle(currentGene)
+                   ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() +  ggtitle(currentGene) 
                  }
                  )
     
-    if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75)    
-
-      p1
+    if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
+    
+      p1 
   }
   )
 
@@ -810,37 +810,60 @@ output$survivalPlot <- reactivePlot(function(){
   
 
 
-output$downloadScript <- downloadHandler(
+output$cambridgeProfileScript <- downloadHandler(
   filename = function() {
     paste(input$outfile, '.R', sep='')
   },
   content = function(file) {
     inFile <- input$file1
+    cat(file=file,as.name("library(ggplot2)\n"))
+    cat(file=file,as.name("library(tidyr)\n"),append=TRUE)
+
+
     
-    cat(file=file,as.name(paste0('myfile <- \"' , inFile$name, '\"\n')))
-    cat(file=file,as.name(paste0('sep <- \'', input$sep,'\'','\n')),append=TRUE)
-    cat(file=file,as.name(paste0('quote <- \'', input$quote,'\'','\n')),append=TRUE)
-    cat(file=file,as.name(paste('header <- ', input$header,'\n')),append=TRUE)
-    cat(file=file,as.name(paste('skip <- ', input$skip,'\n')),append=TRUE)
-    cat(file=file,as.name("data <- read.csv(myfile, header=header, sep=sep, quote=quote,skip=skip)\n"),append=TRUE)
+    cat(file=file,as.name("data(camcap,package = 'prostateCancerCamcap')\n"),append=TRUE)
+    cat(file=file,as.name("pd_camcap <- tbl_df(pData(camcap))\n"),append=TRUE)
+    cat(file=file,as.name("fd_camcap <- tbl_df(fData(camcap))\n"),append=TRUE)
+    cat(file=file,as.name("exp_camcap <- tbl_df(data.frame(ID=as.character(featureNames(camcap)),exprs(camcap)))\n"),append=TRUE)
+    cat(file=file,as.name("library(dplyr)\n"),append=TRUE)
+    cat(file=file,as.name("library(RColorBrewer)\n"),append=TRUE)
+    cat(file=file,as.name("iclusPal <- brewer.pal(5, 'Set1')\n"),append=TRUE)
     
-    cat(file=file,as.name("head(data)\n"),append=TRUE)
-  
-    cat(file=file,as.name(paste("datacol <- ", input$dataCol,'\n')),append=TRUE)
-    cat(file=file,as.name("X <- data[,datacol]\n"),append=TRUE)
-    cat(file=file,as.name("summary(X)\n"),append=TRUE)
-    cat(file=file,as.name("boxplot(X,horizontal=TRUE)\n"),append=TRUE)
     
-    cat(file=file,as.name("colnames(data)[datacol] <- 'X'\n"),append=TRUE)
-    cat(file=file, as.name("library(ggplot2)\n"),append=TRUE)
-    cat(file=file, as.name("ggplot(data, aes(x=X)) + geom_histogram(aes(y=..density..),binwidth=.5,colour='black', fill='white')+ stat_function(fun=dnorm,color='red',arg=list(mean=mean(data$X), sd=sd(data$X)))\n"),append=TRUE)
+    currentGene <- getCurrentGene()
+    doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
+    var <- getCambridgeVariable()
+    overlay <- getCambridgeOverlay()
     
-    cat(file=file,as.name(paste0('alternative <- \'', input$alternative,'\'','\n')),append=TRUE)
-    cat(file=file,as.name(paste("mu <- ", input$mu,'\n')),append=TRUE)
-    cat(file=file,as.name("t.test(X,mu=mu,alternative=alternative)\n"),append=TRUE)
-    cat(file=file,as.name("sessionInfo()\n"),append=TRUE)
-    #formatR::tidy_source(source=file,output = file)
-  }
+    cat(file=file,as.name(paste0("currentGene <-'", currentGene,"'\n")),append=TRUE)
+    
+    cat(file=file, as.name(paste0("probes <- fd_camcap %>% filter(Symbol == \'",currentGene,"\') %>% select(ID) %>% unique %>% as.matrix %>%  as.character\n")),append=TRUE)
+    
+    cat(file=file,as.name("camcap<- exp_camcap  %>% filter(ID %in% probes) %>% gather(geo_accession,Expression,-ID)\n"),append=TRUE)
+    cat(file=file,as.name("summary_stats <- camcap%>% group_by(ID) %>% summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))\n"),append=TRUE)
+    cat(file=file,as.name("mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])\n"),append=TRUE)
+    cat(file=file,as.name("mu <- summary_stats$mean[which.max(summary_stats$iqr)]\n"),append=TRUE)
+    cat(file=file,as.name("sd <- summary_stats$sd[which.max(summary_stats$iqr)]\n"),append=TRUE)
+    
+    cat(file=file,as.name("camcap <- filter(camcap, ID== mostVarProbe) %>% mutate(Z = (Expression -mu) /sd)\n"),append=TRUE)
+    cat(file=file,as.name("camcap <- full_join(camcap,pd_camcap)\n"),append=TRUE)
+    
+    if(doZ) cat(file=file,as.name("camcap <- mutate(camcap, Expression=Z)\n"),append=TRUE)
+    
+    if(var == "iCluster"){
+      
+      cat(file=file,as.name("p1 <- camcap %>% filter(Sample_Group == 'Tumour',!is.na(iCluster)) %>% ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() + ggtitle(currentGene)+ scale_fill_manual(values=iclusPal)\n"),append=TRUE)
+      
+    } else if(var == "Gleason"){
+      
+      cat(file=file,as.name("p1 <- camcap %>% filter(Sample_Group == 'Gleason',!is.na(iCluster)) %>% ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() +  ggtitle(currentGene)\n"))
+    }
+    
+    
+    if(overlay=="Yes") cat(file=file,as.name("p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75) \n"),append=TRUE)
+    
+    cat(file=file,as.name("p1"),append=TRUE)
+   }
 )
 
 
