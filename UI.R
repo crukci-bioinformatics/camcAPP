@@ -43,8 +43,8 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      plotOutput("boxplotCambridge"),verbatimTextOutput("anovaCambridge"), h4("R Script"),
                      
                      helpText("You will be able to re-run this analysis in R by downloading the R code below"),
-                     helpText("In order to compile the report in RStudio, you will need to install the ggplot2, rmarkdown, reshape2,gridExtra and knitr packages"),br(),
-                     code("install.packages(c('ggplot2','tidyr','dplyr','gridExtra'))"),
+                     helpText("In order to compile the report in RStudio, you will need to install the ggplot2, tidyr, dplyr, devtools and RColorBrewer packages. The first time you run the script, the Camcap dataset will also be download for you"),br(),
+                     code("install.packages(c('ggplot2','tidyr','dplyr','devtools','RColorBrewer'))"),
                      br(),
                      downloadLink('cambridgeProfileScript', 'Download R Script')
                    )
@@ -83,6 +83,35 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                
       ),
     
+    tabPanel("Michigan-2005 Profile",
+             sidebarLayout(
+               sidebarPanel(
+                 selectInput("clinvar_varambally", "Choose a Clinical Covariate",choices=c("Sample_Group"),selected="Sample_Group"),
+                 radioButtons("z_varambally","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
+                 radioButtons("overlay_varambally","Overlay individual points?",choices=c("Yes","No"),selected="Yes")
+               ),
+               mainPanel(
+                 plotOutput("boxplotVarambally"),verbatimTextOutput("anovaVarambally")
+               )
+               
+             )
+             
+    ),
+    tabPanel("Michigan-2012 Profile",
+             sidebarLayout(
+               sidebarPanel(
+                 selectInput("clinvar_grasso", "Choose a Clinical Covariate",choices=c("Group"),selected="Group"),
+                 radioButtons("z_grasso","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
+                 radioButtons("overlay_grasso","Overlay individual points?",choices=c("Yes","No"),selected="Yes")
+               ),
+               mainPanel(
+                 plotOutput("boxplotGrasso"),verbatimTextOutput("anovaGrasso")
+               )
+               
+             )
+             
+    ),
+    
     tabPanel("Survival",
              sidebarLayout(
                 sidebarPanel(
@@ -93,6 +122,19 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                   plotOutput("survivalPlot"),helpText("The Kaplan-Meier plot is a useful way of summarising survival data. There is one curve for each group. Each curve starts at 100% probability of survival. The probability of freedom from biochemical recurrence is shown on the y axis and the time (in years) is shown on the x axis. The curve drops each time there is an 'event'. A cross is shown on each curve where a 'censoring'' event takes place. This is where someone drops out of the study for a reason not related to the study, e.g. the study ends before an event has occurred. These subjects are no longer included in any calculations. The lower the survival curve the worse prognosis the patients in that group have.")
                 )
                 
+             )
+    ),
+    
+    tabPanel("Gene Correlation",
+             sidebarLayout(
+               sidebarPanel(
+                 selectInput("secondGene","Type a Gene Symbol",choices=keys(revmap(org.Hs.egSYMBOL)),selected = "A2M"),
+                 selectInput("corDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC"),selected = "Cambridge"),
+                 radioButtons("corType","Type of correlation to calculate",choices=c("spearman","pearson"),selected="pearson")
+               ),
+               mainPanel(
+                 plotOutput("corPlot")
+               )
              )
     ),
     

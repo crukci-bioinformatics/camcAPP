@@ -33,6 +33,19 @@ pd_taylor <- tbl_df(pData(taylor))
 fd_taylor <- tbl_df(fData(taylor))
 exp_taylor <- tbl_df(data.frame(ID=as.character(featureNames(taylor)),log2(exprs(taylor))))
 
+data(varambally,package="prostateCancerVarambally")
+pd_varambally <- tbl_df(pData(varambally))
+fd_varambally <- tbl_df(fData(varambally))
+exp_varambally <- tbl_df(data.frame(ID=as.character(featureNames(varambally)),log2(exprs(varambally))))
+
+
+data(grasso,package="prostateCancerGrasso")
+pd_grasso <- tbl_df(pData(grasso))
+fd_grasso <- tbl_df(fData(grasso))
+exp_grasso <- tbl_df(data.frame(ID=as.character(featureNames(grasso)),exprs(grasso)))
+
+
+
 ## dplyr needs to be the last package loaded, otherwise the 'select' function seems to be over-written
 
 select <- dplyr::select
@@ -72,6 +85,15 @@ shinyServer(function(input, output){
     input$clinvar_taylor
   })
   
+  getVaramballyVariable <- reactive({
+    input$clinvar_varambally
+  })
+  
+  getGrassoVariable <- reactive({
+    input$clinvar_grasso
+  })
+
+  
   
   getCambridgeOverlay <- reactive({
     input$overlay_cambridge
@@ -81,6 +103,13 @@ shinyServer(function(input, output){
   })
   getTaylorOverlay <- reactive({
     input$overlay_taylor
+  })
+  getVaramballyOverlay <- reactive({
+    input$overlay_varambally
+  })
+  
+  getGrassoOverlay <- reactive({
+    input$overlay_grasso
   })
   
   
@@ -94,7 +123,13 @@ shinyServer(function(input, output){
   getTaylorZ <- reactive({
     input$z_taylor
   })
-
+  getVaramballyZ <- reactive({
+    input$z_varambally
+  })
+  getGrassoZ <- reactive({
+    input$z_grasso
+  })
+  
   
   getRpDataset <- reactive({
     input$rpDataset
@@ -121,6 +156,18 @@ shinyServer(function(input, output){
     input$scale
   })
   
+  getCorDataset <- reactive({
+    input$corDataset
+  })
+  
+  getSecondGene <- reactive({
+    input$secondGene
+    
+  })
+  
+  getCorType <- reactive({
+    input$corType
+  })
   
   getGeneList <- reactive({inFile <- input$file1
   
@@ -168,7 +215,7 @@ shinyServer(function(input, output){
     p1 <- switch(var,
                  iCluster = {camcap %>% 
                    filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
-                   ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal)
+                   ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) +  ggtitle(currentGene) 
                    },
                  
                  Gleason = {camcap  %>% 
@@ -274,6 +321,90 @@ output$boxplotTaylor <- reactivePlot(function(){
                    ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() +  ggtitle(currentGene)
                }
   )
+  
+  if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75)    
+  
+  p1
+  
+}
+
+
+)
+
+
+output$boxplotVarambally <- reactivePlot(function(){
+  currentGene <- getCurrentGene()
+  
+  message(paste("Plotting gene", currentGene))
+  probes <- fd_varambally %>% filter(Symbol == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+  
+  varambally <- exp_varambally  %>% filter(ID %in% probes) %>% 
+    gather(geo_accession,Expression,-ID)
+  
+  summary_stats <- varambally %>% group_by(ID) %>% 
+    summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+  
+  mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
+  mu <- summary_stats$mean[which.max(summary_stats$iqr)]
+  sd <- summary_stats$sd[which.max(summary_stats$iqr)]
+  
+  varambally <- filter(varambally, ID== mostVarProbe) %>%
+    mutate(Z = (Expression -mu) /sd)
+  
+  varambally <- full_join(varambally,pd_varambally)
+  
+  doZ <- ifelse(getVaramballyZ() == "Yes",TRUE,FALSE)
+  
+  if(doZ) varambally <- mutate(varambally, Expression=Z)
+  
+  var <- getVaramballyVariable()
+  overlay <- getVaramballyOverlay()
+  
+  p1 <- varambally %>% ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()  +  ggtitle(currentGene)
+               
+  
+  
+  if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75)    
+  
+  p1
+  
+}
+
+
+)
+
+
+output$boxplotGrasso <- reactivePlot(function(){
+  currentGene <- getCurrentGene()
+  
+  message(paste("Plotting gene", currentGene))
+  probes <- fd_grasso %>% filter(GENE_SYMBOL == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+  
+  grasso <- exp_grasso  %>% filter(ID %in% probes) %>% 
+    gather(geo_accession,Expression,-ID)
+  
+  summary_stats <- grasso %>% group_by(ID) %>% 
+    summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+  
+  mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
+  mu <- summary_stats$mean[which.max(summary_stats$iqr)]
+  sd <- summary_stats$sd[which.max(summary_stats$iqr)]
+  
+  grasso <- filter(grasso, ID== mostVarProbe) %>%
+    mutate(Z = (Expression -mu) /sd)
+  
+  grasso <- full_join(grasso,pd_grasso)
+  
+  doZ <- ifelse(getGrassoZ() == "Yes",TRUE,FALSE)
+  
+  if(doZ) grasso <- mutate(grasso, Expression=Z)
+  
+  var <- getGrassoVariable()
+  overlay <- getGrassoOverlay()
+  
+  p1 <- grasso %>% ggplot(aes(x = Group, y = Expression, fill=Group)) + geom_boxplot()  +  ggtitle(currentGene)
+  
+  
   
   if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75)    
   
@@ -810,22 +941,125 @@ output$survivalPlot <- reactivePlot(function(){
   
 
 
+  output$corPlot <- reactivePlot(function(){
+    
+    dataset <- getCorDataset()
+    currentGene <- getCurrentGene()
+    secondGene <- getSecondGene()
+    genes <- c(currentGene, secondGene)
+    
+    if(dataset == "MSKCC"){
+
+      probes <- fd_taylor %>% filter(Gene %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+      
+      #      taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
+      #       gather(geo_accession,Expression,-ID)
+      taylor <- exp_taylor  %>% filter(ID %in% probes) %>% 
+        gather(geo_accession,Expression,-ID)
+      
+      summary_stats <- taylor %>% group_by(ID) %>% 
+        summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+      
+      mostVarProbes <- left_join(summary_stats,fd_taylor) %>% 
+        arrange(Gene,desc(iqr)) %>% 
+        distinct(Gene) %>% 
+        select(ID) %>%  as.matrix %>%  as.character
+      
+      
+      
+      
+      samples <- filter(pd_taylor, Sample_Group == "prostate cancer") %>% 
+        select(geo_accession) %>% as.matrix %>% as.character
+      
+      taylor <- filter(taylor, ID %in% mostVarProbes,geo_accession %in% samples) 
+      cor_data <- left_join(taylor,select(fd_taylor,ID,Gene)) %>% mutate(Gene = ifelse(Gene == currentGene,"Gene1","Gene2")) %>% 
+        select(geo_accession,Expression,Gene) %>% spread(Gene,Expression)
+      cor_data <- left_join(cor_data, select(pd_taylor, geo_accession,Copy.number.Cluster)) %>% mutate(Group = Copy.number.Cluster)
+      
+    } else if(dataset == "Cambridge"){
+    
+
+    
+    probes <- fd_camcap %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+    
+    #      taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
+    #       gather(geo_accession,Expression,-ID)
+    camcap <- exp_camcap  %>% filter(ID %in% probes) %>% 
+      gather(geo_accession,Expression,-ID)
+    
+    summary_stats <- camcap %>% group_by(ID) %>% 
+      summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+    
+    mostVarProbes <- left_join(summary_stats,fd_camcap) %>% 
+      arrange(Symbol,desc(iqr)) %>% 
+      distinct(Symbol) %>% 
+      select(ID) %>%  as.matrix %>%  as.character
+    
+    
+    
+    
+    samples <- filter(pd_camcap, Sample_Group == "Tumour") %>% 
+      select(geo_accession) %>% as.matrix %>% as.character
+    
+    camcap <- filter(camcap, ID %in% mostVarProbes,geo_accession %in% samples) 
+    cor_data <- left_join(camcap,select(fd_camcap,ID,Symbol)) %>% mutate(Gene = ifelse(Symbol == currentGene,"Gene1","Gene2")) %>% 
+      select(geo_accession,Expression,Gene) %>% spread(Gene,Expression)
+    
+    cor_data <- left_join(cor_data, select(pd_camcap, geo_accession,iCluster)) %>% mutate(Group = iCluster)
+                     
+    } else {
+      
+      probes <- fd_stockholm %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+      
+      #      taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
+      #       gather(geo_accession,Expression,-ID)
+      stockholm <- exp_stockholm  %>% filter(ID %in% probes) %>% 
+        gather(geo_accession,Expression,-ID)
+      
+      summary_stats <- stockholm %>% group_by(ID) %>% 
+        summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+      
+      mostVarProbes <- left_join(summary_stats,fd_stockholm) %>% 
+        arrange(Symbol,desc(iqr)) %>% 
+        distinct(Symbol) %>% 
+        select(ID) %>%  as.matrix %>%  as.character
+      
+
+      stockholm <- filter(stockholm, ID %in% mostVarProbes) 
+      cor_data <- left_join(stockholm,select(fd_stockholm,ID,Symbol)) %>% mutate(Gene = ifelse(Symbol == currentGene,"Gene1","Gene2")) %>% 
+        select(geo_accession,Expression,Gene) %>% spread(Gene,Expression)
+      cor_data <- left_join(cor_data, select(pd_stockholm, geo_accession,iCluster)) %>% mutate(Group = iCluster)
+      
+    }
+        
+    cor <- round(with(cor_data, cor(Gene1,Gene2,method=getCorType())),3)
+    ggplot(cor_data, aes(x = Gene1, y=Gene2,col=Group)) + geom_point() + xlab(currentGene) + ylab(secondGene) + ggtitle(paste0("Correlation = ", cor))
+                 
+  }
+    )
+  
 output$cambridgeProfileScript <- downloadHandler(
   filename = function() {
     paste(input$outfile, '.R', sep='')
   },
   content = function(file) {
     inFile <- input$file1
-    cat(file=file,as.name("library(ggplot2)\n"))
+    cat(file=file,as.name("##Load the required libraries\n"))
+    cat(file=file,as.name("library(ggplot2)\n"),append=TRUE)
     cat(file=file,as.name("library(tidyr)\n"),append=TRUE)
-
-
+    cat(file=file,as.name("library(devtools)\n"),append=TRUE)
     
+    cat(file=file,as.name("###Install camcap dataset if not present\n"),append=TRUE)
+    cat(file=file,as.name("if(!require(prostateCancerCamcap)) install_github('crukci-bioinformatics/prostateCancerCamcap')\n"),append=TRUE)
+    
+    cat(file=file,as.name("library(dplyr)\n"),append=TRUE)
+    cat(file=file,as.name("###Convert into data convenient for dplyr\n"),append=TRUE)
     cat(file=file,as.name("data(camcap,package = 'prostateCancerCamcap')\n"),append=TRUE)
     cat(file=file,as.name("pd_camcap <- tbl_df(pData(camcap))\n"),append=TRUE)
     cat(file=file,as.name("fd_camcap <- tbl_df(fData(camcap))\n"),append=TRUE)
     cat(file=file,as.name("exp_camcap <- tbl_df(data.frame(ID=as.character(featureNames(camcap)),exprs(camcap)))\n"),append=TRUE)
-    cat(file=file,as.name("library(dplyr)\n"),append=TRUE)
+
+    
     cat(file=file,as.name("library(RColorBrewer)\n"),append=TRUE)
     cat(file=file,as.name("iclusPal <- brewer.pal(5, 'Set1')\n"),append=TRUE)
     
