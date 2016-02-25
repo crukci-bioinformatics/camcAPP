@@ -33,7 +33,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
         tabPanel("Cambridge Profile",
                  sidebarLayout(
                    sidebarPanel(
-
+                     radioButtons("inputType_cambridge", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
                      selectInput("clinvar_cambridge", "Choose a Clinical Covariate",choices=c("iCluster","Gleason"),selected="iCluster"),
                      radioButtons("z_cambridge","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
                      radioButtons("overlay_cambridge","Overlay individual points?",choices=c("Yes","No"),selected="Yes"),
@@ -61,7 +61,13 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                    radioButtons("overlay_stockholm","Overlay individual points?",choices=c("Yes","No"),selected="Yes")
                  ),
                  mainPanel(
-                   plotOutput("boxplotStockholm"),verbatimTextOutput("anovaStockholm")
+                   plotOutput("boxplotStockholm"),verbatimTextOutput("anovaStockholm"), h4("R Script"),
+                   
+                   helpText("You will be able to re-run this analysis in R by downloading the R code below"),
+                   helpText("In order to compile the report in RStudio, you will need to install the ggplot2, tidyr, dplyr, devtools and RColorBrewer packages. The first time you run the script, the Camcap dataset will also be download for you"),br(),
+                   code("install.packages(c('ggplot2','tidyr','dplyr','devtools','RColorBrewer'))"),
+                   br(),
+                   downloadLink('stockholmProfileScript', 'Download R Script')
                  )
                  
                )

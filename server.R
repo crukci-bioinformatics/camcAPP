@@ -10,7 +10,7 @@ library(party)
 library(survival)
 library(knitr)
 library(Biobase)
-
+library(broom)
 
 
 #if(!require(prostateCancerTaylor)) install_github("crukci-bioinformatics/prostateCancerTaylor");library(prostateCancerTaylor)
@@ -183,7 +183,7 @@ shinyServer(function(input, output){
   })
   
   
-  getSelectedGenesCambridge <-reactive({
+  getSelectedGeneCambridge <-reactive({
     
     currentGene <- getCurrentGene()
     probes <- fd_camcap %>% filter(Symbol == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
@@ -201,44 +201,77 @@ shinyServer(function(input, output){
     camcap <- filter(camcap, ID== mostVarProbe) %>%
       mutate(Z = (Expression -mu) /sd)
     
-    camcap <- full_join(camcap,pd_camcap)
-    
-    doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
-    
-    if(doZ) camcap <- mutate(camcap, Expression=Z)
+    camcap <- left_join(camcap,pd_camcap)
+    camcap <- left_join(camcap, fd_camcap)
+
     
     camcap
     
   })
   
+  getSelectedGeneListCambridge <- reactive({
+    genes <- getGeneList()
+    
+    probes <- fd_camcap %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+    
+    #      taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
+    #       gather(geo_accession,Expression,-ID)
+    camcap <- exp_camcap  %>% filter(ID %in% probes) %>% 
+      gather(geo_accession,Expression,-ID)
+    
+    summary_stats <- camcap %>% group_by(ID) %>% 
+      summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+    
+    camcap <- left_join(camcap,summary_stats) %>% mutate(Z = (Expression - mean) / sd)
+    
+    mostVarProbes <- left_join(summary_stats,fd_camcap) %>% 
+      arrange(Symbol,desc(iqr)) %>% 
+      distinct(Symbol) %>% 
+      select(ID) %>%  as.matrix %>%  as.character
+  
+    camcap <- filter(camcap, ID %in% mostVarProbes)
+    camcap <- left_join(camcap, select(fd_camcap, ID, Symbol))
+    camcap <- left_join(camcap, pd_camcap)
+    camcap    
+  })
+  
   output$boxplotCambridge <- reactivePlot(function(){
     
-    camcap <- getSelectedGenesCambridge()   
-    currentGene <- getCurrentGene()
+    plotType <- input$inputType_cambridge
+    if(plotType == "Single Gene") {
+      camcap <- getSelectedGeneCambridge()
+    } else 
+      
+    camcap <- getSelectedGeneListCambridge()
+        
+    doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
+    
+    if(doZ) camcap <- mutate(camcap, Expression=Z)
+    
     var <- getCambridgeVariable()
     overlay <- getCambridgeOverlay()
   
     p1 <- switch(var,
                  iCluster = {camcap %>% 
                    filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
-                   ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) +  ggtitle(currentGene) 
+                   ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
                    },
                  
                  Gleason = {camcap  %>% 
                    filter(Sample_Group == "Tumour") %>% 
                    filter(!(is.na(Gleason))) %>% 
-                   ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() +  ggtitle(currentGene) 
+                   ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
                  }
                  )
     
     if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
     
-      p1 
+      p1 +  facet_wrap(~Symbol) 
   }
   )
 
 
-getSelectedGenesStockholm <- reactive({
+getSelectedGeneStockholm <- reactive({
   
   currentGene <- getCurrentGene()
   
@@ -260,9 +293,7 @@ getSelectedGenesStockholm <- reactive({
   
   stockholm <- full_join(stockholm,pd_stockholm)
   
-  doZ <- ifelse(getStockholmZ() == "Yes",TRUE,FALSE)
-  
-  if(doZ) stockholm <- mutate(stockholm, Expression=Z)
+
   
   
 })
@@ -271,8 +302,11 @@ output$boxplotStockholm <- reactivePlot(function(){
 
   currentGene <- getCurrentGene()
   
-  stockholm <- getSelectedGenesStockholm()
+  stockholm <- getSelectedGeneStockholm()
   
+  doZ <- ifelse(getStockholmZ() == "Yes",TRUE,FALSE)
+  
+  if(doZ) stockholm <- mutate(stockholm, Expression=Z)
   
   var <- getStockholmVariable()
   overlay <- getStockholmOverlay()
@@ -299,9 +333,8 @@ output$boxplotStockholm <- reactivePlot(function(){
 )
 
 
-output$boxplotTaylor <- reactivePlot(function(){
+getSelectedGeneTaylor <- reactive({
   currentGene <- getCurrentGene()
-  
   message(paste("Plotting gene", currentGene))
   probes <- fd_taylor %>% filter(Gene == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
   
@@ -319,6 +352,16 @@ output$boxplotTaylor <- reactivePlot(function(){
     mutate(Z = (Expression -mu) /sd)
   
   taylor <- full_join(taylor,pd_taylor)
+  
+  
+  
+})
+
+
+output$boxplotTaylor <- reactivePlot(function(){
+
+  
+  taylor <- getSelectedGeneTaylor()
   
   doZ <- ifelse(getTaylorZ() == "Yes",TRUE,FALSE)
   
@@ -437,15 +480,15 @@ output$boxplotGrasso <- reactivePlot(function(){
 
 output$anovaCambridge <- renderPrint({
   
-  cambridge <- getSelectedGenesCambridge()   
+  cambridge <- getSelectedGeneCambridge()   
   
   cambridge <- full_join(cambridge,pd_camcap)
   
   var <- getCambridgeVariable()
   switch(var,
-         iCluster = summary(aov(lm(Expression~iCluster,cambridge))),
+         iCluster = group_by(camcap, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.))),
          
-         Gleason = summary(aov(lm(Expression~Gleason,cambridge)))
+         Gleason = group_by(camcap, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))
          
   )
   
@@ -458,7 +501,7 @@ output$anovaStockholm <- renderPrint({
   
   currentGene <- getCurrentGene()
   
-  stockholm <- getSelectedGenesStockholm()
+  stockholm <- getSelectedGeneStockholm()
   stockholm <- full_join(stockholm,pd_stockholm)
   
   var <- getStockholmVariable()
@@ -478,19 +521,8 @@ output$anovaTaylor <- renderPrint({
   
   currentGene <- getCurrentGene()
   
-  probes <- fd_taylor %>% filter(Gene == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+  taylor <- getSelectedGeneTaylor()
   
-  taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
-    gather(geo_accession,Expression,-ID)
-  
-  summary_stats <- taylor%>% group_by(ID) %>% 
-    summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
-  
-  mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
-  mu <- summary_stats$mean[which.max(summary_stats$iqr)]
-  sd <- summary_stats$sd[which.max(summary_stats$iqr)]
-  
-  taylor <- filter(taylor, ID== mostVarProbe)
   taylor <- full_join(taylor,pd_taylor)
   
   var <- getTaylorVariable()
@@ -532,7 +564,7 @@ prepareSurvival <- reactive({
     
   } else if (dataset == "Cambridge"){
     
-    camcap <- getSelectedGenesCambridge()
+    camcap <- getSelectedGeneCambridge()
     
     camcap <- full_join(camcap,pd_camcap) %>% 
       mutate(Time = FollowUpTime, Event = ifelse(BCR=="Y",1,0))
@@ -542,19 +574,7 @@ prepareSurvival <- reactive({
     
     
   } else{
-    probes <- fd_stockholm %>% filter(Symbol == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-    
-    stockholm <- exp_stockholm  %>% filter(ID %in% probes) %>% 
-      gather(geo_accession,Expression,-ID)
-    
-    summary_stats <- stockholm %>% group_by(ID) %>% 
-      summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
-    
-    mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
-    mu <- summary_stats$mean[which.max(summary_stats$iqr)]
-    sd <- summary_stats$sd[which.max(summary_stats$iqr)]
-    
-    stockholm <- filter(stockholm, ID== mostVarProbe)
+    stockholm <- getSelectedGeneStockholm()
     
     stockholm <- full_join(stockholm,pd_stockholm) %>% 
       mutate(Time = FollowUpTime, Event = ifelse(BCR=="Y",1,0))
@@ -1002,46 +1022,65 @@ output$cambridgeProfileScript <- downloadHandler(
 )
 
 
-output$downloadMarkdown <- downloadHandler(
+output$stockholmProfileScript <- downloadHandler(
   filename = function() {
-    paste(input$outfile, '.Rmd', sep='')
+    paste(input$outfile, '.R', sep='')
   },
   content = function(file) {
     inFile <- input$file1
-    script <- gsub(".Rmd", ".R",file)
-    cat(file=script,as.name(paste0('myfile <- \"' , inFile$name, '\"\n')))
-    cat(file=script,as.name(paste0('sep <- \'', input$sep,'\'','\n')),append=TRUE)
-    cat(file=script,as.name(paste0('quote <- \'', input$quote,'\'','\n')),append=TRUE)
-    cat(file=script,as.name(paste('header <- ', input$header,'\n')),append=TRUE)
-    cat(file=script,as.name(paste('skip <- ', input$skip,'\n')),append=TRUE)
-    cat(file=script,as.name("data <- read.csv(myfile, header=header, sep=sep, quote=quote,skip=skip)\n"),append=TRUE)
-    cat(file=script,as.name("head(data)\n"),append=TRUE)
+    cat(file=file,as.name("##Load the required libraries\n"))
+    cat(file=file,as.name("library(ggplot2)\n"),append=TRUE)
+    cat(file=file,as.name("library(tidyr)\n"),append=TRUE)
+    cat(file=file,as.name("library(devtools)\n"),append=TRUE)
     
-    cat(file=script,as.name(paste("datacol <- ", input$dataCol,'\n')),append=TRUE)
-    cat(file=script,as.name("X <- data[,datacol]\n"),append=TRUE)
-    cat(file=script,as.name("summary(X)\n"),append=TRUE)
-    cat(file=script,as.name("boxplot(X,horizontal=TRUE)\n"),append=TRUE)
-    cat(file=script,as.name("colnames(data)[datacol] <- 'X'\n"),append=TRUE)
-    cat(file=script, as.name("library(ggplot2)\n"),append=TRUE)
-    cat(file=script, as.name("ggplot(data, aes(x=X)) + geom_histogram(aes(y=..density..),binwidth=.5,colour='black', fill='white')+ stat_function(fun=dnorm,color='red',arg=list(mean=mean(data$X), sd=sd(data$X)))\n"),append=TRUE)
+    cat(file=file,as.name("###Install stockholm dataset if not present\n"),append=TRUE)
+    cat(file=file,as.name("if(!require(prostateCancerStockholm)) install_github('crukci-bioinformatics/prostateCancerStockholm')\n"),append=TRUE)
     
-    cat(file=script,as.name(paste0('alternative <- \'', input$alternative,'\'','\n')),append=TRUE)
-    cat(file=script,as.name(paste("mu <- ", input$mu,'\n')),append=TRUE)
-    cat(file=script,as.name("t.test(X,mu=mu,alternative=alternative)\n"),append=TRUE)
-    cat(file=script,as.name("sessionInfo()\n"),append=TRUE)
-    knitr:::spin(hair=script,knit = FALSE)
-    rmd <- readLines(file)
+    cat(file=file,as.name("library(dplyr)\n"),append=TRUE)
+    cat(file=file,as.name("###Convert into data convenient for dplyr\n"),append=TRUE)
+    cat(file=file,as.name("data(stockholm,package = 'prostateCancerStockholm')\n"),append=TRUE)
+    cat(file=file,as.name("pd_stockholm <- tbl_df(pData(stockholm))\n"),append=TRUE)
+    cat(file=file,as.name("fd_stockholm <- tbl_df(fData(stockholm))\n"),append=TRUE)
+    cat(file=file,as.name("exp_stockholm <- tbl_df(data.frame(ID=as.character(featureNames(stockholm)),exprs(stockholm)))\n"),append=TRUE)
     
-    cat(file = file, paste(input$title, "\n=======================\n"))
-    cat(file=file, as.name(paste("###", input$name, "\n")),append=TRUE)    
-    cat(file=file, as.name(paste("### Report Generated at: ", as.character(Sys.time()), "\n")),append=TRUE)    
     
-    for(i in 1:length(rmd)){
-      cat(file=file, as.name(paste(rmd[i], "\n")),append=TRUE)
+    cat(file=file,as.name("library(RColorBrewer)\n"),append=TRUE)
+    cat(file=file,as.name("iclusPal <- brewer.pal(5, 'Set1')\n"),append=TRUE)
+    
+    
+    currentGene <- getCurrentGene()
+    doZ <- ifelse(getStockholmZ() == "Yes",TRUE,FALSE)
+    var <- getStockholmVariable()
+    overlay <- getStockholmOverlay()
+    
+    cat(file=file,as.name(paste0("currentGene <-'", currentGene,"'\n")),append=TRUE)
+    
+    cat(file=file, as.name(paste0("probes <- fd_stockholm %>% filter(Symbol == \'",currentGene,"\') %>% select(ID) %>% unique %>% as.matrix %>%  as.character\n")),append=TRUE)
+    
+    cat(file=file,as.name("stockholm <- exp_stockholm  %>% filter(ID %in% probes) %>% gather(geo_accession,Expression,-ID)\n"),append=TRUE)
+    cat(file=file,as.name("summary_stats <- stockholm %>% group_by(ID) %>% summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))\n"),append=TRUE)
+    cat(file=file,as.name("mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])\n"),append=TRUE)
+    cat(file=file,as.name("mu <- summary_stats$mean[which.max(summary_stats$iqr)]\n"),append=TRUE)
+    cat(file=file,as.name("sd <- summary_stats$sd[which.max(summary_stats$iqr)]\n"),append=TRUE)
+    
+    cat(file=file,as.name("stockholm <- filter(stockholm, ID== mostVarProbe) %>% mutate(Z = (Expression -mu) /sd)\n"),append=TRUE)
+    cat(file=file,as.name("stockholm <- full_join(stockholm,pd_stockholm)\n"),append=TRUE)
+    
+    if(doZ) cat(file=file,as.name("stockholm <- mutate(stockholm, Expression=Z)\n"),append=TRUE)
+    
+    if(var == "iCluster"){
       
+      cat(file=file,as.name("p1 <- stockholm %>% filter(!is.na(iCluster)) %>% ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() + ggtitle(currentGene)+ scale_fill_manual(values=iclusPal)\n"),append=TRUE)
+      
+    } else if(var == "Gleason"){
+      
+      cat(file=file,as.name("p1 <- stockholm %>% ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() +  ggtitle(currentGene)\n"))
     }
     
-    #    formatR::tidy_urce(file,output = file)
+    
+    if(overlay=="Yes") cat(file=file,as.name("p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75) \n"),append=TRUE)
+    
+    cat(file=file,as.name("p1"),append=TRUE)
   }
 )
 
