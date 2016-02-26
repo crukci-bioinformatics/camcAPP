@@ -596,7 +596,7 @@ output$rpSummary <- renderPrint({
   ctree_xfs <- results[[1]]
   newPval <- results[[2]]
   summary <- ifelse(newPval <0.05, ". The partitioning and survival curves will apear below", ". Unfortunately, no significant partitioning of the expression values could be found")
-  paste("Recursive Partitioning was run on ", currentGene, "from the", getRpDatase(), "dataset",summary)
+  paste("Recursive Partitioning was run on ", currentGene, "from the", getRpDataset(), "dataset",summary)
 })
 
 
