@@ -26,6 +26,9 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                    ),
                    mainPanel(
                      h3("About this app............."),
+                     img(src="cruk-cambridge-institute.jpg",width=350,height=77), br(),a("cruk.cam.ac.uk",href="www.cruk.cam.ac.uk"),
+                     helpText("This app was developed by"),a("Cancer Research Uk Cambridge Institute Bioinformatics Core",href="http://www.cruk.cam.ac.uk/core-facilities/bioinformatics-core"),
+                     h3("Features"),
                      h2("Profile a specified gene across different datasets"),
                      helpText("Choose a gene from the 'Type a Gene Symbol' box and the first five tabs (Cambridge Profile ... Michigan-2012) will show the expression of this gene in different datasets. For each dataset, you can choose which clinical variable to group the samples on"),
                      helpText("If multiple microarray probes are found for the gene, the probe with the highest inter-quartile range (IQR) will be picked"),
@@ -56,6 +59,10 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      textInput("outfile", "What to call the output R script",value="analysis")
                    ),
                    mainPanel(
+                     helpText("Integration of copy number and transcriptomics provides risk stratification in prostate cancer: A discovery and validation cohort study"),
+                     a("Ross-Adams et al. (2015) doi:10.1016/j.ebiom.2015.07.017",href="http://www.ebiomedicine.com/article/S2352-3964%2815%2930071-2/abstract"),
+                     helpText("These data were downloaded from GEO: GSE70768 and imported using the GEOquery Bioconductor package"),
+                     a("GSE70768",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE70768"),
                      plotOutput("boxplotCambridge"),verbatimTextOutput("anovaCambridge"), h4("R Script"),
                      
                      helpText("You will be able to re-run this analysis in R by downloading the R code below"),
@@ -77,6 +84,10 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                    radioButtons("overlay_stockholm","Overlay individual points?",choices=c("Yes","No"),selected="Yes")
                  ),
                  mainPanel(
+                   helpText("Integration of copy number and transcriptomics provides risk stratification in prostate cancer: A discovery and validation cohort study"),
+                   a("Ross-Adams et al. (2015) doi:10.1016/j.ebiom.2015.07.017",href="http://www.ebiomedicine.com/article/S2352-3964%2815%2930071-2/abstract"),
+                   helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
+                   a("GSE70769",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE70769"),
                    plotOutput("boxplotStockholm"),verbatimTextOutput("anovaStockholm"), h4("R Script"),
                    
                    helpText("You will be able to re-run this analysis in R by downloading the R code below"),
@@ -98,6 +109,10 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                    radioButtons("overlay_taylor","Overlay individual points?",choices=c("Yes","No"),selected="Yes")
                  ),
                  mainPanel(
+                   helpText("Integrative genomic profiling of human prostate cancer"),
+                   a("Taylor et al. (2010) doi:10.1016/j.ccr.2010.05.026",href="http://www.sciencedirect.com/science/article/pii/S1535610810002382"),
+                   helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
+                   a("GSE21034",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE21034"),
                    plotOutput("boxplotTaylor"),verbatimTextOutput("anovaTaylor")
                  )
                  
@@ -113,6 +128,10 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  radioButtons("overlay_varambally","Overlay individual points?",choices=c("Yes","No"),selected="Yes")
                ),
                mainPanel(
+                 helpText("Integrative genomic and proteomic analysis of prostate cancer reveals signatures of metastatic progression."),
+                 a("Varambally et al. (2005) doi:10.1016/j.ccr.2005.10.001",href="http://www.sciencedirect.com/science/article/pii/S1535610805003053"),
+                 helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
+                 a("GSE3325",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE3325"),
                  plotOutput("boxplotVarambally"),verbatimTextOutput("anovaVarambally")
                )
                
@@ -127,6 +146,10 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  radioButtons("overlay_grasso","Overlay individual points?",choices=c("Yes","No"),selected="Yes")
                ),
                mainPanel(
+                 helpText("The Mutational Landscape of Lethal Castrate Resistant Prostate Cancer"),
+                 a("Grasso et al. (2012) doi:10.1038/nature11125",href="http://www.sciencedirect.com/science/article/pii/S1535610805003053"),
+                 helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
+                 a("GSE35988",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE35988"),
                  plotOutput("boxplotGrasso"),verbatimTextOutput("anovaGrasso")
                )
                
