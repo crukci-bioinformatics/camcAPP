@@ -259,7 +259,12 @@ shinyServer(function(input, output){
                    filter(Sample_Group == "Tumour") %>% 
                    filter(!(is.na(Gleason))) %>% 
                    ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
+                 },
+                 Sample_Group ={camcap %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
+                   ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+                   
                  }
+                 
                  )
     
     if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 

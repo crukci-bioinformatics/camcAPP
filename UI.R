@@ -25,7 +25,23 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                                accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')),helpText("Your gene list must tab-delimited, with gene names in the first column")
                    ),
                    mainPanel(
-                     h3("About this app.............")
+                     h3("About this app............."),
+                     h2("Profile a specified gene across different datasets"),
+                     helpText("Choose a gene from the 'Type a Gene Symbol' box and the first five tabs (Cambridge Profile ... Michigan-2012) will show the expression of this gene in different datasets. For each dataset, you can choose which clinical variable to group the samples on"),
+                     helpText("If multiple microarray probes are found for the gene, the probe with the highest inter-quartile range (IQR) will be picked"),
+                     helpText("An ANOVA analysis will also be performed to assess whether there are different expression levels in the groups you have chosen"),
+                     helpText("You can also upload a gene list and the boxplots will be displayed for each gene individually [CURRENTLY CAMBRIDGE ONLY]"),
+                     helpText("An R script can be downloaded, allowing you to repeat the analysis or tweak as you wish"),
+                     h2("Survival Analysis"),
+                     helpText("You can perform Recursive Partitioning on a selected gene in a dataset with survival information (Cambridge, Stockholm and MSKCC)"),
+                     helpText("If samples in the dataset can be allocated into different groups based on the expression of the gene, a Kaplan-Meir plot will be displayed"),
+                     helpText("Otherwise, no plots will be displayed"),
+                     h2("Gene Correlation"),
+                     helpText("You can plot one gene against another in a specified dataset. Points on the plot are coloured according to sample group. The correlation is computed and displayed. "),
+                     h2("Heatmap"),
+                     helpText("The uploaded gene list can be used to generate a heatmap from the chosen dataset. Control is given over the distance metric and clustering method")
+                     
+                     
                   )
                  )
         ),
@@ -34,7 +50,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  sidebarLayout(
                    sidebarPanel(
                      radioButtons("inputType_cambridge", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
-                     selectInput("clinvar_cambridge", "Choose a Clinical Covariate",choices=c("iCluster","Gleason"),selected="iCluster"),
+                     selectInput("clinvar_cambridge", "Choose a Clinical Covariate",choices=c("iCluster","Gleason","Sample_Group"),selected="iCluster"),
                      radioButtons("z_cambridge","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
                      radioButtons("overlay_cambridge","Overlay individual points?",choices=c("Yes","No"),selected="Yes"),
                      textInput("outfile", "What to call the output R script",value="analysis")
