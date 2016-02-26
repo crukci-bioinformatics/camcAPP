@@ -357,7 +357,7 @@ getSelectedGeneTaylor <- reactive({
 
 
 output$boxplotTaylor <- reactivePlot(function(){
-
+  currentGene <- getCurrentGene()
   
   taylor <- getSelectedGeneTaylor()
   
