@@ -490,9 +490,11 @@ output$anovaCambridge <- renderPrint({
 
   var <- getCambridgeVariable()
   switch(var,
-         iCluster = group_by(camcap, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.))),
+         iCluster = group_by(camcap, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals"),
          
-         Gleason = group_by(camcap, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))
+         Gleason = group_by(camcap, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals"),
+         
+         Sample_Group = group_by(camcap, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.))) %>% filter(term != "Residuals")
          
   )
   
