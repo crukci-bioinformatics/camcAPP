@@ -5,13 +5,14 @@ library(tidyr)
 library(devtools)
 library(gridExtra)
 library(heatmap.plus)
+library(gplots)
 library(RColorBrewer)
 library(party)
 library(survival)
 library(knitr)
 library(Biobase)
 library(broom)
-
+library(WGCNA)
 
 #if(!require(prostateCancerTaylor)) install_github("crukci-bioinformatics/prostateCancerTaylor");library(prostateCancerTaylor)
 #if(!require(prostateCancerCamcap)) install_github("crukci-bioinformatics/prostateCancerCamcap");library(prostateCancerCamcap)
@@ -674,10 +675,8 @@ output$survivalPlot <- reactivePlot(function(){
 })
 
 
-
-
-  
-  output$heatmap<- reactivePlot(function(){
+  prepareHeatmap <- reactive({
+    
     
     genes <- getGeneList()
     dataset <- getHeatmapDataset()
@@ -686,8 +685,8 @@ output$survivalPlot <- reactivePlot(function(){
       
       probes <- fd_taylor %>% filter(Gene %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
       
-#      taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
- #       gather(geo_accession,Expression,-ID)
+      #      taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
+      #       gather(geo_accession,Expression,-ID)
       taylor <- exp_taylor  %>% filter(ID %in% probes) %>% 
         gather(geo_accession,Expression,-ID)
       
@@ -695,29 +694,29 @@ output$survivalPlot <- reactivePlot(function(){
         summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
       
       mostVarProbes <- left_join(summary_stats,fd_taylor) %>% 
-       arrange(Gene,desc(iqr)) %>% 
+        arrange(Gene,desc(iqr)) %>% 
         distinct(Gene) %>% 
         select(ID) %>%  as.matrix %>%  as.character
-       
-    
+      
+      
       
       samples <- filter(pd_taylor, Sample_Group == "prostate cancer") %>% 
         select(geo_accession) %>% as.matrix %>% as.character
       
-
+      
       
       taylor <- filter(taylor, ID %in% mostVarProbes,geo_accession %in% samples)
       geneMatrix <- taylor %>% 
         spread(geo_accession,Expression) %>% data.frame
-  
-        geneMatrix <- as.matrix(geneMatrix[,-1])
-  
-
+      
+      geneMatrix <- as.matrix(geneMatrix[,-1])
+      
+      
       symbols <- filter(fd_taylor, ID %in% mostVarProbes) %>% 
-                  select(Gene) %>% as.matrix %>% as.character
-        
+        select(Gene) %>% as.matrix %>% as.character
+      
       rownames(geneMatrix) <- symbols
-
+      
       pd <- left_join(taylor,pd_taylor) %>% distinct(geo_accession)
       
       colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)
@@ -735,6 +734,7 @@ output$survivalPlot <- reactivePlot(function(){
       grp <- as.factor(as.character(grp))
       levels(grp) <- cols
       colMatrix[,2] <- as.character(grp)
+      colnames(colMatrix) <- c("Copy Number Cluster", "Gleason")
       
       
     } else if(dataset == "Cambridge"){
@@ -758,7 +758,7 @@ output$survivalPlot <- reactivePlot(function(){
       
       
       samples <- filter(pd_camcap, Sample_Group == "Tumour") %>% 
-                select(geo_accession) %>% as.matrix %>% as.character
+        select(geo_accession) %>% as.matrix %>% as.character
       
       camcap <- filter(camcap, ID %in% mostVarProbes,geo_accession %in% samples) 
       
@@ -791,11 +791,12 @@ output$survivalPlot <- reactivePlot(function(){
       levels(grp) <- cols
       colMatrix[,2] <- as.character(grp)
       
+      colnames(colMatrix) <- c("iCluster", "Gleason")
       
       
-
-
-        
+      
+      
+      
     } else{
       
       probes <- fd_stockholm %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
@@ -848,26 +849,67 @@ output$survivalPlot <- reactivePlot(function(){
       grp <- as.factor(as.character(grp))
       levels(grp) <- cols
       colMatrix[,2] <- as.character(grp)
-      
+      colnames(colMatrix) <- c("iCluster", "Gleason")
       
     }
     
+    return(list(geneMatrix, colMatrix))
+  })
+
+  
+  
+  doClustering <- reactive({
     
-    hmcol <- brewer.pal(11 , "RdBu")
+    hm <- prepareHeatmap()
+    geneMatrix <- hm[[1]]
     
     if(getDistFun() == "Correlation") distfun <- function(x) as.dist(1 - cor(t(x)))
     else distfun <- dist
     
     hclustfun <- function(x) hclust(x,method=getHclustMethod())
+    
+    
+    dMat <- as.dist(distfun(t(geneMatrix)))
+    
+    clusObj <- hclustfun(dMat)
+    
+    clusObj
+    
+  })
+  
+  output$heatmap<- reactivePlot(function(){
+    
+    hm <- prepareHeatmap()
+    geneMatrix <- hm[[1]]
+    
+    clusObj <- doClustering()
+    
+    hmcol <- rev(brewer.pal(11 , "RdBu"))
+    
+
     scale <- getScaleMethod()
     
-    if(getReordRows() == "Yes") heatmap.plus(geneMatrix,ColSideColors = colMatrix,col=hmcol,distfun=distfun,hclustfun = hclustfun,scale=scale)
-    else heatmap.plus(geneMatrix,ColSideColors = colMatrix,col=hmcol,distfun=distfun,Rowv=NA,hclustfun = hclustfun,scale=scale)
+    if(getReordRows() == "Yes") heatmap.2(geneMatrix,Colv = as.dendrogram(clusObj),col=hmcol,distfun=distfun,hclustfun = hclustfun,scale=scale,trace="none",cexRow = 0.9)
+    else heatmap.2(geneMatrix,Colv = as.dendrogram(clusObj),col=hmcol,distfun=distfun,Rowv=NA,hclustfun = hclustfun,scale=scale,trace="none",cexRow = 0.9)
   }
   )
   
+  
 
+  output$dendrogram <- reactivePlot(function(){
+    
+    hm <- prepareHeatmap()
+    colMatrix <- hm[[2]]
+    clusObj <- doClustering()
+    
+    plotDendroAndColors(clusObj,colors = colMatrix)
+    
+  }
+  
+)
+  
 
+  
   output$corPlot <- reactivePlot(function(){
     
     dataset <- getCorDataset()

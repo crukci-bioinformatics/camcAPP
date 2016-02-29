@@ -28,6 +28,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      h3("About this app............."),
                      img(src="cruk-cambridge-institute.jpg",width=350,height=77), br(),a("cruk.cam.ac.uk",href="www.cruk.cam.ac.uk"),
                      helpText("This app was developed by"),a("Cancer Research Uk Cambridge Institute Bioinformatics Core",href="http://www.cruk.cam.ac.uk/core-facilities/bioinformatics-core"),
+                     helpText("Source code available on github;"),code("https://github.com/crukci-bioinformatics/camcAPP"),
                      h3("Features"),
                      h2("Profile a specified gene across different datasets"),
                      helpText("Choose a gene from the 'Type a Gene Symbol' box and the first five tabs (Cambridge Profile ... Michigan-2012) will show the expression of this gene in different datasets. For each dataset, you can choose which clinical variable to group the samples on"),
@@ -194,7 +195,10 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  radioButtons("scale","Scaling?",choices = c("row", "column", "none"),selected="row")
                ),
                mainPanel(
-                 plotOutput("heatmap")
+                 helpText("Construcing a heatmap from the gene list you uploaded in the Analysis Parameters tab. If you haven't uploaded a gene list, an example gene list of three genes will be used"),
+                 plotOutput("heatmap"),
+                 helpText("Sample Clustering"),
+                 plotOutput("dendrogram")
                )
                
              )
