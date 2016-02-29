@@ -603,8 +603,19 @@ output$rpSummary <- renderPrint({
   results <- rpAnalysis(combined.data)
   ctree_xfs <- results[[1]]
   newPval <- results[[2]]
+  
+  if(input$cutoffMethod == "RP"){
+  
   summary <- ifelse(newPval <0.05, ". The partitioning and survival curves will apear below", ". Unfortunately, no significant partitioning of the expression values could be found")
   paste("Recursive Partitioning was run on ", currentGene, "from the", getRpDataset(), "dataset",summary)
+  } else if(input$cutoffMehod == "Median") {
+    
+    print("Selecting expression cut-off based on median expression of the gene")
+  }
+  
+  else print("Using manual cut-off of; ",as.numeric(input$expCutoff))
+  
+  
 })
 
 
@@ -624,10 +635,13 @@ output$rpPlot <- reactivePlot(function(){
   surv.xfs <- Surv((as.numeric(as.character(combined.data$Time))/12), combined.data$Event)
   combined.data$surv.xfs <- surv.xfs
   
-  results <- rpAnalysis(combined.data)
-  ctree_xfs <- results[[1]]
-  newPval <- results[[2]]
 
+
+  if(input$cutoffMethod == "RP"){
+    results <- rpAnalysis(combined.data)
+    ctree_xfs <- results[[1]]
+    newPval <- results[[2]]
+    
       if(newPval<0.05) {
       
       
@@ -636,7 +650,24 @@ output$rpPlot <- reactivePlot(function(){
 
       par(mfrow=c(2,1))
       plot(ctree(surv.xfs~Expression, data=combined.data))
+      }
+    
+  }
+  
+  else{
+    
+    if (input$cutoffMethod == "Median") {
+    
+    med <- median(combined.data$Expression)
+    ggplot(combined.data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=med,col="red",lty=2)
+
     }
+    else  ggplot(combined.data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=as.numeric(input$expCutOff),col="red",lty=2)
+
+    
+  }
+    
+  
       
   
 }
@@ -646,13 +677,17 @@ output$rpPlot <- reactivePlot(function(){
 
 output$survivalPlot <- reactivePlot(function(){
   combined.data <- prepareSurvival()
-  results <- rpAnalysis(combined.data)
-  surv.xfs <- Surv((as.numeric(as.character(combined.data$Time))/12), combined.data$Event)
-  combined.data$surv.xfs <- surv.xfs
-  ctree_xfs <- results[[1]]
-  newPval <- results[[2]]
+
   currentGene <- getCurrentGene()
+  surv.xfs <- Surv((as.numeric(as.character(combined.data$Time))/12), combined.data$Event)
   
+  if(input$cutoffMethod == "RP"){
+    
+    results <- rpAnalysis(combined.data)
+
+    combined.data$surv.xfs <- surv.xfs
+    ctree_xfs <- results[[1]]
+    newPval <- results[[2]]
     
     if(newPval<0.05) {
       
@@ -671,6 +706,29 @@ output$survivalPlot <- reactivePlot(function(){
       }
       
     }
+  }
+  
+  else{
+    
+    if (input$cutoffMethod == "Median"){
+    
+    
+      ps <- round(median(combined.data$Expression),3)
+    } else ps <- as.numeric(input$expCutOff)
+      
+    combined.data$geneexp_cp <- combined.data$Expression<= ps
+    nt                       <- table(combined.data$geneexp_cp)
+    geneexp.survfit.xfs      <- survfit(surv.xfs~geneexp_cp,data=combined.data)
+    
+    test <- survdiff(surv.xfs~geneexp_cp,data=combined.data)
+    
+    newPval <- round(pchisq(test$chisq, df = length(test$n)-1, lower.tail=FALSE),3)
+    
+    plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(2,4))
+    legend("bottomleft", c(paste(currentGene, ">", ps, "n=", nt[[1]]), paste(currentGene, "<=", ps, "n=", nt[[2]])), col=c(2,4), lty=1, lwd=1.5, bty="n")
+    
+    
+  }
 
 })
 

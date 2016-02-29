@@ -163,7 +163,9 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
     tabPanel("Survival",
              sidebarLayout(
                 sidebarPanel(
-                  selectInput("rpDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC"),selected = "MSKCC")
+                  selectInput("rpDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC"),selected = "MSKCC"),
+                  radioButtons("cutoffMethod","Use Recursive Partitioning to choose a cut-off?",choices=c("RP","Median","Manual"),selected="RP"),
+                  textInput("expCutOff", "Cut-off for partitioning",value = 6)
                 ),
                 mainPanel(
                   textOutput("rpSummary"),
