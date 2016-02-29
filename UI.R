@@ -64,7 +64,9 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      a("Ross-Adams et al. (2015) doi:10.1016/j.ebiom.2015.07.017",href="http://www.ebiomedicine.com/article/S2352-3964%2815%2930071-2/abstract"),
                      helpText("These data were downloaded from GEO: GSE70768 and imported using the GEOquery Bioconductor package"),
                      a("GSE70768",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE70768"),
-                     plotOutput("boxplotCambridge"),verbatimTextOutput("anovaCambridge"), h4("R Script"),
+                     plotOutput("boxplotCambridge"),
+                     helpText("ANOVA analysis"),
+                     verbatimTextOutput("anovaCambridge"), h4("R Script"),
                      
                      helpText("You will be able to re-run this analysis in R by downloading the R code below"),
                      helpText("In order to compile the report in RStudio, you will need to install the ggplot2, tidyr, dplyr, devtools and RColorBrewer packages. The first time you run the script, the Camcap dataset will also be download for you"),br(),
@@ -89,7 +91,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                    a("Ross-Adams et al. (2015) doi:10.1016/j.ebiom.2015.07.017",href="http://www.ebiomedicine.com/article/S2352-3964%2815%2930071-2/abstract"),
                    helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
                    a("GSE70769",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE70769"),
-                   plotOutput("boxplotStockholm"),verbatimTextOutput("anovaStockholm"), h4("R Script"),
+                   plotOutput("boxplotStockholm"),helpText("ANOVA analysis"),verbatimTextOutput("anovaStockholm"), h4("R Script"),
                    
                    helpText("You will be able to re-run this analysis in R by downloading the R code below"),
                    helpText("In order to compile the report in RStudio, you will need to install the ggplot2, tidyr, dplyr, devtools and RColorBrewer packages. The first time you run the script, the Camcap dataset will also be download for you"),br(),
@@ -114,7 +116,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                    a("Taylor et al. (2010) doi:10.1016/j.ccr.2010.05.026",href="http://www.sciencedirect.com/science/article/pii/S1535610810002382"),
                    helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
                    a("GSE21034",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE21034"),
-                   plotOutput("boxplotTaylor"),verbatimTextOutput("anovaTaylor")
+                   plotOutput("boxplotTaylor"),helpText("ANOVA analysis"),verbatimTextOutput("anovaTaylor")
                  )
                  
                )
@@ -133,7 +135,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  a("Varambally et al. (2005) doi:10.1016/j.ccr.2005.10.001",href="http://www.sciencedirect.com/science/article/pii/S1535610805003053"),
                  helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
                  a("GSE3325",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE3325"),
-                 plotOutput("boxplotVarambally"),verbatimTextOutput("anovaVarambally")
+                 plotOutput("boxplotVarambally"),helpText("ANOVA analysis"),verbatimTextOutput("anovaVarambally")
                )
                
              )
@@ -151,7 +153,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  a("Grasso et al. (2012) doi:10.1038/nature11125",href="http://www.sciencedirect.com/science/article/pii/S1535610805003053"),
                  helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
                  a("GSE35988",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE35988"),
-                 plotOutput("boxplotGrasso"),verbatimTextOutput("anovaGrasso")
+                 plotOutput("boxplotGrasso"),helpText("ANOVA analysis"),verbatimTextOutput("anovaGrasso")
                )
                
              )
