@@ -887,6 +887,12 @@ output$survivalPlot <- reactivePlot(function(){
     hmcol <- rev(brewer.pal(11 , "RdBu"))
     
 
+    if(getDistFun() == "Correlation") distfun <- function(x) as.dist(1 - cor(t(x)))
+    else distfun <- dist
+    
+    hclustfun <- function(x) hclust(x,method=getHclustMethod())
+    
+    
     scale <- getScaleMethod()
     
     if(getReordRows() == "Yes") heatmap.2(geneMatrix,Colv = as.dendrogram(clusObj),col=hmcol,distfun=distfun,hclustfun = hclustfun,scale=scale,trace="none",cexRow = 0.9)
