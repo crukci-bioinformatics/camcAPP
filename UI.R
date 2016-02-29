@@ -194,13 +194,18 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  radioButtons("distfun","Method to calulate distances",choices=c("Euclidean","Correlation"),selected="Euclidean"),
                  radioButtons("hclustfun", "Method of hierachical clustering",choices=c("ward","single","complete","average","mcquitty","median","centroid"),selected="complete"),
                  radioButtons("reordRows", "Re-order Rows?", choices = c("Yes","No"),selected = "Yes"),
-                 radioButtons("scale","Scaling?",choices = c("row", "column", "none"),selected="row")
+                 radioButtons("scale","Scaling?",choices = c("row", "column", "none"),selected="row"),
+                 radioButtons("cutType","Cut the dendrogram into k groups, or h(eight)",choices=c("k","h"),selected = "k"),
+                 sliderInput("kGrps","Select k groups from the dendrogram",min=2,max = 7,value=2),
+                 textInput("hCut","Select a height to cut the dendrogram",value = 10)
                ),
                mainPanel(
                  helpText("Construcing a heatmap from the gene list you uploaded in the Analysis Parameters tab. If you haven't uploaded a gene list, an example gene list of three genes will be used"),
                  plotOutput("heatmap"),
                  helpText("Sample Clustering"),
-                 plotOutput("dendrogram")
+                 plotOutput("dendrogram"),
+                 helpText("Select the number of clusters, k, from the slider"),
+                 plotOutput("sampleBreakown")
                )
                
              )

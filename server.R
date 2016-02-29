@@ -908,13 +908,62 @@ output$survivalPlot <- reactivePlot(function(){
     colMatrix <- hm[[2]]
     clusObj <- doClustering()
     
-    plotDendroAndColors(clusObj,colors = colMatrix)
-    
+
+    h=min(as.numeric(input$hCut),max(clusObj$height))
+    plotDendroAndColors(clusObj,colors = colMatrix,abHeight = h)    
   }
   
 )
   
 
+  
+  output$sampleBreakown <- reactivePlot(function(){
+    
+    hm <- prepareHeatmap()
+    colMatrix <- hm[[2]]
+    clusObj <- doClustering()
+    
+    dataset <- getHeatmapDataset()
+    
+    if(input$cutType == "k"){
+      kGrps <- cutree(clusObj,k=input$kGrps)
+    } else {
+      h=min(as.numeric(input$hCut),max(clusObj$height))
+      message("cutting at height",h)
+      kGrps <- cutree(clusObj,h=h)
+    }
+    newGrps <- tbl_df(data.frame(geo_accession=names(kGrps), Cluster = kGrps))
+                      
+                      
+    if(dataset == "Cambridge"){
+      
+      new_pheno <- left_join(pd_camcap,newGrps) %>% filter(!is.na(Cluster))
+      p1 <- ggplot(new_pheno,aes(x=iCluster,fill=iCluster)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  +  scale_fill_manual(values=iclusPal) 
+      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none") 
+      grid.arrange(p1,p2)
+      
+    } else if(dataset == "Stockholm"){
+      
+      new_pheno <- left_join(pd_stockholm,newGrps) %>% filter(!is.na(Cluster))
+      p1 <- ggplot(new_pheno,aes(x=iCluster,fill=iCluster)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  +  scale_fill_manual(values=iclusPal) 
+      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none") 
+      grid.arrange(p1,p2)
+      
+    }
+
+    else{
+      
+      new_pheno <- left_join(pd_taylor,newGrps) %>% filter(!is.na(Cluster))
+      p1 <- ggplot(new_pheno,aes(x=Copy.number.Cluster,fill=Copy.number.Cluster)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  
+      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none") 
+      grid.arrange(p1,p2)
+      
+    }
+    
+    
+    }
+  )
+  
   
   output$corPlot <- reactivePlot(function(){
     
