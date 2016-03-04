@@ -65,6 +65,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      helpText("These data were downloaded from GEO: GSE70768 and imported using the GEOquery Bioconductor package"),
                      a("GSE70768",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE70768"),
                      plotOutput("boxplotCambridge"),
+                     downloadLink("cambridgeBoxplotPDF","Download pdf...."),
                      helpText("ANOVA analysis"),
                      verbatimTextOutput("anovaCambridge"), h4("R Script"),
                      
@@ -82,6 +83,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
       tabPanel("Stockholm Profile",
                sidebarLayout(
                  sidebarPanel(
+                   radioButtons("inputType_stockholm", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
                    selectInput("clinvar_stockholm", "Choose a Clinical Covariate",choices=c("iCluster","Gleason"),selected="iCluster"),
                    radioButtons("z_stockholm","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
                    radioButtons("overlay_stockholm","Overlay individual points?",choices=c("Yes","No"),selected="Yes")

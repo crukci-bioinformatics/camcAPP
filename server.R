@@ -17,12 +17,60 @@ library(WGCNA)
 #if(!require(prostateCancerTaylor)) install_github("crukci-bioinformatics/prostateCancerTaylor");library(prostateCancerTaylor)
 #if(!require(prostateCancerCamcap)) install_github("crukci-bioinformatics/prostateCancerCamcap");library(prostateCancerCamcap)
 #if(!require(prostateCancerStockholm)) install_github("crukci-bioinformatics/prostateCancerStockholm");library(prostateCancerStockholm)
+
+plotDendroAndColors.mod <- function (dendro, colors, groupLabels = NULL, rowText = NULL, 
+          rowTextAlignment = c("left", "center", "right"), rowTextIgnore = NULL, 
+          textPositions = NULL, setLayout = TRUE, autoColorHeight = TRUE, 
+          colorHeight = 0.2, rowWidths = NULL, dendroLabels = NULL, 
+          addGuide = FALSE, guideAll = FALSE, guideCount = 50, guideHang = 0.2, 
+          addTextGuide = FALSE, cex.colorLabels = 0.8, cex.dendroLabels = 0.9, 
+          cex.rowText = 0.8, marAll = c(1, 5, 3, 1), saveMar = TRUE, 
+          abHeight = NULL, abCol = "red",cutType="k",k=2, ...) 
+{
+  oldMar = par("mar")
+  if (!is.null(dim(colors))) {
+    nRows = dim(colors)[2]
+  }
+  else nRows = 1
+  if (!is.null(rowText)) 
+    nRows = nRows + if (is.null(textPositions)) 
+      nRows
+  else length(textPositions)
+  if (autoColorHeight) 
+    colorHeight = 0.2 + 0.3 * (1 - exp(-(nRows - 1)/6))
+  if (setLayout) 
+    layout(matrix(c(1:2), 2, 1), heights = c(1 - colorHeight, 
+                                             colorHeight))
+  par(mar = c(0, marAll[2], marAll[3], marAll[4]))
+  plot(dendro, labels = dendroLabels, cex = cex.dendroLabels, 
+       ...)
+  if(cutType == "k"){
+    rect.hclust(dendro,k=k,border="blue")
+    abHeight <- NULL
+  } else rect.hclust(dendro, h=abHeight,border="blue")
+    
+  if (addGuide) 
+    addGuideLines(dendro, count = if (guideAll) 
+      length(dendro$height) + 1
+      else guideCount, hang = guideHang)
+  if (!is.null(abHeight)) 
+    abline(h = abHeight, col = abCol)
+  par(mar = c(marAll[1], marAll[2], 0, marAll[4]))
+  plotColorUnderTree(dendro, colors, groupLabels, cex.rowLabels = cex.colorLabels, 
+                     rowText = rowText, rowTextAlignment = rowTextAlignment, 
+                     rowTextIgnore = rowTextIgnore, textPositions = textPositions, 
+                     cex.rowText = cex.rowText, rowWidths = rowWidths, addTextGuide = addTextGuide)
+  if (saveMar) 
+    par(mar = oldMar)
+}
+
 library(dplyr)
 
 data(camcap,package = "prostateCancerCamcap")
 pd_camcap <- tbl_df(pData(camcap))
 fd_camcap <- tbl_df(fData(camcap))
-exp_camcap <- tbl_df(data.frame(ID=as.character(featureNames(camcap)),exprs(camcap)))
+exp_camcap <-
+  tbl_df(data.frame(ID = as.character(featureNames(camcap)),exprs(camcap)))
 
 data(stockholm, package="prostateCancerStockholm")
 pd_stockholm <- tbl_df(pData(stockholm))
@@ -236,43 +284,123 @@ shinyServer(function(input, output){
     camcap    
   })
   
-  output$boxplotCambridge <- reactivePlot(function(){
+  
+  cambridgeSingleBoxplot <- reactive({
     
     plotType <- input$inputType_cambridge
     if(plotType == "Single Gene") {
       camcap <- getSelectedGeneCambridge()
     } else  camcap <- getSelectedGeneListCambridge()
-        
+    
     doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
     
     if(doZ) camcap <- mutate(camcap, Expression=Z)
     
     var <- getCambridgeVariable()
     overlay <- getCambridgeOverlay()
-  
+    
     p1 <- switch(var,
                  iCluster = {camcap %>% 
-                   filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
-                   ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
-                   },
+                     filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
+                     ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
+                 },
                  
                  Gleason = {camcap  %>% 
-                   filter(Sample_Group == "Tumour") %>% 
-                   filter(!(is.na(Gleason))) %>% 
-                   ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
+                     filter(Sample_Group == "Tumour") %>% 
+                     filter(!(is.na(Gleason))) %>% 
+                     ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
                  },
                  Sample_Group ={camcap %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
-                   ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+                     ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
                    
                  }
                  
-                 )
+    )
     
     if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
     
-      p1 +  facet_wrap(~Symbol) 
+    p1 +  facet_wrap(~Symbol) 
+    
+    
+  })
+  
+  
+  cambridgeMultiBoxplot <- reactive({
+    
+    plotType <- input$inputType_cambridge
+    if(plotType == "Single Gene") {
+      camcap <- getSelectedGeneCambridge()
+    } else  camcap <- getSelectedGeneListCambridge()
+    
+    doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
+    
+    if(doZ) camcap <- mutate(camcap, Expression=Z)
+    
+    var <- getCambridgeVariable()
+    overlay <- getCambridgeOverlay()
+    
+    p1 <- switch(var,
+                 iCluster = {camcap %>% 
+                     filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
+                     ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
+                 },
+                 
+                 Gleason = {camcap  %>% 
+                     filter(Sample_Group == "Tumour") %>% 
+                     filter(!(is.na(Gleason))) %>% 
+                     ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
+                 },
+                 Sample_Group ={camcap %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
+                     ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+                   
+                 }
+                 
+    )
+    
+    if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
+    
+    p1 +  facet_wrap(~Symbol) 
+    
+    
+  })
+  
+  output$boxplotCambridge <- reactivePlot(function(){
+    
+    plotType <- input$inputType_cambridge
+    if(plotType == "Single Gene") {
+      cambridgeSingleBoxplot()
+    } else  {
+      
+      p1 <- cambridgeMultiBoxplot()
+      
+
+        data <- p1$data %>% group_by(Symbol)
+               
+      }
   }
+  
   )
+  
+  
+  output$cambridgeBoxplotPDF <- downloadHandler(
+    filename ="graph.pdf",
+    content = function(file) {
+      pdf(file, width=12, height=6.3)
+      
+      plotType <- input$inputType_cambridge
+      if(plotType == "Single Gene") {
+        print(cambridgeSingleBoxplot())
+      }
+      else{
+        p1 <- cambridgeMultiBoxplot()
+        data <- p1$data %>% group_by(Symbol)
+        
+      }
+      
+      
+            dev.off()
+    })
+  
 
 
 getSelectedGeneStockholm <- reactive({
@@ -295,18 +423,47 @@ getSelectedGeneStockholm <- reactive({
   stockholm <- filter(stockholm, ID== mostVarProbe) %>%
     mutate(Z = (Expression -mu) /sd)
   
-  stockholm <- full_join(stockholm,pd_stockholm)
-  
-
+  stockholm <- left_join(stockholm,pd_stockholm)
+  stockholm <- left_join(stockholm, fd_stockholm)
   
   
 })
   
+getSelectedGeneListStockholm <- reactive({
+  genes <- getGeneList()
+  
+  probes <- fd_stockholm %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+  
+  #      taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
+  #       gather(geo_accession,Expression,-ID)
+  stockholm <- exp_stockholm  %>% filter(ID %in% probes) %>% 
+    gather(geo_accession,Expression,-ID)
+  
+  summary_stats <- stockholm %>% group_by(ID) %>% 
+    summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+  
+  stockholm <- left_join(stockholm,summary_stats) %>% mutate(Z = (Expression - mean) / sd)
+  
+  mostVarProbes <- left_join(summary_stats,fd_stockholm) %>% 
+    arrange(Symbol,desc(iqr)) %>% 
+    distinct(Symbol) %>% 
+    select(ID) %>%  as.matrix %>%  as.character
+  
+  stockholm <- filter(stockholm, ID %in% mostVarProbes)
+  stockholm <- left_join(stockholm, select(fd_stockholm, ID, Symbol))
+  stockholm <- left_join(stockholm, pd_stockholm)
+  stockholm    
+})
+
+
+
+
 output$boxplotStockholm <- reactivePlot(function(){
 
-  currentGene <- getCurrentGene()
-  
-  stockholm <- getSelectedGeneStockholm()
+  plotType <- input$inputType_stockholm
+  if(plotType == "Single Gene") {
+    stockholm <- getSelectedGeneStockholm()
+  } else  stockholm <- getSelectedGeneListStockholm()
   
   doZ <- ifelse(getStockholmZ() == "Yes",TRUE,FALSE)
   
@@ -317,19 +474,19 @@ output$boxplotStockholm <- reactivePlot(function(){
   
   p1 <- switch(var,
                iCluster = {stockholm %>% 
-                   filter(!is.na(iCluster)) %>% 
-                   ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) +  ggtitle(currentGene)
+                   ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
                },
                
                Gleason = {stockholm  %>% 
                    filter(!(is.na(Gleason))) %>% 
-                   ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() +  ggtitle(currentGene)
+                   ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
                }
+
   )
   
-  if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75)    
+  if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
   
-  p1
+  p1 +  facet_wrap(~Symbol,ncol=3) 
   
 }
 
@@ -415,8 +572,8 @@ output$boxplotVarambally <- reactivePlot(function(){
   varambally <- filter(varambally, ID== mostVarProbe) %>%
     mutate(Z = (Expression -mu) /sd)
   
-  varambally <- full_join(varambally,pd_varambally)
-  
+  varambally <- full_join(varambally,pd_varambally) %>% 
+              mutate(Sample_Group = factor(Sample_Group, levels=c("Benign","Tumour","Metastatic")))  
   doZ <- ifelse(getVaramballyZ() == "Yes",TRUE,FALSE)
   
   if(doZ) varambally <- mutate(varambally, Expression=Z)
@@ -506,18 +663,18 @@ output$anovaCambridge <- renderPrint({
 
 output$anovaStockholm <- renderPrint({
   
-  currentGene <- getCurrentGene()
-  
-  stockholm <- getSelectedGeneStockholm()
-  stockholm <- full_join(stockholm,pd_stockholm)
+  plotType <- input$inputType_stockholm
+  if(plotType == "Single Gene") {
+    stockholm <- getSelectedGeneStockholm()
+  } else  stockholm <- getSelectedGeneListStockholm()
   
   var <- getStockholmVariable()
   switch(var,
-         iCluster = summary(aov(lm(Expression~iCluster,stockholm))),
+         iCluster = group_by(stockholm, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals"),
          
-         Gleason = summary(aov(lm(Expression~Gleason,stockholm)))
-         
+         Gleason = group_by(stockholm, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals")
   )
+  
   
   
 }
@@ -967,8 +1124,18 @@ output$survivalPlot <- reactivePlot(function(){
     clusObj <- doClustering()
     
 
-    h=min(as.numeric(input$hCut),max(clusObj$height))
-    plotDendroAndColors(clusObj,colors = colMatrix,abHeight = h)    
+    h <- min(as.numeric(input$hCut),max(clusObj$height))
+    k <- input$kGrps
+    
+    if(input$cutType == "k") newLabs <- cutree(clusObj,k=k)
+    else newLabs <-  cutree(clusObj,h=h)
+    
+    newLabs <- factor(newLabs)
+    levels(newLabs) <- rainbow(n=length(unique(newLabs)))
+    
+    colMatrix <- data.frame(colMatrix, SampleCluster=as.character(newLabs))
+    
+    plotDendroAndColors.mod(clusObj,colors = as.matrix(colMatrix),abHeight = h,k=k,cutType=input$cutType)    
   }
   
 )
@@ -990,15 +1157,16 @@ output$survivalPlot <- reactivePlot(function(){
       message("cutting at height",h)
       kGrps <- cutree(clusObj,h=h)
     }
-    newGrps <- tbl_df(data.frame(geo_accession=names(kGrps), Cluster = kGrps))
+    newGrps <- tbl_df(data.frame(geo_accession=names(kGrps), Cluster = factor(kGrps)))
                       
                       
     if(dataset == "Cambridge"){
       
       new_pheno <- left_join(pd_camcap,newGrps) %>% filter(!is.na(Cluster))
+      p0 <- ggplot(new_pheno, aes(x = Cluster,fill=Cluster)) + geom_bar() +  scale_fill_manual(values=as.character(rainbow(n=length(unique(kGrps))))) + coord_flip()
       p1 <- ggplot(new_pheno,aes(x=iCluster,fill=iCluster)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  +  scale_fill_manual(values=iclusPal) 
       p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none") 
-      grid.arrange(p1,p2)
+      grid.arrange(p0,p1,p2)
       
     } else if(dataset == "Stockholm"){
       
