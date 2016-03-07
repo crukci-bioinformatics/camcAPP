@@ -14,6 +14,10 @@ library(Biobase)
 library(broom)
 library(WGCNA)
 
+
+library(DT)
+
+
 #if(!require(prostateCancerTaylor)) install_github("crukci-bioinformatics/prostateCancerTaylor");library(prostateCancerTaylor)
 #if(!require(prostateCancerCamcap)) install_github("crukci-bioinformatics/prostateCancerCamcap");library(prostateCancerCamcap)
 #if(!require(prostateCancerStockholm)) install_github("crukci-bioinformatics/prostateCancerStockholm");library(prostateCancerStockholm)
@@ -72,27 +76,41 @@ fd_camcap <- tbl_df(fData(camcap))
 exp_camcap <-
   tbl_df(data.frame(ID = as.character(featureNames(camcap)),exprs(camcap)))
 
-data(stockholm, package="prostateCancerStockholm")
-pd_stockholm <- tbl_df(pData(stockholm))
-fd_stockholm <- tbl_df(fData(stockholm))
-exp_stockholm <- tbl_df(data.frame(ID=as.character(featureNames(stockholm)),exprs(stockholm)))
+#loadStockholm <- function(){
 
-data(taylor, package="prostateCancerTaylor")
-pd_taylor <- tbl_df(pData(taylor))
-fd_taylor <- tbl_df(fData(taylor))
-exp_taylor <- tbl_df(data.frame(ID=as.character(featureNames(taylor)),log2(exprs(taylor))))
+  data(stockholm, package="prostateCancerStockholm")
+  pd_stockholm <- tbl_df(pData(stockholm))
+  fd_stockholm <- tbl_df(fData(stockholm))
+  exp_stockholm <- tbl_df(data.frame(ID=as.character(featureNames(stockholm)),exprs(stockholm)))
+#}
+  
 
-data(varambally,package="prostateCancerVarambally")
-pd_varambally <- tbl_df(pData(varambally))
-fd_varambally <- tbl_df(fData(varambally))
-exp_varambally <- tbl_df(data.frame(ID=as.character(featureNames(varambally)),log2(exprs(varambally))))
+#loadTaylor <- function(){
 
+  data(taylor, package="prostateCancerTaylor")
+  pd_taylor <- tbl_df(pData(taylor))
+  fd_taylor <- tbl_df(fData(taylor))
+  exp_taylor <- tbl_df(data.frame(ID=as.character(featureNames(taylor)),log2(exprs(taylor))))
 
-data(grasso,package="prostateCancerGrasso")
-pd_grasso <- tbl_df(pData(grasso))
-fd_grasso <- tbl_df(fData(grasso))
-exp_grasso <- tbl_df(data.frame(ID=as.character(featureNames(grasso)),exprs(grasso)))
+#}
 
+#loadVarambally <- function(){
+
+  data(varambally,package="prostateCancerVarambally")
+  pd_varambally <- tbl_df(pData(varambally))
+  fd_varambally <- tbl_df(fData(varambally))
+  exp_varambally <- tbl_df(data.frame(ID=as.character(featureNames(varambally)),log2(exprs(varambally))))
+
+#}
+
+#loadGrasso <- function(){
+
+  data(grasso,package="prostateCancerGrasso")
+  pd_grasso <- tbl_df(pData(grasso))
+  fd_grasso <- tbl_df(fData(grasso))
+  exp_grasso <- tbl_df(data.frame(ID=as.character(featureNames(grasso)),exprs(grasso)))
+
+#}
 
 
 ## dplyr needs to be the last package loaded, otherwise the 'select' function seems to be over-written
@@ -102,11 +120,23 @@ iclusPal <- brewer.pal(5, "Set1")
 
 message("READY FOR INPUT")
 
+
+#library(org.Hs.eg.db)
+
+#gList <- unique(as.character(as.matrix(select(fd_camcap,Symbol))))
+#gList <- union(gList, as.character(as.matrix(select(fd_taylor,Gene))))
+
+
+#geneTable <- AnnotationDbi:::select(org.Hs.eg.db, keys=gList, keytype = "SYMBOL",columns=c("SYMBOL","GENENAME"))
+
+
 shinyServer(function(input, output){
   
   getCurrentGene <- reactive({
     input$currentGene
   })
+  
+  output$geneTable <- DT:::renderDataTable(geneTable)
   
 #  getCurrentGene <- reactive({
  #   input$currentGene_cambridge

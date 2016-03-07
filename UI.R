@@ -1,7 +1,7 @@
 
 
 library(shiny)
-library(org.Hs.eg.db)
+
 
 shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                   
@@ -20,10 +20,19 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
         tabPanel("Analysis Parameters",
                  sidebarLayout(
                    sidebarPanel(
-                     selectInput("currentGene","Type a Gene Symbol",choices=keys(revmap(org.Hs.egSYMBOL)),selected = "A1BG"),
-                     fileInput('file1', 'Gene List',
+                     fluidRow(
+                     #selectInput("currentGene","Type a Gene Symbol",choices=keys(revmap(org.Hs.egSYMBOL)),selected = "A1BG"),
+                     #fluidRow(
+                       h1("Gene Selector"),
+#                      column(8,DT::dataTableOutput("geneTable"))
+                      textInput("currentGene", "Type a Gene Symbol",value="A1BG")
+                     )
+                   ,
+                     #),
+                      fileInput('file1', 'Gene List',
                                accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')),helpText("Your gene list must tab-delimited, with gene names in the first column")
-                   ),
+                   )
+                  ,
                    mainPanel(
                      h3("About this app............."),
                      img(src="cruk-cambridge-institute.jpg",width=350,height=77), br(),a("cruk.cam.ac.uk",href="www.cruk.cam.ac.uk"),
