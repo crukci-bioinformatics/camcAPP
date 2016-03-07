@@ -1,7 +1,7 @@
 
 
 library(shiny)
-
+library(org.Hs.eg.db)
 
 shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                   
