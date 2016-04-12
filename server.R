@@ -400,12 +400,9 @@ shinyServer(function(input, output){
     if(plotType == "Single Gene") {
       cambridgeSingleBoxplot()
     } else  {
-      
+#      data <- p1$data %>% group_by(Symbol)
       p1 <- cambridgeMultiBoxplot()
-      
-
-        data <- p1$data %>% group_by(Symbol)
-               
+      p1
       }
   }
   
@@ -423,8 +420,45 @@ shinyServer(function(input, output){
       }
       else{
         p1 <- cambridgeMultiBoxplot()
-        data <- p1$data %>% group_by(Symbol)
+        doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
+        if(doZ) p1$data <- mutate(p1$data, Expression=Z)
+        data <- split(p1$data, factor(p1$data$Symbol))
+
         
+
+        
+        var <- getCambridgeVariable()
+        overlay <- getCambridgeOverlay()
+        
+        pList <- NULL
+        
+        for(i in 1:length(data)){
+          pList[[i]] <- switch(var,
+                       iCluster = {data[[i]] %>% 
+                           filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
+                           ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
+                       },
+                       
+                       Gleason = {data[[i]]  %>% 
+                           filter(Sample_Group == "Tumour") %>% 
+                           filter(!(is.na(Gleason))) %>% 
+                           ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
+                       },
+                       Sample_Group ={data[[i]] %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
+                           ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+                         
+                       }
+                       
+          )
+          
+          if(overlay == "Yes")  pList[[i]] <- pList[[i]] + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
+          
+          pList[[i]] <- pList[[i]] +  facet_wrap(~Symbol) 
+          
+        }        
+
+        
+        lapply(pList,print)
       }
       
       

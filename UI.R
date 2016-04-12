@@ -21,13 +21,14 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  sidebarLayout(
                    sidebarPanel(
                      fluidRow(
-                     #selectInput("currentGene","Type a Gene Symbol",choices=keys(revmap(org.Hs.egSYMBOL)),selected = "A1BG"),
-                     #fluidRow(
                        h1("Gene Selector"),
+                     selectInput("currentGene","Type a Gene Symbol",choices=keys(revmap(org.Hs.egSYMBOL)),selected = "A1BG")
+                     #fluidRow(
+                       
 #                      column(8,DT::dataTableOutput("geneTable"))
-                      textInput("currentGene", "Type a Gene Symbol",value="A1BG")
-                     )
-                   ,
+                      #textInput("currentGene", "Type a Gene Symbol",value="A1BG")
+                     ),
+                   
                      #),
                       fileInput('file1', 'Gene List',
                                accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')),helpText("Your gene list must tab-delimited, with gene names in the first column")
@@ -66,15 +67,15 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      selectInput("clinvar_cambridge", "Choose a Clinical Covariate",choices=c("iCluster","Gleason","Sample_Group"),selected="iCluster"),
                      radioButtons("z_cambridge","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
                      radioButtons("overlay_cambridge","Overlay individual points?",choices=c("Yes","No"),selected="Yes"),
-                     textInput("outfile", "What to call the output R script",value="analysis")
+                     textInput("outfile", "What to call the output R script",value="analysis"),
+                     downloadButton("cambridgeBoxplotPDF","Download pdf....")
                    ),
                    mainPanel(
                      helpText("Integration of copy number and transcriptomics provides risk stratification in prostate cancer: A discovery and validation cohort study"),
                      a("Ross-Adams et al. (2015) doi:10.1016/j.ebiom.2015.07.017",href="http://www.ebiomedicine.com/article/S2352-3964%2815%2930071-2/abstract"),
                      helpText("These data were downloaded from GEO: GSE70768 and imported using the GEOquery Bioconductor package"),
                      a("GSE70768",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE70768"),
-                     plotOutput("boxplotCambridge"),
-                     downloadLink("cambridgeBoxplotPDF","Download pdf...."),
+                     plotOutput("boxplotCambridge",width = 1200,height=600),
                      helpText("ANOVA analysis"),
                      verbatimTextOutput("anovaCambridge"), h4("R Script"),
                      
@@ -102,7 +103,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                    a("Ross-Adams et al. (2015) doi:10.1016/j.ebiom.2015.07.017",href="http://www.ebiomedicine.com/article/S2352-3964%2815%2930071-2/abstract"),
                    helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
                    a("GSE70769",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE70769"),
-                   plotOutput("boxplotStockholm"),helpText("ANOVA analysis"),verbatimTextOutput("anovaStockholm"), h4("R Script"),
+                   plotOutput("boxplotStockholm",width = 1200,height=600),helpText("ANOVA analysis"),verbatimTextOutput("anovaStockholm"), h4("R Script"),
                    
                    helpText("You will be able to re-run this analysis in R by downloading the R code below"),
                    helpText("In order to compile the report in RStudio, you will need to install the ggplot2, tidyr, dplyr, devtools and RColorBrewer packages. The first time you run the script, the Camcap dataset will also be download for you"),br(),
@@ -127,7 +128,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                    a("Taylor et al. (2010) doi:10.1016/j.ccr.2010.05.026",href="http://www.sciencedirect.com/science/article/pii/S1535610810002382"),
                    helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
                    a("GSE21034",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE21034"),
-                   plotOutput("boxplotTaylor"),helpText("ANOVA analysis"),verbatimTextOutput("anovaTaylor")
+                   plotOutput("boxplotTaylor",width = 1200,height=600),helpText("ANOVA analysis"),verbatimTextOutput("anovaTaylor")
                  )
                  
                )
@@ -146,7 +147,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  a("Varambally et al. (2005) doi:10.1016/j.ccr.2005.10.001",href="http://www.sciencedirect.com/science/article/pii/S1535610805003053"),
                  helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
                  a("GSE3325",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE3325"),
-                 plotOutput("boxplotVarambally"),helpText("ANOVA analysis"),verbatimTextOutput("anovaVarambally")
+                 plotOutput("boxplotVarambally",width = 1200,height=600),helpText("ANOVA analysis"),verbatimTextOutput("anovaVarambally")
                )
                
              )
@@ -164,7 +165,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  a("Grasso et al. (2012) doi:10.1038/nature11125",href="http://www.sciencedirect.com/science/article/pii/S1535610805003053"),
                  helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
                  a("GSE35988",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE35988"),
-                 plotOutput("boxplotGrasso"),helpText("ANOVA analysis"),verbatimTextOutput("anovaGrasso")
+                 plotOutput("boxplotGrasso",width = 1200,height=600),helpText("ANOVA analysis"),verbatimTextOutput("anovaGrasso")
                )
                
              )
