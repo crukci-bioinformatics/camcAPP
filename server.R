@@ -151,9 +151,11 @@ shinyServer(function(input, output,session){
 #  })
   
   
+  
+  
     
   getCambridgeVariable <- reactive({
-    input$clinvar_cambridge
+    input$clinvar_boxplot
   })
   
   getStockholmVariable <- reactive({
@@ -261,8 +263,8 @@ shinyServer(function(input, output,session){
                      Michigan2005 = "Sample_Group",
                      Michigan2012 = "Sample_Group"
     )
-    
-    updateSelectInput(session, "clinvar_boxplot", covars,selected=covars[1])
+    message(covars)
+    updateSelectInput(session, inputId="clinvar_boxplot", choices=covars,selected=covars[1])
     dataset
     
   })
@@ -280,33 +282,98 @@ shinyServer(function(input, output,session){
     updateSelectInput(session, inputId = "survivalGeneChoice",choices = as.character(genes),selected=as.character(genes)[1])
     
     genes
-    #read.csv("GraphPad Course Data/diseaseX.csv")
+
   })
   
+
   
-  getSelectedGeneCambridge <-reactive({
     
-    currentGene <- getCurrentGene()
-    probes <- fd_camcap %>% filter(Symbol == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
     
-    camcap<- exp_camcap  %>% filter(ID %in% probes) %>% 
-      gather(geo_accession,Expression,-ID)
+  filterByGene <-reactive({
     
-    summary_stats <- camcap%>% group_by(ID) %>% 
-      summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+    plotType <- input$inputType_cambridge
+    if(plotType == "Single Gene") {
+      genes <- getCurrentGene()
+    }
+    else {
+      genes <- getGeneList()
+    }
+        
+    dataset <- getBoxplotDataset()
     
-    mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
-    mu <- summary_stats$mean[which.max(summary_stats$iqr)]
-    sd <- summary_stats$sd[which.max(summary_stats$iqr)]
+    if(dataset == "Cambridge"){
     
-    camcap <- filter(camcap, ID== mostVarProbe) %>%
-      mutate(Z = (Expression -mu) /sd)
+      probes <- fd_camcap %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+      data<- exp_camcap  %>% filter(ID %in% probes) %>% 
+        gather(geo_accession,Expression,-ID)
+      fd <- fd_camcap
+      pd <- pd_camcap  
+      
+    } else if (dataset == "Stockholm"){
+      
+      probes <- fd_stockholm %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+      data<- exp_stockholm  %>% filter(ID %in% probes) %>% 
+        gather(geo_accession,Expression,-ID)
+      fd <- fd_stockholm
+      pd <- pd_stockholm  
+    }
     
-    camcap <- left_join(camcap,pd_camcap)
-    camcap <- left_join(camcap, fd_camcap)
+    else if(dataset == "MSKCC"){
+      
+      probes <- fd_taylor %>% filter(Gene %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+      data <- exp_taylor  %>% filter(ID %in% probes) %>% 
+        gather(geo_accession,Expression,-ID)
+      fd <- fd_taylor %>% mutate(Symbol = Gene)
+      pd <- pd_taylor  
+    }
+    
+    else if(dataset == "Michigan2005"){
+      
+      probes <- fd_varambally %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+      data <- exp_varambally  %>% filter(ID %in% probes) %>% 
+        gather(geo_accession,Expression,-ID)
+      fd <- fd_varambally
+      pd <- pd_varambally 
+    }
+    
+    else {
+      probes <- fd_grasso %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+      data <- exp_grasso  %>% filter(ID %in% probes) %>% 
+        gather(geo_accession,Expression,-ID)
+      fd <- fd_grasso
+      pd <- pd_grasso 
+      
+    }
 
     
-    camcap
+    summary_stats <- data %>% group_by(ID) %>% 
+      summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+    
+    data <- left_join(data,summary_stats) %>% mutate(Z = (Expression - mean) / sd)
+    
+#    mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
+#    mu <- summary_stats$mean[which.max(summary_stats$iqr)]
+#    sd <- summary_stats$sd[which.max(summary_stats$iqr)]
+    
+#    data <- filter(data, ID== mostVarProbe) %>%
+#      mutate(Z = (Expression -mu) /sd)
+    
+#    data <- left_join(data,pd)
+#    data <- left_join(data, fd)
+
+    
+    
+    mostVarProbes <- left_join(summary_stats,fd) %>% 
+      arrange(Symbol,desc(iqr)) %>% 
+      distinct(Symbol) %>% 
+      select(ID) %>%  as.matrix %>%  as.character
+    
+    data <- filter(data, ID %in% mostVarProbes)
+    data <- left_join(data, select(fd, ID, Symbol))
+    data <- left_join(data, pd)
+    data    
+    
+    data
     
   })
   
@@ -337,130 +404,196 @@ shinyServer(function(input, output,session){
   })
   
   
-  cambridgeSingleBoxplot <- reactive({
+  output$displayBoxplot <- reactivePlot(function(){
     
     plotType <- input$inputType_cambridge
-    if(plotType == "Single Gene") {
-      camcap <- getSelectedGeneCambridge()
-    } else  camcap <- getSelectedGeneListCambridge()
     
-    doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
+    p1 <- singleBoxplot()
     
-    if(doZ) camcap <- mutate(camcap, Expression=Z)
-    
-    var <- getCambridgeVariable()
-    overlay <- getCambridgeOverlay()
-    
-    p1 <- switch(var,
-                 iCluster = {camcap %>% 
-                     filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
-                     ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
-                 },
-                 
-                 Gleason = {camcap  %>% 
-                     filter(Sample_Group == "Tumour") %>% 
-                     filter(!(is.na(Gleason))) %>% 
-                     ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
-                 },
-                 Sample_Group ={camcap %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
-                     ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
-                   
-                 }
-                 
-    )
-    
-    if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
-    
-    p1 +  facet_wrap(~Symbol) 
-    
-    
-  })
-  
-  
-  cambridgeMultiBoxplot <- reactive({
-    
-    plotType <- input$inputType_cambridge
-    if(plotType == "Single Gene") {
-      camcap <- getSelectedGeneCambridge()
-    } else  camcap <- getSelectedGeneListCambridge()
-    
-    doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
-    
-    if(doZ) camcap <- mutate(camcap, Expression=Z)
-    
-    var <- getCambridgeVariable()
-    overlay <- getCambridgeOverlay()
-    
-    p1 <- switch(var,
-                 iCluster = {camcap %>% 
-                     filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
-                     ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
-                 },
-                 
-                 Gleason = {camcap  %>% 
-                     filter(Sample_Group == "Tumour") %>% 
-                     filter(!(is.na(Gleason))) %>% 
-                     ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
-                 },
-                 Sample_Group ={camcap %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
-                     ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
-                   
-                 }
-                 
-    )
-    
-    if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
-    
-    p1 +  facet_wrap(~Symbol) 
-    
-    
-  })
-  
-  output$boxplotCambridge <- reactivePlot(function(){
-    
-    plotType <- input$inputType_cambridge
-    if(plotType == "Single Gene") {
-      p1 <- cambridgeSingleBoxplot()
-    } else  {
-#      data <- p1$data %>% group_by(Symbol)
-      p1 <- cambridgeMultiBoxplot()
-
+    if(plotType != "Single Gene") {
+    message("Plotting a gene list....")
+        
       if(getCambridgeCompositePlot() == "No"){
         
+        message("Not making a composite plot,...")
         geneToPlot <- input$cambridgeGeneChoice
         var <- getCambridgeVariable()
         overlay <- getCambridgeOverlay()
         
         data <- filter(p1$data, Symbol == geneToPlot)
-                       
-        p1 <- switch(var,
-                            iCluster = {data %>% 
-                                filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
-                                ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
-                            },
-                            
-                            Gleason = {data  %>% 
-                                filter(Sample_Group == "Tumour") %>% 
-                                filter(!(is.na(Gleason))) %>% 
-                                ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
-                            },
-                            Sample_Group ={data %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
-                                ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
-                              
-                            }
-                            
-       )       
         
-       p1 <- p1 + facet_wrap(~Symbol) 
+        p1 <- switch(var,
+                     iCluster = {data %>% 
+                         filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
+                         ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
+                     },
+                     
+                     Gleason = {data  %>% 
+                         filter(Sample_Group == "Tumour") %>% 
+                         filter(!(is.na(Gleason))) %>% 
+                         ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
+                     },
+                     Sample_Group ={data %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
+                         ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+                       
+                     }
+                     
+        )       
+        
+
       }
-      
+      p1 <- p1 + facet_wrap(~Symbol)       
       
     }
+    message("Going to print the plot..")
     p1
   }
-
+  
   
   )
+  
+  
+  
+  singleBoxplot <- reactive({
+    
+    dataset <- getBoxplotDataset()
+    
+    
+    plotType <- input$inputType_cambridge
+    
+    data <- filterByGene()
+    
+#    if(plotType == "Single Gene") {
+ #     camcap <- getSelectedGeneCambridge()
+#    } else  camcap <- getSelectedGeneListCambridge()
+    
+    doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
+    
+    if(doZ) data <- mutate(data, Expression=Z)
+    
+    var <- getCambridgeVariable()
+    overlay <- getCambridgeOverlay()
+    
+    
+    if(dataset == "Cambridge"){
+    
+        p1 <- switch(var,
+                     iCluster = {data %>% 
+                         filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
+                         ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
+                     },
+                     
+                     Gleason = {data  %>% 
+                         filter(Sample_Group == "Tumour") %>% 
+                         filter(!(is.na(Gleason))) %>% 
+                         ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
+                     },
+                     Sample_Group ={data %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
+                         ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+                       
+                     }
+                     
+        )
+    }
+    
+    else if(dataset == "Stockholm"){
+      
+      p1 <- switch(var,
+                   iCluster = {data %>% 
+                       ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
+                   },
+                   
+                   Gleason = {data  %>% 
+                       filter(!(is.na(Gleason))) %>% 
+                       ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
+                   }
+                   
+      )
+      
+    }
+    
+    else if(dataset == "MSKCC"){
+      
+      p1 <- switch(var,
+                   CopyNumberCluster = {data %>% 
+                       filter(!is.na(Copy.number.Cluster)) %>% 
+                       ggplot(aes(x = Copy.number.Cluster, y = Expression, fill=Copy.number.Cluster)) + geom_boxplot()
+                   },
+                   
+                   Gleason = {data  %>% 
+                       filter(!(is.na(Gleason))) %>% 
+                       ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot()
+                   }
+      )
+      
+    }
+    
+    else if(dataset == "Michigan2005"){
+      
+
+      p1 <- data %>% ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()  +  ggtitle(currentGene)
+    }
+    
+    else if(dataset == "Michigan2012"){
+      
+      p1 <- data %>% ggplot(aes(x = Group, y = Expression, fill=Group)) + geom_boxplot()  +  ggtitle(currentGene)  
+      
+    }
+    
+    
+    if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
+    
+    p1 +  facet_wrap(~Symbol) 
+    
+    
+  })
+  
+  
+  multiBoxplot <- reactive({
+    
+    plotType <- input$inputType_cambridge
+    
+    data <- filterByGene()
+    
+#    if(plotType == "Single Gene") {
+ #     camcap <- getSelectedGeneCambridge()
+#    } else  camcap <- getSelectedGeneListCambridge()
+    
+    doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
+    
+    if(doZ) data <- mutate(data, Expression=Z)
+    
+    var <- getCambridgeVariable()
+    overlay <- getCambridgeOverlay()
+    
+    p1 <- switch(var,
+                 iCluster = {camcap %>% 
+                     filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
+                     ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
+                 },
+                 
+                 Gleason = {camcap  %>% 
+                     filter(Sample_Group == "Tumour") %>% 
+                     filter(!(is.na(Gleason))) %>% 
+                     ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
+                 },
+                 Sample_Group ={camcap %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
+                     ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+                   
+                 }
+                 
+    )
+    
+    if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
+    
+    p1 +  facet_wrap(~Symbol) 
+    
+    
+  })
+  
+  
+  
+  
   
   
   output$cambridgeBoxplotPDF <- downloadHandler(
@@ -470,10 +603,10 @@ shinyServer(function(input, output,session){
       
       plotType <- input$inputType_cambridge
       if(plotType == "Single Gene") {
-        print(cambridgeSingleBoxplot())
+        print(singleBoxplot())
       }
       else{
-        p1 <- cambridgeMultiBoxplot()
+        p1 <- singleBoxplot()
         
         
         if(getCambridgeCompositePlot() == "Yes"){

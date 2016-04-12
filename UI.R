@@ -63,11 +63,12 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
 
 
 
-        tabPanel("Cambridge Profile",
+        tabPanel("Gene Profile",
                  sidebarLayout(
                    sidebarPanel(
+                     selectInput("boxplotDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC"),selected = "Cambridge"),
                      radioButtons("inputType_cambridge", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
-                     selectInput("clinvar_cambridge", "Choose a Clinical Covariate",choices=c("iCluster","Gleason","Sample_Group"),selected="iCluster"),
+                     selectInput("clinvar_boxplot", "Choose a Clinical Covariate",choices=c("iCluster","Gleason","Sample_Group"),selected="iCluster"),
                      radioButtons("z_cambridge","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
                      radioButtons("overlay_cambridge","Overlay individual points?",choices=c("Yes","No"),selected="Yes"),
                      textInput("outfile", "What to call the output R script",value="analysis"),
@@ -78,14 +79,14 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      helpText("If you are using a gene list as input for the boxplots and have de-selected the composite plot option each gene will be plotted on a separate page")
                    ),
                    mainPanel(
-                     helpText("Integration of copy number and transcriptomics provides risk stratification in prostate cancer: A discovery and validation cohort study"),
-                     a("Ross-Adams et al. (2015) doi:10.1016/j.ebiom.2015.07.017",href="http://www.ebiomedicine.com/article/S2352-3964%2815%2930071-2/abstract"),
-                     helpText("These data were downloaded from GEO: GSE70768 and imported using the GEOquery Bioconductor package"),
-                     a("GSE70768",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE70768"),
-                     helpText("Also available as the "), a("prostateCancerCamcap",href="http://bioconductor.org/packages/devel/data/experiment/html/prostateCancerCamcap.html"), helpText(" Bioconductor package"),
-                     plotOutput("boxplotCambridge",width = 1200,height=600),
+   #                  helpText("Integration of copy number and transcriptomics provides risk stratification in prostate cancer: A discovery and validation cohort study"),
+    #                 a("Ross-Adams et al. (2015) doi:10.1016/j.ebiom.2015.07.017",href="http://www.ebiomedicine.com/article/S2352-3964%2815%2930071-2/abstract"),
+     #                helpText("These data were downloaded from GEO: GSE70768 and imported using the GEOquery Bioconductor package"),
+      #               a("GSE70768",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE70768"),
+       #              helpText("Also available as the "), a("prostateCancerCamcap",href="http://bioconductor.org/packages/devel/data/experiment/html/prostateCancerCamcap.html"), helpText(" Bioconductor package"),
+                     plotOutput("displayBoxplot",width = 1200,height=600),
                      helpText("ANOVA analysis"),
-                     verbatimTextOutput("anovaCambridge"), h4("R Script"),
+#                     verbatimTextOutput("anovaCambridge"), h4("R Script"),
                      
                      helpText("You will be able to re-run this analysis in R by downloading the R code below"),
                      helpText("In order to compile the report in RStudio, you will need to install the ggplot2, tidyr, dplyr, devtools and RColorBrewer packages. The first time you run the script, the Camcap dataset will also be download for you"),br(),
@@ -98,88 +99,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  
         ),
     
-      tabPanel("Stockholm Profile",
-               sidebarLayout(
-                 sidebarPanel(
-                   radioButtons("inputType_stockholm", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
-                   selectInput("clinvar_stockholm", "Choose a Clinical Covariate",choices=c("iCluster","Gleason"),selected="iCluster"),
-                   radioButtons("z_stockholm","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
-                   radioButtons("overlay_stockholm","Overlay individual points?",choices=c("Yes","No"),selected="Yes")
-                 ),
-                 mainPanel(
-                   helpText("Integration of copy number and transcriptomics provides risk stratification in prostate cancer: A discovery and validation cohort study"),
-                   a("Ross-Adams et al. (2015) doi:10.1016/j.ebiom.2015.07.017",href="http://www.ebiomedicine.com/article/S2352-3964%2815%2930071-2/abstract"),
-                   helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
-                   a("GSE70769",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE70769"),
-                   plotOutput("boxplotStockholm",width = 1200,height=600),helpText("ANOVA analysis"),verbatimTextOutput("anovaStockholm"), h4("R Script"),
-                   
-                   helpText("You will be able to re-run this analysis in R by downloading the R code below"),
-                   helpText("In order to compile the report in RStudio, you will need to install the ggplot2, tidyr, dplyr, devtools and RColorBrewer packages. The first time you run the script, the Camcap dataset will also be download for you"),br(),
-                   code("install.packages(c('ggplot2','tidyr','dplyr','devtools','RColorBrewer'))"),
-                   br(),
-                   downloadLink('stockholmProfileScript', 'Download R Script')
-                 )
-                 
-               )
-               
-      ),
-    
-      tabPanel("MSKCC Profile",
-               sidebarLayout(
-                 sidebarPanel(
-                   selectInput("clinvar_taylor", "Choose a Clinical Covariate",choices=c("CopyNumberCluster","Gleason"),selected="CopyNumberCluster"),
-                   radioButtons("z_taylor","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
-                   radioButtons("overlay_taylor","Overlay individual points?",choices=c("Yes","No"),selected="Yes")
-                 ),
-                 mainPanel(
-                   helpText("Integrative genomic profiling of human prostate cancer"),
-                   a("Taylor et al. (2010) doi:10.1016/j.ccr.2010.05.026",href="http://www.sciencedirect.com/science/article/pii/S1535610810002382"),
-                   helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
-                   a("GSE21034",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE21034"),
-                   plotOutput("boxplotTaylor",width = 1200,height=600),helpText("ANOVA analysis"),verbatimTextOutput("anovaTaylor")
-                 )
-                 
-               )
-               
-      ),
-    
-    tabPanel("Michigan-2005 Profile",
-             sidebarLayout(
-               sidebarPanel(
-                 selectInput("clinvar_varambally", "Choose a Clinical Covariate",choices=c("Sample_Group"),selected="Sample_Group"),
-                 radioButtons("z_varambally","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
-                 radioButtons("overlay_varambally","Overlay individual points?",choices=c("Yes","No"),selected="Yes")
-               ),
-               mainPanel(
-                 helpText("Integrative genomic and proteomic analysis of prostate cancer reveals signatures of metastatic progression."),
-                 a("Varambally et al. (2005) doi:10.1016/j.ccr.2005.10.001",href="http://www.sciencedirect.com/science/article/pii/S1535610805003053"),
-                 helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
-                 a("GSE3325",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE3325"),
-                 plotOutput("boxplotVarambally",width = 1200,height=600),helpText("ANOVA analysis"),verbatimTextOutput("anovaVarambally")
-               )
-               
-             )
-             
-    ),
-    tabPanel("Michigan-2012 Profile",
-             sidebarLayout(
-               sidebarPanel(
-                 selectInput("clinvar_grasso", "Choose a Clinical Covariate",choices=c("Group"),selected="Group"),
-                 radioButtons("z_grasso","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
-                 radioButtons("overlay_grasso","Overlay individual points?",choices=c("Yes","No"),selected="Yes")
-               ),
-               mainPanel(
-                 helpText("The Mutational Landscape of Lethal Castrate Resistant Prostate Cancer"),
-                 a("Grasso et al. (2012) doi:10.1038/nature11125",href="http://www.sciencedirect.com/science/article/pii/S1535610805003053"),
-                 helpText("These data were downloaded from GEO and imported using the GEOquery Bioconductor package"),
-                 a("GSE35988",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE35988"),
-                 plotOutput("boxplotGrasso",width = 1200,height=600),helpText("ANOVA analysis"),verbatimTextOutput("anovaGrasso")
-               )
-               
-             )
-             
-    ),
-    
+
     tabPanel("Survival",
              sidebarLayout(
                 sidebarPanel(
