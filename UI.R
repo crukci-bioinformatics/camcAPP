@@ -59,6 +59,9 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                   )
                  )
         ),
+      
+
+
 
         tabPanel("Cambridge Profile",
                  sidebarLayout(
@@ -68,13 +71,18 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      radioButtons("z_cambridge","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
                      radioButtons("overlay_cambridge","Overlay individual points?",choices=c("Yes","No"),selected="Yes"),
                      textInput("outfile", "What to call the output R script",value="analysis"),
-                     downloadButton("cambridgeBoxplotPDF","Download pdf....")
+                     radioButtons("cambridgeCombPlot","Composite plot?",choices=c("Yes","No"),selected="Yes"),
+                     helpText("Choosing a composite plot will display all genes in the gene list side-by-side. If No is selected, a particular gene from the list can be selected"),
+                     selectInput("cambridgeGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3"),
+                     downloadButton("cambridgeBoxplotPDF","Export current plot as pdf...."),
+                     helpText("If you are using a gene list as input for the boxplots and have de-selected the composite plot option each gene will be plotted on a separate page")
                    ),
                    mainPanel(
                      helpText("Integration of copy number and transcriptomics provides risk stratification in prostate cancer: A discovery and validation cohort study"),
                      a("Ross-Adams et al. (2015) doi:10.1016/j.ebiom.2015.07.017",href="http://www.ebiomedicine.com/article/S2352-3964%2815%2930071-2/abstract"),
                      helpText("These data were downloaded from GEO: GSE70768 and imported using the GEOquery Bioconductor package"),
                      a("GSE70768",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE70768"),
+                     helpText("Also available as the "), a("prostateCancerCamcap",href="http://bioconductor.org/packages/devel/data/experiment/html/prostateCancerCamcap.html"), helpText(" Bioconductor package"),
                      plotOutput("boxplotCambridge",width = 1200,height=600),
                      helpText("ANOVA analysis"),
                      verbatimTextOutput("anovaCambridge"), h4("R Script"),
@@ -175,9 +183,11 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
     tabPanel("Survival",
              sidebarLayout(
                 sidebarPanel(
+                  radioButtons("inputType_survival", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
                   selectInput("rpDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC"),selected = "MSKCC"),
                   radioButtons("cutoffMethod","Use Recursive Partitioning to choose a cut-off?",choices=c("RP","Median","Manual"),selected="RP"),
-                  textInput("expCutOff", "Cut-off for partitioning",value = 6)
+                  textInput("expCutOff", "Cut-off for partitioning",value = 6),
+                  selectInput("survivalGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3")
                 ),
                 mainPanel(
                   textOutput("rpSummary"),

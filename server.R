@@ -130,7 +130,7 @@ message("READY FOR INPUT")
 #geneTable <- AnnotationDbi:::select(org.Hs.eg.db, keys=gList, keytype = "SYMBOL",columns=c("SYMBOL","GENENAME"))
 
 
-shinyServer(function(input, output){
+shinyServer(function(input, output,session){
   
   getCurrentGene <- reactive({
     input$currentGene
@@ -209,6 +209,10 @@ shinyServer(function(input, output){
     input$z_grasso
   })
   
+  getCambridgeCompositePlot <- reactive({
+    input$cambridgeCombPlot
+  })
+  
   
   getRpDataset <- reactive({
     input$rpDataset
@@ -248,6 +252,21 @@ shinyServer(function(input, output){
     input$corType
   })
   
+  getBoxplotDataset <- reactive({
+    dataset <- input$boxplotDataset
+    covars <- switch(dataset,
+                     Cambridge=c("iCluster","Gleason","Sample_Group"),
+                     Stockholm=c("iCluster","Gleason"),
+                     MSKCC = c("CopyNumberCluster","Gleason"),
+                     Michigan2005 = "Sample_Group",
+                     Michigan2012 = "Sample_Group"
+    )
+    
+    updateSelectInput(session, "clinvar_boxplot", covars,selected=covars[1])
+    dataset
+    
+  })
+  
   getGeneList <- reactive({inFile <- input$file1
   
     if (is.null(inFile))
@@ -257,6 +276,9 @@ shinyServer(function(input, output){
     print(inFile$name)
     genes <- read.delim(inFile$datapath)[,1]
     print(dim(genes))
+    updateSelectInput(session, inputId = "cambridgeGeneChoice",choices = as.character(genes),selected=as.character(genes)[1])
+    updateSelectInput(session, inputId = "survivalGeneChoice",choices = as.character(genes),selected=as.character(genes)[1])
+    
     genes
     #read.csv("GraphPad Course Data/diseaseX.csv")
   })
@@ -398,13 +420,45 @@ shinyServer(function(input, output){
     
     plotType <- input$inputType_cambridge
     if(plotType == "Single Gene") {
-      cambridgeSingleBoxplot()
+      p1 <- cambridgeSingleBoxplot()
     } else  {
 #      data <- p1$data %>% group_by(Symbol)
       p1 <- cambridgeMultiBoxplot()
-      p1
+
+      if(getCambridgeCompositePlot() == "No"){
+        
+        geneToPlot <- input$cambridgeGeneChoice
+        var <- getCambridgeVariable()
+        overlay <- getCambridgeOverlay()
+        
+        data <- filter(p1$data, Symbol == geneToPlot)
+                       
+        p1 <- switch(var,
+                            iCluster = {data %>% 
+                                filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
+                                ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
+                            },
+                            
+                            Gleason = {data  %>% 
+                                filter(Sample_Group == "Tumour") %>% 
+                                filter(!(is.na(Gleason))) %>% 
+                                ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
+                            },
+                            Sample_Group ={data %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
+                                ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+                              
+                            }
+                            
+       )       
+        
+       p1 <- p1 + facet_wrap(~Symbol) 
       }
+      
+      
+    }
+    p1
   }
+
   
   )
   
@@ -420,48 +474,59 @@ shinyServer(function(input, output){
       }
       else{
         p1 <- cambridgeMultiBoxplot()
-        doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
-        if(doZ) p1$data <- mutate(p1$data, Expression=Z)
-        data <- split(p1$data, factor(p1$data$Symbol))
+        
+        
+        if(getCambridgeCompositePlot() == "Yes"){
+          
+          print(p1)
+          
+          
+        }
+        
+        else {
+        
+          doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
+          if(doZ) p1$data <- mutate(p1$data, Expression=Z)
+          data <- split(p1$data, factor(p1$data$Symbol))
+  
+          
+  
+          
+          var <- getCambridgeVariable()
+          overlay <- getCambridgeOverlay()
+          
+          pList <- NULL
 
-        
-
-        
-        var <- getCambridgeVariable()
-        overlay <- getCambridgeOverlay()
-        
-        pList <- NULL
-        
-        for(i in 1:length(data)){
-          pList[[i]] <- switch(var,
-                       iCluster = {data[[i]] %>% 
-                           filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
-                           ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
-                       },
-                       
-                       Gleason = {data[[i]]  %>% 
-                           filter(Sample_Group == "Tumour") %>% 
-                           filter(!(is.na(Gleason))) %>% 
-                           ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
-                       },
-                       Sample_Group ={data[[i]] %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
-                           ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+          for(i in 1:length(data)){
+            pList[[i]] <- switch(var,
+                         iCluster = {data[[i]] %>% 
+                             filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
+                             ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
+                         },
                          
-                       }
-                       
-          )
+                         Gleason = {data[[i]]  %>% 
+                             filter(Sample_Group == "Tumour") %>% 
+                             filter(!(is.na(Gleason))) %>% 
+                             ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
+                         },
+                         Sample_Group ={data[[i]] %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
+                             ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+                           
+                         }
+                         
+            )
+            
+            if(overlay == "Yes")  pList[[i]] <- pList[[i]] + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
+            
+            pList[[i]] <- pList[[i]] +  facet_wrap(~Symbol) 
+            
+          }        
+  
           
-          if(overlay == "Yes")  pList[[i]] <- pList[[i]] + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
-          
-          pList[[i]] <- pList[[i]] +  facet_wrap(~Symbol) 
-          
-        }        
-
-        
-        lapply(pList,print)
-      }
+          lapply(pList,print)
+        }
       
-      
+      }      
             dev.off()
     })
   
@@ -637,7 +702,7 @@ output$boxplotVarambally <- reactivePlot(function(){
     mutate(Z = (Expression -mu) /sd)
   
   varambally <- full_join(varambally,pd_varambally) %>% 
-              mutate(Sample_Group = factor(Sample_Group, levels=c("Benign","Tumour","Metastatic")))  
+              mutate(Sample_Group = factor(Sample_Group, levels=c("Benign","PC","Metastatic")))  
   doZ <- ifelse(getVaramballyZ() == "Yes",TRUE,FALSE)
   
   if(doZ) varambally <- mutate(varambally, Expression=Z)
@@ -766,7 +831,18 @@ output$anovaTaylor <- renderPrint({
 prepareSurvival <- reactive({
 
   dataset <- getRpDataset()
-  currentGene <- getCurrentGene()
+  
+  plotType <- input$inputType_survival
+  if(plotType == "Single Gene") {
+    currentGene <- getCurrentGene()
+  }
+  else {
+    
+    currentGene <- input$survivalGeneChoice
+    
+  }
+  
+  
   
   if(dataset == "MSKCC"){
     
@@ -820,7 +896,15 @@ prepareSurvival <- reactive({
 output$rpSummary <- renderPrint({
   
   combined.data <- prepareSurvival()
-  currentGene <- getCurrentGene()
+  plotType <- input$inputType_survival
+  if(plotType == "Single Gene") {
+    currentGene <- getCurrentGene()
+  }
+  else {
+    
+    currentGene <- input$survivalGeneChoice
+    
+  }
   results <- rpAnalysis(combined.data)
   ctree_xfs <- results[[1]]
   newPval <- results[[2]]
@@ -899,7 +983,15 @@ output$rpPlot <- reactivePlot(function(){
 output$survivalPlot <- reactivePlot(function(){
   combined.data <- prepareSurvival()
 
-  currentGene <- getCurrentGene()
+  plotType <- input$inputType_survival
+  if(plotType == "Single Gene") {
+    currentGene <- getCurrentGene()
+  }
+  else {
+    
+    currentGene <- input$survivalGeneChoice
+    
+  }
   surv.xfs <- Surv((as.numeric(as.character(combined.data$Time))/12), combined.data$Event)
   
   if(input$cutoffMethod == "RP"){
