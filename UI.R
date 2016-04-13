@@ -23,6 +23,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      fluidRow(
                        h1("Gene Selector"),
                      selectInput("currentGene","Type a Gene Symbol",choices=keys(revmap(org.Hs.egSYMBOL)),selected = "A1BG")
+
                      #fluidRow(
                        
 #                      column(8,DT::dataTableOutput("geneTable"))
@@ -31,7 +32,9 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                    
                      #),
                       fileInput('file1', 'Gene List',
-                               accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')),helpText("Your gene list must tab-delimited, with gene names in the first column")
+                               accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')),helpText("Your gene list must tab-delimited, with gene names in the first column"),
+                      helpText("If no gene list is uploaded, the genes ESR1, AR and STAT3 will be used"),
+radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene")
                    )
                   ,
                    mainPanel(
@@ -66,16 +69,21 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
         tabPanel("Gene Profile",
                  sidebarLayout(
                    sidebarPanel(
-                     selectInput("boxplotDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC"),selected = "Cambridge"),
-                     radioButtons("inputType_cambridge", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
+                     selectInput("boxplotDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
                      selectInput("clinvar_boxplot", "Choose a Clinical Covariate",choices=c("iCluster","Gleason","Sample_Group"),selected="iCluster"),
+                     helpText("The covariates you can plot will be different for the various datasets"),
                      radioButtons("z_cambridge","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
                      radioButtons("overlay_cambridge","Overlay individual points?",choices=c("Yes","No"),selected="Yes"),
-                     textInput("outfile", "What to call the output R script",value="analysis"),
+                     h2("Gene List plotting options"),
+                     helpText("You can choose whether to plot all genes in the gene list on the same plot"),
                      radioButtons("cambridgeCombPlot","Composite plot?",choices=c("Yes","No"),selected="Yes"),
                      helpText("Choosing a composite plot will display all genes in the gene list side-by-side. If No is selected, a particular gene from the list can be selected"),
                      selectInput("cambridgeGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3"),
+                     h2("Output options"),
+                     textInput("profileBasename", label = "What to call the output files",value="sausage"),
+                     helpText("Plots and R scripts will have the extension pdf and R respectively"),
                      downloadButton("cambridgeBoxplotPDF","Export current plot as pdf...."),
+                     downloadButton("geneProfileScript","Download R script...."),
                      helpText("If you are using a gene list as input for the boxplots and have de-selected the composite plot option each gene will be plotted on a separate page")
                    ),
                    mainPanel(
@@ -84,15 +92,11 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
      #                helpText("These data were downloaded from GEO: GSE70768 and imported using the GEOquery Bioconductor package"),
       #               a("GSE70768",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE70768"),
        #              helpText("Also available as the "), a("prostateCancerCamcap",href="http://bioconductor.org/packages/devel/data/experiment/html/prostateCancerCamcap.html"), helpText(" Bioconductor package"),
+                     h1("Gene Profile"),
                      plotOutput("displayBoxplot",width = 1200,height=600),
-                     helpText("ANOVA analysis"),
-#                     verbatimTextOutput("anovaCambridge"), h4("R Script"),
-                     
-                     helpText("You will be able to re-run this analysis in R by downloading the R code below"),
-                     helpText("In order to compile the report in RStudio, you will need to install the ggplot2, tidyr, dplyr, devtools and RColorBrewer packages. The first time you run the script, the Camcap dataset will also be download for you"),br(),
-                     code("install.packages(c('ggplot2','tidyr','dplyr','devtools','RColorBrewer'))"),
-                     br(),
-                     downloadLink('cambridgeProfileScript', 'Download R Script')
+                     h1("ANOVA analysis"),
+                     verbatimTextOutput("anovaResult")
+
                    )
                    
                  )
@@ -107,10 +111,15 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                   selectInput("rpDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC"),selected = "MSKCC"),
                   radioButtons("cutoffMethod","Use Recursive Partitioning to choose a cut-off?",choices=c("RP","Median","Manual"),selected="RP"),
                   textInput("expCutOff", "Cut-off for partitioning",value = 6),
-                  selectInput("survivalGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3")
+                  selectInput("survivalGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3"),
+                  textInput("survivalBasename", label = "What to call the output files",value="sausage"),
+                  h2("Output options"),
+                  downloadButton("survivalPlotPDF","Export current plot as pdf...."),
+                  downloadButton("survivalProfileScript","Download R script....")
                 ),
                 mainPanel(
-                  textOutput("rpSummary"),
+                  helpText("A recursive partitioning (RP) analysis is performed to determine if the samples can be split into groups based on the expression data from your chosen gene(s)."),
+                  tableOutput("rpSummary"),
                   plotOutput("rpPlot"),
                   plotOutput("survivalPlot"),helpText("The Kaplan-Meier plot is a useful way of summarising survival data. There is one curve for each group. Each curve starts at 100% probability of survival. The probability of freedom from biochemical recurrence is shown on the y axis and the time (in years) is shown on the x axis. The curve drops each time there is an 'event'. A cross is shown on each curve where a 'censoring'' event takes place. This is where someone drops out of the study for a reason not related to the study, e.g. the study ends before an event has occurred. These subjects are no longer included in any calculations. The lower the survival curve the worse prognosis the patients in that group have.")
                 )
@@ -141,13 +150,17 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  radioButtons("scale","Scaling?",choices = c("row", "column", "none"),selected="row"),
                  radioButtons("cutType","Cut the dendrogram into k groups, or h(eight)",choices=c("k","h"),selected = "k"),
                  sliderInput("kGrps","Select k groups from the dendrogram",min=2,max = 7,value=2),
-                 textInput("hCut","Select a height to cut the dendrogram",value = 10)
+                 textInput("hCut","Select a height to cut the dendrogram",value = 10),
+                 h2("Output options"),
+                 textInput("heatmapBasename", label = "What to call the output files",value="sausage"),
+                 downloadButton("HeatmapPDF","Export heatmap as pdf...."),
+                 downloadButton("heatmapScript","Download R script....")
                ),
                mainPanel(
                  helpText("Construcing a heatmap from the gene list you uploaded in the Analysis Parameters tab. If you haven't uploaded a gene list, an example gene list of three genes will be used"),
-                 plotOutput("heatmap"),
+                 plotOutput("heatmap",width = 1200,height=600),
                  helpText("Sample Clustering"),
-                 plotOutput("dendrogram"),
+                 plotOutput("dendrogram",width = 1200,height=600),
                  helpText("Select the number of clusters, k, from the slider"),
                  plotOutput("sampleBreakown")
                )
