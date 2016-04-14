@@ -93,6 +93,7 @@ radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single
       #               a("GSE70768",href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE70768"),
        #              helpText("Also available as the "), a("prostateCancerCamcap",href="http://bioconductor.org/packages/devel/data/experiment/html/prostateCancerCamcap.html"), helpText(" Bioconductor package"),
                      h1("Gene Profile"),
+                     verbatimTextOutput("profileMapping"),
                      plotOutput("displayBoxplot",width = 1200,height=600),
                      h1("ANOVA analysis"),
                      verbatimTextOutput("anovaResult")
@@ -109,15 +110,16 @@ radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single
                 sidebarPanel(
                   radioButtons("inputType_survival", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
                   selectInput("rpDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC"),selected = "MSKCC"),
-                  radioButtons("cutoffMethod","Use Recursive Partitioning to choose a cut-off?",choices=c("RP","Median","Manual"),selected="RP"),
+                  radioButtons("cutoffMethod","Type of partitioning?",choices=c("RP","Median","Manual"),selected="RP"),
                   textInput("expCutOff", "Cut-off for partitioning",value = 6),
                   selectInput("survivalGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3"),
                   textInput("survivalBasename", label = "What to call the output files",value="sausage"),
                   h2("Output options"),
-                  downloadButton("survivalPlotPDF","Export current plot as pdf...."),
+                  downloadButton("survivalPlotPDF","Export K-M plot as pdf...."),
                   downloadButton("survivalProfileScript","Download R script....")
                 ),
                 mainPanel(
+                  verbatimTextOutput("survivalMapping"),
                   helpText("A recursive partitioning (RP) analysis is performed to determine if the samples can be split into groups based on the expression data from your chosen gene(s)."),
                   tableOutput("rpSummary"),
                   plotOutput("rpPlot"),
@@ -131,11 +133,12 @@ radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single
              sidebarLayout(
                sidebarPanel(
                  selectInput("secondGene","Type a Gene Symbol",choices=keys(revmap(org.Hs.egSYMBOL)),selected = "A2M"),
-                 selectInput("corDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC"),selected = "Cambridge"),
+                 selectInput("corDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC","Michigan2005","Michigan2012"),selected = "Cambridge"),
+                 selectInput("clinvar_cor", "Choose a Clinical Covariate to colour by...",choices=c("None", "iCluster","Gleason","Sample_Group"),selected="None"),
                  radioButtons("corType","Type of correlation to calculate",choices=c("spearman","pearson"),selected="pearson")
                ),
                mainPanel(
-                 plotOutput("corPlot")
+                 plotOutput("corPlot",width = 1200,height=600)
                )
              )
     ),
@@ -158,6 +161,7 @@ radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single
                ),
                mainPanel(
                  helpText("Construcing a heatmap from the gene list you uploaded in the Analysis Parameters tab. If you haven't uploaded a gene list, an example gene list of three genes will be used"),
+                 verbatimTextOutput("heatmapMapping"),
                  plotOutput("heatmap",width = 1200,height=600),
                  helpText("Sample Clustering"),
                  plotOutput("dendrogram",width = 1200,height=600),
