@@ -135,6 +135,8 @@ shinyServer(function(input, output,session){
   getCurrentGene <- reactive({
     if(input$inputType == "Single Gene"){
       updateTextInput(session, inputId = "profileBasename", value=paste0(input$currentGene,"-profile"))
+      updateTextInput(session, inputId = "survivalBasename", value=paste0(input$currentGene,"-survival"))
+      updateTextInput(session, inputId = "correlationBasename", value=paste0(input$currentGene,"-versus-",getSecondGene()))
     }
     input$currentGene
   })
@@ -151,10 +153,9 @@ shinyServer(function(input, output,session){
   
 #  getCurrentGene <- reactive({
 #    input$currentGene_taylor
-#  })
+#  })get
   
-  
-  
+
   
     
   getCambridgeVariable <- reactive({
@@ -256,6 +257,7 @@ shinyServer(function(input, output,session){
     )
     
     updateSelectInput(session, inputId="clinvar_cor", choices=covars,selected=covars[1])
+
     dataset
     
     
@@ -263,10 +265,8 @@ shinyServer(function(input, output,session){
   
   getSecondGene <- reactive({
     
-    
-    
-    input$secondGene
-    
+    gene2 <- input$secondGene
+
   })
   
   getCorType <- reactive({
@@ -318,6 +318,12 @@ shinyServer(function(input, output,session){
  #   if(input$inputType != "Single Gene") updateTextInput(session, inputId = "profileBasename",value=paste0(basename(input$datapath),"-profile"))
     updateSelectInput(session, inputId = "cambridgeGeneChoice",choices = as.character(genes),selected=as.character(genes)[1])
     updateSelectInput(session, inputId = "survivalGeneChoice",choices = as.character(genes),selected=as.character(genes)[1])
+    
+    if(input$inputType != "Single Gene"){
+      updateTextInput(session, inputId = "profileBasename", value=paste0(basename(inFile$datapath),"-profile"))
+      updateTextInput(session, inputId = "survivalBasename", value=paste0(as.character(genes)[1],"-km"))
+      updateTextInput(session, inputId = "heatmapBasename", value=paste0(basename(inFile$datapath),"-profile"))
+    }
     
     genes
 
@@ -585,7 +591,7 @@ shinyServer(function(input, output,session){
     
     if(plotType != "Single Gene") {
     message("Plotting a gene list....")
-        
+    updateTextInput(session, "profileBasename", value = "genelist-profile")    
       if(getCambridgeCompositePlot() == "No"){
         
         message("Not making a composite plot,...")
@@ -693,6 +699,8 @@ shinyServer(function(input, output,session){
       p1 <- p1 + facet_wrap(~Symbol)       
       
     }
+    else     updateTextInput(session, "profileBasename", value = paste0(input$currentGene,"-profile"))   
+    
     message("Going to print the plot..")
     p1
   }
@@ -930,10 +938,14 @@ shinyServer(function(input, output,session){
   
   
   output$cambridgeBoxplotPDF <- downloadHandler(
-    filename = paste0(getProfileBasename(),".pdf"),
+    filename = function(){
+      paste0(input$profileBasename,".",input$profilePlotFormat)
+      },
     content = function(file) {
-      pdf(file, width=12, height=6.3)
       
+      if(input$profilePlotFormat == "pdf") pdf(file, width=12, height=6.3)
+      else png(file, width=1200,height=600)
+
       plotType <- input$inputType
       if(plotType == "Single Gene") {
         print(singleBoxplot())
@@ -1368,6 +1380,7 @@ shinyServer(function(input, output,session){
       
     }
     
+    updateTextInput(session, "survivalBasename",value=paste0(currentGene,"-survival"))
     
     data <- filter(combined.data, Symbol == currentGene)
     updateTextInput(session, "expCutOff",value=round(median(data$Expression),2))
@@ -1443,9 +1456,13 @@ shinyServer(function(input, output,session){
   
   
   output$survivalPlotPDF <- downloadHandler(
-    filename = paste0(input$survivalBasename,".pdf"),
+    filename = function(){
+      paste0(input$survivalBasename, "." ,input$survivalPlotFormat)
+    },
     content = function(file) {
-      pdf(file, width=12, height=6.3)
+      
+      if(input$survivalPlotFormat == "pdf") pdf(file, width=12, height=6.3)
+      else png(file, width=1200,height=600)
     
       plotType <- input$inputType_survival
       if(plotType == "Single Gene") {
@@ -1760,9 +1777,14 @@ shinyServer(function(input, output,session){
   )
   
   output$HeatmapPDF <- downloadHandler(
-    filename = paste0(getHeatmapBasename(),".pdf"),
+    filename = function(){
+      paste0(input$heatmapBasename,".",input$heatmapPlotFormat)
+    },
     content = function(file) {
-      pdf(file, width=12, height=12)
+      
+      if(input$heatmapPlotFormat == "pdf") pdf(file, width=12, height=6.3)
+      else png(file, width=1200,height=600)
+      
       hm <- prepareHeatmap()
       geneMatrix <- hm[[1]]
       
@@ -1867,9 +1889,12 @@ shinyServer(function(input, output,session){
   
   
   
+
+  
   output$corPlot <- reactivePlot(function(){
     
-    plotType <- input$inputType
+    plotType <- input$inputType_correlation
+    
     if(plotType == "Single Gene") {
       gene1 <- getCurrentGene()
       gene2 <- input$secondGene
@@ -1895,7 +1920,7 @@ shinyServer(function(input, output,session){
         spread(Symbol,Expression)
   #      cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
         df <- as.data.frame(data)
-        ggpairs(df, columns = 3:ncol(df),col="iCluster")
+        p <- ggpairs(df, columns = 3:ncol(df),col="iCluster")
         
 #        ggplot(data, aes(x = Gene1, y=Gene2,col=iCluster)) + geom_point() + xlab(genes[1]) + ylab(genes[2]) +  scale_fill_manual(values=iclusPal) + ggtitle(paste("Correlation = ",cor))
                 
@@ -1906,7 +1931,7 @@ shinyServer(function(input, output,session){
         data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
           spread(Symbol,Expression)
         df <- as.data.frame(data)
-        ggpairs(df, columns = 3:ncol(df),col="Gleason")
+        p <- ggpairs(df, columns = 3:ncol(df),col="Gleason")
         
       }
       
@@ -1915,7 +1940,7 @@ shinyServer(function(input, output,session){
         data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
           spread(Symbol,Expression)
         df <- as.data.frame(data)
-        ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
+        p <- ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
     
       }
       
@@ -1924,7 +1949,7 @@ shinyServer(function(input, output,session){
         data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
           spread(Symbol,Expression)
         df <- as.data.frame(data)
-        ggpairs(df, columns = 3:ncol(df))
+        p <- ggpairs(df, columns = 3:ncol(df))
       }
         
 
@@ -1942,7 +1967,7 @@ shinyServer(function(input, output,session){
           spread(Symbol,Expression)
         #      cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
         df <- as.data.frame(data)
-        ggpairs(df, columns = 3:ncol(df),col="iCluster")
+        p <- ggpairs(df, columns = 3:ncol(df),col="iCluster")
         
       }
       
@@ -1951,7 +1976,7 @@ shinyServer(function(input, output,session){
         data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
           spread(Symbol,Expression)
         df <- as.data.frame(data)
-        ggpairs(df, columns = 3:ncol(df),col="Gleason")
+        p <- ggpairs(df, columns = 3:ncol(df),col="Gleason")
 
       }
       
@@ -1960,7 +1985,7 @@ shinyServer(function(input, output,session){
         data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
           spread(Symbol,Expression)
         df <- as.data.frame(data)
-        ggpairs(df, columns = 3:ncol(df))
+        p <- ggpairs(df, columns = 3:ncol(df))
         
       }
       
@@ -1975,7 +2000,7 @@ shinyServer(function(input, output,session){
           spread(Symbol,Expression)
         df <- as.data.frame(data)
         cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
-        ggpairs(df, columns = 3:ncol(df),col="Copy.number.Cluster")
+        p <- ggpairs(df, columns = 3:ncol(df),col="Copy.number.Cluster")
       }
       else if(covar == "Gleason"){
         
@@ -1983,7 +2008,7 @@ shinyServer(function(input, output,session){
         data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
           spread(Symbol,Expression)
         df <- as.data.frame(data)
-        ggpairs(df, columns = 3:ncol(df),col="Gleason")
+        p <- ggpairs(df, columns = 3:ncol(df),col="Gleason")
       }
       
       else {
@@ -1991,7 +2016,7 @@ shinyServer(function(input, output,session){
         data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
           spread(Symbol,Expression)
         df <- as.data.frame(data)
-        ggpairs(df, columns = 3:ncol(df))
+        p <- ggpairs(df, columns = 3:ncol(df))
         
       }
       
@@ -2004,14 +2029,14 @@ shinyServer(function(input, output,session){
         data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
           spread(Symbol,Expression)
         df <- as.data.frame(data)
-        ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
+        p <- ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
         
       }
       else{
         data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
           spread(Symbol,Expression)
         df <- as.data.frame(data)
-        ggpairs(df, columns = 3:ncol(df))
+        p <- ggpairs(df, columns = 3:ncol(df))
         
       }
       
@@ -2023,20 +2048,20 @@ shinyServer(function(input, output,session){
         data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
           spread(Symbol,Expression)
         df <- as.data.frame(data)
-        ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
+        p <- ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
         
       }
       else{
         data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
           spread(Symbol,Expression)
         df <- as.data.frame(data)
-        ggpairs(df, columns = 3:ncol(df))
+        p <- ggpairs(df, columns = 3:ncol(df))
         
       }
       
     }
     
-    
+    print(p)
   }
   
   )
@@ -2044,6 +2069,190 @@ shinyServer(function(input, output,session){
   
   
 
+  
+  
+  output$CorrelationPDF <- downloadHandler(
+    filename = function(){
+      paste0(input$correlationBasename,".",input$correlationPlotFormat)
+    },
+    content = function(file) {
+      
+      if(input$correlationPlotFormat == "pdf") pdf(file, width=12, height=6.3)
+      else png(file, width=1200,height=600)
+      
+      plotType <- input$inputType_correlation
+      if(plotType == "Single Gene") {
+        gene1 <- getCurrentGene()
+        gene2 <- input$secondGene
+        genes <- c(gene1,gene2)
+        
+      } else  genes <- getGeneList()
+      
+      
+      dataset <- getCorDataset()
+      
+      cordata <- filterByGene(dataset, genes)
+      
+      covar <- input$clinvar_cor
+      
+      if(dataset == "Cambridge"){
+        
+        if(covar == "iCluster"){
+          
+          data <- select(cordata, geo_accession,Expression, iCluster, Symbol) %>% 
+            filter(iCluster %in% c("clust1","clust2","clust3","clust4","clust5")) %>% 
+            #        mutate(Symbol=gsub(genes[1], "Gene1",Symbol)) %>% 
+            #       mutate(Symbol=gsub(genes[2], "Gene2",Symbol)) %>% 
+            spread(Symbol,Expression)
+          #      cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df),col="iCluster")
+          
+          #        ggplot(data, aes(x = Gene1, y=Gene2,col=iCluster)) + geom_point() + xlab(genes[1]) + ylab(genes[2]) +  scale_fill_manual(values=iclusPal) + ggtitle(paste("Correlation = ",cor))
+          
+        }
+        
+        else if(covar == "Gleason"){
+          
+          data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df),col="Gleason")
+          
+        }
+        
+        else if(covar == "Sample_Group"){
+          
+          data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
+          
+        }
+        
+        else {
+          
+          data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df))
+        }
+        
+        
+        
+      }
+      
+      else if (dataset == "Stockholm"){
+        
+        if(covar == "iCluster"){
+          
+          data <- select(cordata, geo_accession,Expression, iCluster, Symbol) %>% 
+            filter(iCluster %in% c("clust1","clust2","clust3","clust4","clust5")) %>% 
+            #        mutate(Symbol=gsub(genes[1], "Gene1",Symbol)) %>% 
+            #       mutate(Symbol=gsub(genes[2], "Gene2",Symbol)) %>% 
+            spread(Symbol,Expression)
+          #      cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
+          df <- as.data.frame(data)
+          p <-  ggpairs(df, columns = 3:ncol(df),col="iCluster")
+          
+        }
+        
+        else if(covar == "Gleason"){
+          
+          data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df),col="Gleason")
+          
+        }
+        
+        else {
+          
+          data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df))
+          
+        }
+        
+        
+      }
+      
+      else if (dataset=="MSKCC"){
+        
+        if(covar == "CopyNumberCluster"){
+          
+          data <- select(cordata, geo_accession,Expression, Copy.number.Cluster, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
+          p <- ggpairs(df, columns = 3:ncol(df),col="Copy.number.Cluster")
+        }
+        else if(covar == "Gleason"){
+          
+          
+          data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df),col="Gleason")
+        }
+        
+        else {
+          
+          data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df))
+          
+        }
+        
+        
+      }
+      
+      else if (dataset == "Michigan2005"){
+        
+        if(covar == "Sample_Group"){
+          data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
+          
+        }
+        else{
+          data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df))
+          
+        }
+        
+      }
+      
+      else if (dataset == "Michigan2012"){
+        
+        if(covar == "Sample_Group"){
+          data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
+          
+        }
+        else{
+          data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df))
+          
+        }
+        
+      }
+      
+    print(p)   
+   dev.off()   
+    }
+    
+    
+  )
   
   
   

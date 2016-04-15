@@ -17,7 +17,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
            #      )
                  
             #     ),
-        tabPanel("Analysis Parameters",
+        tabPanel("Data Upload",
                  sidebarLayout(
                    sidebarPanel(
                      fluidRow(
@@ -33,8 +33,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      #),
                       fileInput('file1', 'Gene List',
                                accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')),helpText("Your gene list must tab-delimited, with gene names in the first column"),
-                      helpText("If no gene list is uploaded, the genes ESR1, AR and STAT3 will be used"),
-radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene")
+                      helpText("If no gene list is uploaded, the genes ESR1, AR and STAT3 will be used")
                    )
                   ,
                    mainPanel(
@@ -69,6 +68,7 @@ radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single
         tabPanel("Gene Profile",
                  sidebarLayout(
                    sidebarPanel(
+                     radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
                      selectInput("boxplotDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
                      selectInput("clinvar_boxplot", "Choose a Clinical Covariate",choices=c("iCluster","Gleason","Sample_Group"),selected="iCluster"),
                      helpText("The covariates you can plot will be different for the various datasets"),
@@ -77,12 +77,13 @@ radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single
                      h2("Gene List plotting options"),
                      helpText("You can choose whether to plot all genes in the gene list on the same plot"),
                      radioButtons("cambridgeCombPlot","Composite plot?",choices=c("Yes","No"),selected="Yes"),
-                     helpText("Choosing a composite plot will display all genes in the gene list side-by-side. If No is selected, a particular gene from the list can be selected"),
+                     helpText("If No is selected above, a particular gene from the list can be displayed"),
                      selectInput("cambridgeGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3"),
                      h2("Output options"),
-                     textInput("profileBasename", label = "What to call the output files",value="sausage"),
-                     helpText("Plots and R scripts will have the extension pdf and R respectively"),
-                     downloadButton("cambridgeBoxplotPDF","Export current plot as pdf...."),
+                     textInput("profileBasename", label = "What to call the output files",value="boxplot"),
+                     radioButtons("profilePlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
+                     helpText("Plots and R scripts will have the extension pdf (/png) and R respectively"),
+                     downloadButton("cambridgeBoxplotPDF","Export current profile(s)...."),
                      downloadButton("geneProfileScript","Download R script...."),
                      helpText("If you are using a gene list as input for the boxplots and have de-selected the composite plot option each gene will be plotted on a separate page")
                    ),
@@ -112,11 +113,13 @@ radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single
                   selectInput("rpDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC"),selected = "MSKCC"),
                   radioButtons("cutoffMethod","Type of partitioning?",choices=c("RP","Median","Manual"),selected="RP"),
                   textInput("expCutOff", "Cut-off for partitioning",value = 6),
+                  helpText("If you working on a gene list, you can select which gene to display the results for"),
                   selectInput("survivalGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3"),
-                  textInput("survivalBasename", label = "What to call the output files",value="sausage"),
                   h2("Output options"),
+                  textInput("survivalBasename", label = "What to call the output files",value="survival"),
+                  radioButtons("survivalPlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
                   downloadButton("survivalPlotPDF","Export K-M plot as pdf...."),
-                  downloadButton("survivalProfileScript","Download R script....")
+                  downloadButton("survivalScript","Download R script....")
                 ),
                 mainPanel(
                   verbatimTextOutput("survivalMapping"),
@@ -132,10 +135,16 @@ radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single
     tabPanel("Gene Correlation",
              sidebarLayout(
                sidebarPanel(
+                 radioButtons("inputType_correlation", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
+                 helpText("If you have selected Single Gene mode (above), now select a second gene to correlate with"),
                  selectInput("secondGene","Type a Gene Symbol",choices=keys(revmap(org.Hs.egSYMBOL)),selected = "A2M"),
                  selectInput("corDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC","Michigan2005","Michigan2012"),selected = "Cambridge"),
                  selectInput("clinvar_cor", "Choose a Clinical Covariate to colour by...",choices=c("None", "iCluster","Gleason","Sample_Group"),selected="None"),
-                 radioButtons("corType","Type of correlation to calculate",choices=c("spearman","pearson"),selected="pearson")
+                 h2("Output options"),
+                 textInput("correlationBasename", label = "What to call the output files",value="correlation"),
+                 radioButtons("correlationPlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
+                 downloadButton("CorrelationPDF","Export Correlation plot as pdf...."),
+                 downloadButton("correlationScript","Download R script....")
                ),
                mainPanel(
                  plotOutput("corPlot",width = 1200,height=600)
@@ -155,7 +164,8 @@ radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single
                  sliderInput("kGrps","Select k groups from the dendrogram",min=2,max = 7,value=2),
                  textInput("hCut","Select a height to cut the dendrogram",value = 10),
                  h2("Output options"),
-                 textInput("heatmapBasename", label = "What to call the output files",value="sausage"),
+                 textInput("heatmapBasename", label = "What to call the output files",value="example"),
+                 radioButtons("heatmapPlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
                  downloadButton("HeatmapPDF","Export heatmap as pdf...."),
                  downloadButton("heatmapScript","Download R script....")
                ),
