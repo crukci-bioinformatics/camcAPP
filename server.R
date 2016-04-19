@@ -13,7 +13,7 @@ library(knitr)
 library(Biobase)
 library(broom)
 library(WGCNA)
-library(GGally)
+#library(GGally)
 
 library(DT)
 
