@@ -593,7 +593,10 @@ shinyServer(function(input, output,session){
     if(plotType != "Single Gene") {
     message("Plotting a gene list....")
     inFile <- input$file1
-    updateTextInput(session, inputId = "profileBasename", value=paste0(basename(inFile$name),"-profile"))
+    
+    if(!is.null(inFile)) updateTextInput(session, inputId = "profileBasename", value=paste0(basename(inFile$name),"-profile"))
+    else updateTextInput(session, inputId = "profileBasename", value="examplegenes-profile")
+  
       if(getCambridgeCompositePlot() == "No"){
         
         message("Not making a composite plot,...")
