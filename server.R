@@ -13,7 +13,7 @@ library(knitr)
 library(Biobase)
 library(broom)
 library(WGCNA)
-#library(GGally)
+library(GGally)
 
 library(DT)
 
@@ -584,7 +584,7 @@ shinyServer(function(input, output,session){
   
   
   
-  output$displayBoxplot <- reactivePlot(function(){
+  output$displayBoxplot <- renderPlot({
     
     plotType <- input$inputType
     
@@ -707,7 +707,7 @@ shinyServer(function(input, output,session){
     else     updateTextInput(session, "profileBasename", value = paste0(input$currentGene,"-profile"))   
     
     message("Going to print the plot..")
-    p1
+    print(p1)
   }
   
   
@@ -1197,7 +1197,7 @@ shinyServer(function(input, output,session){
     
   }
   
-  output$rpPlot <- reactivePlot(function(){
+  output$rpPlot <- renderPlot({
     
     
     combined.data <- prepareSurvival()
@@ -1247,7 +1247,8 @@ shinyServer(function(input, output,session){
      
       else {
         med <- median(data$Expression)
-        ggplot(data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=med,col="red",lty=2) + ggtitle("Partitioning using median expression")
+        p <- ggplot(data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=med,col="red",lty=2) + ggtitle("Partitioning using median expression")
+        print(p)
       }
        
     }
@@ -1257,8 +1258,8 @@ shinyServer(function(input, output,session){
       if (input$cutoffMethod == "Median") {
         
         med <- median(combined.data$Expression)
-        ggplot(combined.data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=med,col="red",lty=2)
-        
+        p <- ggplot(combined.data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=med,col="red",lty=2)
+        print(p)
       }
       else  ggplot(combined.data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=as.numeric(input$expCutOff),col="red",lty=2) + ggtitle("Partitioning using defined cut-off")
       
@@ -1273,7 +1274,7 @@ shinyServer(function(input, output,session){
   
   
   
-  output$survivalPlot <- reactivePlot(function(){
+  output$survivalPlot <- renderPlot({
     combined.data <- prepareSurvival()
     
     plotType <- input$inputType_survival
@@ -1659,7 +1660,7 @@ shinyServer(function(input, output,session){
     
   })
   
-  output$heatmap<- reactivePlot(function(){
+  output$heatmap<- renderPlot({
     
     hm <- prepareHeatmap()
     geneMatrix <- hm[[1]]
@@ -1718,7 +1719,7 @@ shinyServer(function(input, output,session){
   
   
 
-  output$dendrogram <- reactivePlot(function(){
+  output$dendrogram <- renderPlot({
     
     hm <- prepareHeatmap()
     colMatrix <- hm[[2]]
@@ -1743,7 +1744,7 @@ shinyServer(function(input, output,session){
   
 
   
-  output$sampleBreakown <- reactivePlot(function(){
+  output$sampleBreakown <- renderPlot({
     
     hm <- prepareHeatmap()
     colMatrix <- hm[[2]]
@@ -1797,7 +1798,7 @@ shinyServer(function(input, output,session){
   
 
   
-  output$corPlot <- reactivePlot(function(){
+  output$corPlot <- renderPlot({
     
     plotType <- input$inputType_correlation
     
