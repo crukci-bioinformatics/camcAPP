@@ -182,7 +182,27 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                )
                
              )
-    )    
+    ),
+    tabPanel("Copy Number",
+      sidebarLayout(
+       sidebarPanel(
+         radioButtons("inputType_cn", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),                 h2("Output options"),
+         textInput("copyNumberBasename", label = "What to call the output files",value="example"),
+         radioButtons("copyNumberPlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
+         downloadButton("copyNumberPDF","Export plot...."),
+         downloadButton("copyNumberScript","Download R script....")
+        ),
+        mainPanel(
+          helpText("The Proportion of amplifications and deletions will be shown for your chosen gene(s)."),
+          plotOutput("copyNumber",width=1200,height=600),
+          tableOutput("copyNumberTable")
+        )
+        
+      )
+
+    )
+
+
                    
 )
 

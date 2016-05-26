@@ -129,6 +129,25 @@ message("READY FOR INPUT")
 
 #geneTable <- AnnotationDbi:::select(org.Hs.eg.db, keys=gList, keytype = "SYMBOL",columns=c("SYMBOL","GENENAME"))
 
+camcap.cn <- read.delim("data/2014-06-04_UK_OncoSNP_rank3_gene_matrix.txt") %>% 
+  gather(Sample, Call, -(EntrezID:position)) %>% 
+  tbl_df %>% 
+  select(Symbol,Sample,Call) %>% 
+  mutate(Cohort = "Cambridge")
+
+stockholm.cn <- read.delim("data/2016-01-06_Stockholm_0.9_CNA_threshold_geneXsample_mat.txt") %>% 
+  gather(Sample, Call, -(EntrezID:Symbol)) %>% 
+  tbl_df %>% 
+  select(Symbol,Sample,Call) %>% 
+  mutate(Cohort = "Stockholm")
+
+taylor.cn <- read.delim("data/2014-12-02_cna_matrix_localized_cap_w_clinical.txt") %>% 
+  gather(Sample, Call, -(EntrezID:GeneSymbol)) %>% 
+  tbl_df %>% 
+  mutate(Symbol = GeneSymbol) %>% 
+  select(Symbol,Sample,Call) %>% 
+  mutate(Cohort = "Taylor")
+
 
 shinyServer(function(input, output,session){
   
@@ -136,6 +155,7 @@ shinyServer(function(input, output,session){
     if(input$inputType == "Single Gene"){
       updateTextInput(session, inputId = "profileBasename", value=paste0(input$currentGene,"-profile"))
       updateTextInput(session, inputId = "survivalBasename", value=paste0(input$currentGene,"-survival"))
+      updateTextInput(session, inputId = "copyNumberBasename", value=paste0(input$currentGene,"-copyNumber"))
       updateTextInput(session, inputId = "correlationBasename", value=paste0(input$currentGene,"-versus-",getSecondGene()))
     }
     input$currentGene
@@ -324,6 +344,7 @@ shinyServer(function(input, output,session){
       updateTextInput(session, inputId = "profileBasename", value=paste0(basename(inFile$name),"-profile"))
       updateTextInput(session, inputId = "survivalBasename", value=paste0(as.character(genes)[1],"-survival"))
       updateTextInput(session, inputId = "heatmapBasename", value=paste0(basename(inFile$name),"-heatmap"))
+      updateTextInput(session, inputId = "copyNumberBasename", value=paste0(basename(inFile$name),"-copyNumber"))
     }
     
     genes
@@ -1794,9 +1815,158 @@ shinyServer(function(input, output,session){
     }
   )
   
+  getCopyNumberTable <- function(genes){
+    
+    camcap.cnts <- filter(camcap.cn, Symbol %in% genes) %>% 
+      group_by(Symbol) %>% 
+      summarise(NEUTRAL = sum(Call==0)/n(),DEL = -sum(Call==-1)/n(), AMP = sum(Call==1)/n())  %>% 
+      gather(Event,Count,-Symbol) %>% 
+      mutate(Cohort = "Cambridge")
+    
+    stockholm.cnts <- filter(stockholm.cn, Symbol %in% genes) %>% 
+      group_by(Symbol) %>% 
+      summarise(NEUTRAL = sum(Call==0)/n(),DEL = -sum(Call==-1)/n(), AMP = sum(Call==1)/n())  %>% 
+      gather(Event,Count,-Symbol) %>% 
+      mutate(Cohort = "Stockholm")
+    
+    taylor.cnts <- filter(taylor.cn, Symbol %in% genes) %>% 
+      group_by(Symbol) %>% 
+      summarise(NEUTRAL = sum(Call==0)/n(),DEL = -sum(Call==-1)/n(), AMP = sum(Call==1)/n())  %>% 
+      gather(Event,Count,-Symbol) %>% 
+      mutate(Cohort = "MSKCC")
+    
+    cn.all <- bind_rows(camcap.cnts,stockholm.cnts,taylor.cnts) %>% 
+      mutate(Event = factor(Event, levels=c("DEL","NEUTRAL","AMP")))
+    
+    cn.all
+  }
   
   
+  output$copyNumberTable <- renderTable({
+    
+    if(input$inputType_cn == "Single Gene") {
+      genes <- getCurrentGene()
+      
+      
+    } else  genes <- getGeneList()
+    
+    camcap.cnts <- filter(camcap.cn, Symbol %in% genes) %>% 
+      group_by(Symbol) %>% 
+      summarise(NEUTRAL = sum(Call==0)/n(),DEL = -sum(Call==-1)/n(), AMP = sum(Call==1)/n())  %>% 
+      gather(Event,Count,-Symbol) %>% 
+      mutate(Cohort = "Cambridge")
+    
+    stockholm.cnts <- filter(stockholm.cn, Symbol %in% genes) %>% 
+      group_by(Symbol) %>% 
+      summarise(NEUTRAL = sum(Call==0)/n(),DEL = -sum(Call==-1)/n(), AMP = sum(Call==1)/n())  %>% 
+      gather(Event,Count,-Symbol) %>% 
+      mutate(Cohort = "Stockholm")
+    
+    taylor.cnts <- filter(taylor.cn, Symbol %in% genes) %>% 
+      group_by(Symbol) %>% 
+      summarise(NEUTRAL = sum(Call==0)/n(),DEL = -sum(Call==-1)/n(), AMP = sum(Call==1)/n())  %>% 
+      gather(Event,Count,-Symbol) %>% 
+      mutate(Cohort = "MSKCC")
+    
+    cn.all <- bind_rows(camcap.cnts,stockholm.cnts,taylor.cnts) %>% 
+      mutate(Event = factor(Event, levels=c("DEL","NEUTRAL","AMP")))
+    
+    cn.all
+    
 
+    
+    
+  })
+  
+  
+  output$copyNumber <- renderPlot({
+    
+    if(input$inputType_cn == "Single Gene") {
+      genes <- getCurrentGene()
+
+      
+    } else  genes <- getGeneList()
+    
+    camcap.cnts <- filter(camcap.cn, Symbol %in% genes) %>% 
+      group_by(Symbol) %>% 
+      summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
+      gather(Event,Percentage,-Symbol) %>% 
+      
+      mutate(Cohort = "Cambridge")
+    
+    stockholm.cnts <- filter(stockholm.cn, Symbol %in% genes) %>% 
+      group_by(Symbol) %>% 
+      summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
+      gather(Event,Percentage,-Symbol) %>% 
+      
+      mutate(Cohort = "Stockholm")
+    
+    taylor.cnts <- filter(taylor.cn, Symbol %in% genes) %>% 
+      group_by(Symbol) %>% 
+      summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
+      gather(Event,Percentage,-Symbol) %>% 
+      mutate(Cohort = "MSKCC")
+    
+    cn.all <- bind_rows(camcap.cnts,stockholm.cnts,taylor.cnts) %>% 
+      mutate(Event = factor(Event, levels=c("DEL","NEUTRAL","AMP")))
+    
+    cn.all
+    
+    p <- ggplot(cn.all, aes(x = Event, y=Count,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
+    print(p)
+  })
+
+  
+  output$copyNumberPDF <- downloadHandler(
+    filename = function(){
+      paste0(input$copyNumberBasename,".",input$copyNumberPlotFormat)
+    },
+    content = function(file) {
+      
+      if(input$correlationPlotFormat == "pdf") pdf(file, width=12, height=6.3)
+      else png(file, width=1200,height=600)
+      
+      if(input$inputType_cn == "Single Gene") {
+        genes <- getCurrentGene()
+        
+        
+      } else  genes <- getGeneList()
+      
+      camcap.cnts <- filter(camcap.cn, Symbol %in% genes) %>% 
+        group_by(Symbol) %>% 
+        summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
+        gather(Event,Percentage,-Symbol) %>% 
+        
+        mutate(Cohort = "Cambridge")
+      
+      stockholm.cnts <- filter(stockholm.cn, Symbol %in% genes) %>% 
+        group_by(Symbol) %>% 
+        summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
+        gather(Event,Percentage,-Symbol) %>% 
+        
+        mutate(Cohort = "Stockholm")
+      
+      taylor.cnts <- filter(taylor.cn, Symbol %in% genes) %>% 
+        group_by(Symbol) %>% 
+        summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
+        gather(Event,Percentage,-Symbol) %>% 
+        
+        mutate(Cohort = "MSKCC")
+      
+      cn.all <- bind_rows(camcap.cnts,stockholm.cnts,taylor.cnts) %>% 
+        mutate(Event = factor(Event, levels=c("DEL","NEUTRAL","AMP")))
+      
+      cn.all
+      
+      p <- ggplot(cn.all, aes(x = Event, y=Count,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
+      print(p)
+      dev.off()
+      
+    }
+    
+  )
+  
+  
   
   output$corPlot <- renderPlot({
     
