@@ -8,12 +8,19 @@ fd_camcap <- tbl_df(fData(camcap))
 expression <-
   tbl_df(data.frame(ID = as.character(featureNames(camcap)),exprs(camcap))) %>% 
   gather(geo_accession,Expression,-ID)
+pd <- pd_camcap
 fd <- fd_camcap
 expression <- left_join(expression, select(fd, ID, Symbol))
 
 copy_to(db, expression, temporary = FALSE, indexes = list("Symbol"))
 copy_to(db, pd, temporary = FALSE, indexes = list("geo_accession"))
 copy_to(db, fd, temporary = FALSE, indexes = list("ID"))
+
+copyNumber <- read.delim("data/2014-06-04_UK_OncoSNP_rank3_gene_matrix.txt") %>% 
+  gather(Sample, Call, -(EntrezID:position)) %>% 
+  tbl_df %>% 
+  select(Symbol,Sample,Call)
+copy_to(db, copyNumber, temporary = FALSE, indexes = list("Symbol"))
 
 
 db <- src_sqlite("stockholm.sqlite3", create=TRUE)
@@ -32,7 +39,11 @@ copy_to(db, expression, temporary = FALSE, indexes = list("Symbol"))
 copy_to(db, pd, temporary = FALSE, indexes = list("geo_accession"))
 copy_to(db, fd, temporary = FALSE, indexes = list("ID"))
 
-
+copyNumber <- read.delim("data/2016-01-06_Stockholm_0.9_CNA_threshold_geneXsample_mat.txt") %>% 
+  gather(Sample, Call, -(EntrezID:Symbol)) %>% 
+  tbl_df %>% 
+  select(Symbol,Sample,Call)
+copy_to(db, copyNumber, temporary = FALSE, indexes = list("Symbol"))
 
 db <- src_sqlite("taylor.sqlite3",create=TRUE)
 
@@ -49,6 +60,13 @@ expression <- left_join(expression, select(fd, ID, Gene))
 copy_to(db, expression, temporary = FALSE, indexes = list("Gene"))
 copy_to(db, pd, temporary = FALSE, indexes = list("geo_accession"))
 copy_to(db, fd, temporary = FALSE, indexes = list("ID"))
+
+copyNumber <- read.delim("data/2014-12-02_cna_matrix_localized_cap_w_clinical.txt") %>% 
+  gather(Sample, Call, -(EntrezID:GeneSymbol)) %>% 
+  tbl_df %>% 
+  mutate(Symbol = GeneSymbol) %>% 
+  select(Symbol,Sample,Call)
+copy_to(db, copyNumber, temporary = FALSE, indexes = list("Symbol"))
 
 
 db <- src_sqlite("varambally.sqlite3",create=TRUE)
@@ -98,6 +116,5 @@ expression <- left_join(expression, select(fd, ID, GENE_SYMBOL))
 copy_to(db, expression, temporary = FALSE, indexes = list("GENE_SYMBOL"))
 copy_to(db, pd, temporary = FALSE, indexes = list("geo_accession"))
 copy_to(db, fd, temporary = FALSE, indexes = list("ID"))
-
 
 

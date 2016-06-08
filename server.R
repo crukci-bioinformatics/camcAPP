@@ -23,13 +23,13 @@ library(DT)
 #if(!require(prostateCancerStockholm)) install_github("crukci-bioinformatics/prostateCancerStockholm");library(prostateCancerStockholm)
 
 plotDendroAndColors.mod <- function (dendro, colors, groupLabels = NULL, rowText = NULL, 
-          rowTextAlignment = c("left", "center", "right"), rowTextIgnore = NULL, 
-          textPositions = NULL, setLayout = TRUE, autoColorHeight = TRUE, 
-          colorHeight = 0.2, rowWidths = NULL, dendroLabels = NULL, 
-          addGuide = FALSE, guideAll = FALSE, guideCount = 50, guideHang = 0.2, 
-          addTextGuide = FALSE, cex.colorLabels = 0.8, cex.dendroLabels = 0.9, 
-          cex.rowText = 0.8, marAll = c(1, 5, 3, 1), saveMar = TRUE, 
-          abHeight = NULL, abCol = "red",cutType="k",k=2, ...) 
+                                     rowTextAlignment = c("left", "center", "right"), rowTextIgnore = NULL, 
+                                     textPositions = NULL, setLayout = TRUE, autoColorHeight = TRUE, 
+                                     colorHeight = 0.2, rowWidths = NULL, dendroLabels = NULL, 
+                                     addGuide = FALSE, guideAll = FALSE, guideCount = 50, guideHang = 0.2, 
+                                     addTextGuide = FALSE, cex.colorLabels = 0.8, cex.dendroLabels = 0.9, 
+                                     cex.rowText = 0.8, marAll = c(1, 5, 3, 1), saveMar = TRUE, 
+                                     abHeight = NULL, abCol = "red",cutType="k",k=2, ...) 
 {
   oldMar = par("mar")
   if (!is.null(dim(colors))) {
@@ -52,7 +52,7 @@ plotDendroAndColors.mod <- function (dendro, colors, groupLabels = NULL, rowText
     rect.hclust(dendro,k=k,border="blue")
     abHeight <- NULL
   } else rect.hclust(dendro, h=abHeight,border="blue")
-    
+  
   if (addGuide) 
     addGuideLines(dendro, count = if (guideAll) 
       length(dendro$height) + 1
@@ -71,6 +71,7 @@ plotDendroAndColors.mod <- function (dendro, colors, groupLabels = NULL, rowText
 library(dplyr)
 
 data(camcap,package = "prostateCancerCamcap")
+db_camcap <- src_sqlite("camcap.sqlite3")
 pd_camcap <- tbl_df(pData(camcap))
 fd_camcap <- tbl_df(fData(camcap))
 exp_camcap <-
@@ -78,37 +79,39 @@ exp_camcap <-
 
 #loadStockholm <- function(){
 
-  data(stockholm, package="prostateCancerStockholm")
-  pd_stockholm <- tbl_df(pData(stockholm))
-  fd_stockholm <- tbl_df(fData(stockholm))
-  exp_stockholm <- tbl_df(data.frame(ID=as.character(featureNames(stockholm)),exprs(stockholm)))
+data(stockholm, package="prostateCancerStockholm")
+db_stockholm <- src_sqlite("stockholm.sqlite3")
+pd_stockholm <- tbl_df(pData(stockholm))
+fd_stockholm <- tbl_df(fData(stockholm))
+exp_stockholm <- tbl_df(data.frame(ID=as.character(featureNames(stockholm)),exprs(stockholm)))
 #}
-  
+
 
 #loadTaylor <- function(){
 
-  data(taylor, package="prostateCancerTaylor")
-  pd_taylor <- tbl_df(pData(taylor))
-  fd_taylor <- tbl_df(fData(taylor))
-  exp_taylor <- tbl_df(data.frame(ID=as.character(featureNames(taylor)),log2(exprs(taylor))))
+data(taylor, package="prostateCancerTaylor")
+db_taylor <- src_sqlite("taylor.sqlite3")
+pd_taylor <- tbl_df(pData(taylor))
+fd_taylor <- tbl_df(fData(taylor))
+exp_taylor <- tbl_df(data.frame(ID=as.character(featureNames(taylor)),log2(exprs(taylor))))
 
 #}
 
 #loadVarambally <- function(){
 
-  data(varambally,package="prostateCancerVarambally")
-  pd_varambally <- tbl_df(pData(varambally))
-  fd_varambally <- tbl_df(fData(varambally))
-  exp_varambally <- tbl_df(data.frame(ID=as.character(featureNames(varambally)),log2(exprs(varambally))))
+data(varambally,package="prostateCancerVarambally")
+pd_varambally <- tbl_df(pData(varambally))
+fd_varambally <- tbl_df(fData(varambally))
+exp_varambally <- tbl_df(data.frame(ID=as.character(featureNames(varambally)),log2(exprs(varambally))))
 
 #}
 
 #loadGrasso <- function(){
 
-  data(grasso,package="prostateCancerGrasso")
-  pd_grasso <- tbl_df(pData(grasso))
-  fd_grasso <- tbl_df(fData(grasso))
-  exp_grasso <- tbl_df(data.frame(ID=as.character(featureNames(grasso)),exprs(grasso)))
+data(grasso,package="prostateCancerGrasso")
+pd_grasso <- tbl_df(pData(grasso))
+fd_grasso <- tbl_df(fData(grasso))
+exp_grasso <- tbl_df(data.frame(ID=as.character(featureNames(grasso)),exprs(grasso)))
 
 #}
 
@@ -163,21 +166,21 @@ shinyServer(function(input, output,session){
   
   output$geneTable <- DT:::renderDataTable(geneTable)
   
-#  getCurrentGene <- reactive({
- #   input$currentGene_cambridge
-#  })
-
- # getCurrentGene <- reactive({
-#    input$currentGene_stockholm
-#  })
+  #  getCurrentGene <- reactive({
+  #   input$currentGene_cambridge
+  #  })
   
-#  getCurrentGene <- reactive({
-#    input$currentGene_taylor
-#  })get
+  # getCurrentGene <- reactive({
+  #    input$currentGene_stockholm
+  #  })
   
-
+  #  getCurrentGene <- reactive({
+  #    input$currentGene_taylor
+  #  })get
   
-    
+  
+  
+  
   getCambridgeVariable <- reactive({
     input$clinvar_boxplot
   })
@@ -197,7 +200,7 @@ shinyServer(function(input, output,session){
   getGrassoVariable <- reactive({
     input$clinvar_grasso
   })
-
+  
   
   
   getCambridgeOverlay <- reactive({
@@ -247,7 +250,7 @@ shinyServer(function(input, output,session){
   getHeatmapDataset <- reactive({
     input$heatmapDataset
   })
-
+  
   getDistFun <- reactive({
     input$distfun
     
@@ -277,7 +280,7 @@ shinyServer(function(input, output,session){
     )
     
     updateSelectInput(session, inputId="clinvar_cor", choices=covars,selected=covars[1])
-
+    
     dataset
     
     
@@ -286,7 +289,7 @@ shinyServer(function(input, output,session){
   getSecondGene <- reactive({
     
     gene2 <- input$secondGene
-
+    
   })
   
   getCorType <- reactive({
@@ -316,42 +319,42 @@ shinyServer(function(input, output,session){
                      Michigan2005 = "Sample_Group",
                      Michigan2012 = "Sample_Group"
     )
-
+    
     updateSelectInput(session, inputId="clinvar_boxplot", choices=covars,selected=covars[1])
     dataset
     
   })
   
   
-
+  
   
   
   getGeneList <- reactive({inFile <- input$file1
   
-    if (is.null(inFile))
-      return(c("STAT3","ESR1","AR"))
-    
-    
-#    print(inFile$name)
-    genes <- read.delim(inFile$datapath)[,1]
- #   print(dim(genes))
- #   if(input$inputType != "Single Gene") updateTextInput(session, inputId = "profileBasename",value=paste0(basename(input$datapath),"-profile"))
-    updateSelectInput(session, inputId = "cambridgeGeneChoice",choices = as.character(genes),selected=as.character(genes)[1])
-    updateSelectInput(session, inputId = "survivalGeneChoice",choices = as.character(genes),selected=as.character(genes)[1])
-    
-    if(input$inputType != "Single Gene"){
-      inFile <- input$file1
-      updateTextInput(session, inputId = "profileBasename", value=paste0(basename(inFile$name),"-profile"))
-      updateTextInput(session, inputId = "survivalBasename", value=paste0(as.character(genes)[1],"-survival"))
-      updateTextInput(session, inputId = "heatmapBasename", value=paste0(basename(inFile$name),"-heatmap"))
-      updateTextInput(session, inputId = "copyNumberBasename", value=paste0(basename(inFile$name),"-copyNumber"))
-    }
-    
-    genes
-
+  if (is.null(inFile))
+    return(c("STAT3","ESR1","AR"))
+  
+  
+  #    print(inFile$name)
+  genes <- read.delim(inFile$datapath)[,1]
+  #   print(dim(genes))
+  #   if(input$inputType != "Single Gene") updateTextInput(session, inputId = "profileBasename",value=paste0(basename(input$datapath),"-profile"))
+  updateSelectInput(session, inputId = "cambridgeGeneChoice",choices = as.character(genes),selected=as.character(genes)[1])
+  updateSelectInput(session, inputId = "survivalGeneChoice",choices = as.character(genes),selected=as.character(genes)[1])
+  
+  if(input$inputType != "Single Gene"){
+    inFile <- input$file1
+    updateTextInput(session, inputId = "profileBasename", value=paste0(basename(inFile$name),"-profile"))
+    updateTextInput(session, inputId = "survivalBasename", value=paste0(as.character(genes)[1],"-survival"))
+    updateTextInput(session, inputId = "heatmapBasename", value=paste0(basename(inFile$name),"-heatmap"))
+    updateTextInput(session, inputId = "copyNumberBasename", value=paste0(basename(inFile$name),"-copyNumber"))
+  }
+  
+  genes
+  
   })
   
-
+  
   output$profileMapping <- renderPrint({
     
     
@@ -359,8 +362,8 @@ shinyServer(function(input, output,session){
     
     
     if(plotType != "Single Gene") {
-    
-    dataset <- getBoxplotDataset()
+      
+      dataset <- getBoxplotDataset()
       
       genes <- getGeneList()
       
@@ -412,49 +415,49 @@ shinyServer(function(input, output,session){
   output$heatmapMapping <- renderPrint({
     
     
-
-      dataset <- getHeatmapDataset()
+    
+    dataset <- getHeatmapDataset()
+    
+    genes <- getGeneList()
+    
+    
+    if(dataset == "Cambridge"){
       
-      genes <- getGeneList()
+      check <- all(genes %in% fd_camcap$Symbol)
       
+      if(!check) genediff <- setdiff(genes, fd_camcap$Symbol)
       
-      if(dataset == "Cambridge"){
-        
-        check <- all(genes %in% fd_camcap$Symbol)
-        
-        if(!check) genediff <- setdiff(genes, fd_camcap$Symbol)
-        
-      }
+    }
+    
+    else if (dataset == "Stockholm"){
+      check <- all(genes %in% fd_stockholm$Symbol)
+      if(!check) genediff <- setdiff(genes, fd_stockholm$Symbol)
       
-      else if (dataset == "Stockholm"){
-        check <- all(genes %in% fd_stockholm$Symbol)
-        if(!check) genediff <- setdiff(genes, fd_stockholm$Symbol)
-        
-      }
+    }
+    
+    else if(dataset == "MSKCC"){
+      check <- all(genes %in% fd_taylor$Gene)
+      if(!check) genediff <- setdiff(genes, fd_taylor$Gene)
+    }
+    
+    else if(dataset == "Michigan2005"){
+      check <- all(genes %in% fd_varambally$Symbol)
+      if(!check) genediff <- setdiff(genes, fd_varambally$Gene)
       
-      else if(dataset == "MSKCC"){
-        check <- all(genes %in% fd_taylor$Gene)
-        if(!check) genediff <- setdiff(genes, fd_taylor$Gene)
-      }
+    }
+    
+    else if (dataset == "Michigan2012"){
+      check <- all(genes %in% fd_grasso$GENE_SYMBOL)
+      if(!check) genediff <- setdiff(genes, fd_grasso$GENE_SYMBOL)
+    }
+    
+    if(check) msg <- "All genes were sucessfully mapped to the dataset"
+    else {
+      msg <-paste("Genes that could not be mapped to the dataset:-", genediff)
       
-      else if(dataset == "Michigan2005"){
-        check <- all(genes %in% fd_varambally$Symbol)
-        if(!check) genediff <- setdiff(genes, fd_varambally$Gene)
-        
-      }
-      
-      else if (dataset == "Michigan2012"){
-        check <- all(genes %in% fd_grasso$GENE_SYMBOL)
-        if(!check) genediff <- setdiff(genes, fd_grasso$GENE_SYMBOL)
-      }
-      
-      if(check) msg <- "All genes were sucessfully mapped to the dataset"
-      else {
-        msg <-paste("Genes that could not be mapped to the dataset:-", genediff)
-
-      }
-      
-      msg
+    }
+    
+    msg
     
   })
   
@@ -464,9 +467,9 @@ shinyServer(function(input, output,session){
     
     plotType <- input$inputType
     
-
-    if(plotType != "Single Gene") {
     
+    if(plotType != "Single Gene") {
+      
       dataset <- getRpDataset()
       
       genes <- getGeneList()
@@ -512,19 +515,19 @@ shinyServer(function(input, output,session){
       msg
     }
   })
-    
-    
+  
+  
   filterByGene <-function(dataset, genes){
     
- 
-    if(dataset == "Cambridge"){
     
+    if(dataset == "Cambridge"){
+      
       probes <- fd_camcap %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
       data<- exp_camcap  %>% filter(ID %in% probes) %>% 
         gather(geo_accession,Expression,-ID)
       fd <- fd_camcap
       pd <-  mutate(pd_camcap, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
-            mutate(Time = as.numeric(FollowUpTime), Event = ifelse(BCR=="Y",1,0))
+        mutate(Time = as.numeric(FollowUpTime), Event = ifelse(BCR=="Y",1,0))
       
     } else if (dataset == "Stockholm"){
       
@@ -543,14 +546,14 @@ shinyServer(function(input, output,session){
         gather(geo_accession,Expression,-ID)
       fd <- fd_taylor %>% mutate(Symbol = Gene)
       pd <- mutate(pd_taylor,Gleason = gsub("4+3", "7=4+3", pd_taylor$Gleason,fixed=TRUE)) %>% 
-            mutate(Gleason = gsub("4+3", "8=5+3", Gleason,fixed=TRUE)) %>% 
-            mutate(Gleason = gsub("3+4", "7=3+4", Gleason,fixed=TRUE)) %>% 
-            mutate(Gleason = gsub("4+3", "7=4+3", Gleason,fixed=TRUE)) %>% 
-            mutate(Gleason = gsub("3+3", "6=3+3", Gleason,fixed=TRUE)) %>% 
-            mutate(Gleason = gsub("4+5", "9=4+5", Gleason,fixed=TRUE)) %>% 
-            mutate(Gleason = gsub("3+5", "8=3+5", Gleason,fixed=TRUE)) %>% 
-            mutate(Gleason = gsub("4+4", "8=4+4", Gleason,fixed=TRUE)) %>% 
-            mutate(Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA)))
+        mutate(Gleason = gsub("4+3", "8=5+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+4", "7=3+4", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+3", "7=4+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+3", "6=3+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+5", "9=4+5", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+5", "8=3+5", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+4", "8=4+4", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA)))
     }
     
     else if(dataset == "Michigan2005"){
@@ -570,23 +573,23 @@ shinyServer(function(input, output,session){
       pd <- mutate(pd_grasso, Sample_Group = Group) 
       
     }
-
+    
     
     summary_stats <- data %>% group_by(ID) %>% 
       summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
     
     data <- left_join(data,summary_stats) %>% mutate(Z = (Expression - mean) / sd)
     
-#    mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
-#    mu <- summary_stats$mean[which.max(summary_stats$iqr)]
-#    sd <- summary_stats$sd[which.max(summary_stats$iqr)]
+    #    mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
+    #    mu <- summary_stats$mean[which.max(summary_stats$iqr)]
+    #    sd <- summary_stats$sd[which.max(summary_stats$iqr)]
     
-#    data <- filter(data, ID== mostVarProbe) %>%
-#      mutate(Z = (Expression -mu) /sd)
+    #    data <- filter(data, ID== mostVarProbe) %>%
+    #      mutate(Z = (Expression -mu) /sd)
     
-#    data <- left_join(data,pd)
-#    data <- left_join(data, fd)
-
+    #    data <- left_join(data,pd)
+    #    data <- left_join(data, fd)
+    
     
     
     mostVarProbes <- left_join(summary_stats,fd) %>% 
@@ -612,12 +615,12 @@ shinyServer(function(input, output,session){
     p1 <- singleBoxplot()
     
     if(plotType != "Single Gene") {
-    message("Plotting a gene list....")
-    inFile <- input$file1
-    
-    if(!is.null(inFile)) updateTextInput(session, inputId = "profileBasename", value=paste0(basename(inFile$name),"-profile"))
-    else updateTextInput(session, inputId = "profileBasename", value="examplegenes-profile")
-  
+      message("Plotting a gene list....")
+      inFile <- input$file1
+      
+      if(!is.null(inFile)) updateTextInput(session, inputId = "profileBasename", value=paste0(basename(inFile$name),"-profile"))
+      else updateTextInput(session, inputId = "profileBasename", value="examplegenes-profile")
+      
       if(getCambridgeCompositePlot() == "No"){
         
         message("Not making a composite plot,...")
@@ -681,7 +684,7 @@ shinyServer(function(input, output,session){
           )
           
         }
-
+        
         else if(dataset == "MSKCC"){
           
           p1 <- switch(var,
@@ -693,16 +696,16 @@ shinyServer(function(input, output,session){
                        Gleason = {data  %>% 
                            filter(!(is.na(Gleason))) %>% 
                            ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() + scale_fill_manual(values = c("5=3+2"= gradeCols[1], 
-                                                                                                    "6=3+3"=gradeCols[2],
-                                                                                                    "6=2+4"= gradeCols[3], 
-                                                                                                    "7=3+4" = gradeCols[4],
-                                                                                                    "7=4+3" = gradeCols[5],
-                                                                                                    "8=3+5" = gradeCols[6],
-                                                                                                    "8=4+4"=gradeCols[7],
-                                                                                                    "9=4+5"=gradeCols[8],
-                                                                                                    "9=5+4"=gradeCols[9],
-                                                                                                    "10=5+5"=gradeCols[10]))
-                          
+                                                                                                                                  "6=3+3"=gradeCols[2],
+                                                                                                                                  "6=2+4"= gradeCols[3], 
+                                                                                                                                  "7=3+4" = gradeCols[4],
+                                                                                                                                  "7=4+3" = gradeCols[5],
+                                                                                                                                  "8=3+5" = gradeCols[6],
+                                                                                                                                  "8=4+4"=gradeCols[7],
+                                                                                                                                  "9=4+5"=gradeCols[8],
+                                                                                                                                  "9=5+4"=gradeCols[9],
+                                                                                                                                  "10=5+5"=gradeCols[10]))
+                         
                        }
           )
           
@@ -720,7 +723,7 @@ shinyServer(function(input, output,session){
           
         }    
         
-
+        
       }
       p1 <- p1 + facet_wrap(~Symbol)       
       
@@ -743,13 +746,13 @@ shinyServer(function(input, output,session){
     
     plotType <- input$inputType
     if(plotType == "Single Gene") {
-     genes <- getCurrentGene()
+      genes <- getCurrentGene()
     } else  genes <- getGeneList()
     
     
     data <- filterByGene(dataset, genes)
     
-
+    
     
     doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
     
@@ -760,33 +763,33 @@ shinyServer(function(input, output,session){
     
     
     if(dataset == "Cambridge"){
-    
-        p1 <- switch(var,
-                     iCluster = {data %>% 
-                         filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
-                         ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
-                     },
+      
+      p1 <- switch(var,
+                   iCluster = {data %>% 
+                       filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
+                       ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
+                   },
+                   
+                   Gleason = {data  %>% 
+                       filter(Sample_Group == "Tumour") %>% 
+                       filter(!(is.na(Gleason))) %>% 
+                       ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() + scale_fill_manual(values = c("5=3+2"= gradeCols[1], 
+                                                                                                                              "6=3+3"=gradeCols[2],
+                                                                                                                              "6=2+4"= gradeCols[3], 
+                                                                                                                              "7=3+4" = gradeCols[4],
+                                                                                                                              "7=4+3" = gradeCols[5],
+                                                                                                                              "8=3+5" = gradeCols[6],
+                                                                                                                              "8=4+4"=gradeCols[7],
+                                                                                                                              "9=4+5"=gradeCols[8],
+                                                                                                                              "9=5+4"=gradeCols[9],
+                                                                                                                              "10=5+5"=gradeCols[10]))
+                   },
+                   Sample_Group ={data %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
+                       ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
                      
-                     Gleason = {data  %>% 
-                         filter(Sample_Group == "Tumour") %>% 
-                         filter(!(is.na(Gleason))) %>% 
-                         ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() + scale_fill_manual(values = c("5=3+2"= gradeCols[1], 
-                                                                                                                                "6=3+3"=gradeCols[2],
-                                                                                                                                "6=2+4"= gradeCols[3], 
-                                                                                                                                "7=3+4" = gradeCols[4],
-                                                                                                                                "7=4+3" = gradeCols[5],
-                                                                                                                                "8=3+5" = gradeCols[6],
-                                                                                                                                "8=4+4"=gradeCols[7],
-                                                                                                                                "9=4+5"=gradeCols[8],
-                                                                                                                                "9=5+4"=gradeCols[9],
-                                                                                                                                "10=5+5"=gradeCols[10]))
-                     },
-                     Sample_Group ={data %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
-                         ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
-                       
-                     }
-                     
-        )
+                   }
+                   
+      )
     }
     
     else if(dataset == "Stockholm"){
@@ -841,7 +844,7 @@ shinyServer(function(input, output,session){
     
     else if(dataset == "Michigan2005"){
       
-
+      
       p1 <- data %>% ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
     }
     
@@ -867,12 +870,12 @@ shinyServer(function(input, output,session){
   output$cambridgeBoxplotPDF <- downloadHandler(
     filename = function(){
       paste0(input$profileBasename,".",input$profilePlotFormat)
-      },
+    },
     content = function(file) {
       
       if(input$profilePlotFormat == "pdf") pdf(file, width=12, height=6.3)
       else png(file, width=1200,height=600)
-
+      
       plotType <- input$inputType
       if(plotType == "Single Gene") {
         print(singleBoxplot())
@@ -889,13 +892,13 @@ shinyServer(function(input, output,session){
         }
         
         else {
-        
+          
           doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
           if(doZ) p1$data <- mutate(p1$data, Expression=Z)
           data <- split(p1$data, factor(p1$data$Symbol))
-  
           
-  
+          
+          
           
           var <- getCambridgeVariable()
           overlay <- getCambridgeOverlay()
@@ -904,24 +907,24 @@ shinyServer(function(input, output,session){
           dataset <- getBoxplotDataset()
           
           if(dataset == "Cambridge"){
-          
+            
             for(i in 1:length(data)){
               pList[[i]] <- switch(var,
-                           iCluster = {data[[i]] %>% 
-                               filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
-                               ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
-                           },
-                           
-                           Gleason = {data[[i]]  %>% 
-                               filter(Sample_Group == "Tumour") %>% 
-                               filter(!(is.na(Gleason))) %>% 
-                               ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
-                           },
-                           Sample_Group ={data[[i]] %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
-                               ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
-                             
-                           }
-                           
+                                   iCluster = {data[[i]] %>% 
+                                       filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
+                                       ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
+                                   },
+                                   
+                                   Gleason = {data[[i]]  %>% 
+                                       filter(Sample_Group == "Tumour") %>% 
+                                       filter(!(is.na(Gleason))) %>% 
+                                       ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
+                                   },
+                                   Sample_Group ={data[[i]] %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
+                                       ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+                                     
+                                   }
+                                   
               )
               
               if(overlay == "Yes")  pList[[i]] <- pList[[i]] + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
@@ -935,68 +938,68 @@ shinyServer(function(input, output,session){
             
             for(i in 1:length(data)){
               pList[[i]]  <- switch(var,
-                           iCluster = {data[[i]] %>% 
-                               ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
-                           },
-                           
-                           Gleason = {data[[i]]  %>% 
-                               filter(!(is.na(Gleason))) %>% 
-                               ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
-                           }
-                           
+                                    iCluster = {data[[i]] %>% 
+                                        ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
+                                    },
+                                    
+                                    Gleason = {data[[i]]  %>% 
+                                        filter(!(is.na(Gleason))) %>% 
+                                        ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() 
+                                    }
+                                    
               )
               if(overlay == "Yes")  pList[[i]] <- pList[[i]] + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
               
               pList[[i]] <- pList[[i]] +  facet_wrap(~Symbol) 
             }
           }
-            
-            else if (dataset == "MSKCC"){
-                for(i in 1:length(data)){
-                  pList[[i]] <- switch(var,
-                               CopyNumberCluster = {data[[i]] %>% 
-                                   filter(!is.na(Copy.number.Cluster)) %>% 
-                                   ggplot(aes(x = Copy.number.Cluster, y = Expression, fill=Copy.number.Cluster)) + geom_boxplot()
-                               },
-                               
-                               Gleason = {data[[i]]  %>% 
-                                   filter(!(is.na(Gleason))) %>% 
-                                   ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot()
-                               }
-                  )
-                if(overlay == "Yes")  pList[[i]] <- pList[[i]] + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
-                
-                pList[[i]] <- pList[[i]] +  facet_wrap(~Symbol) 
-                }
-            }
-            else if (dataset == "Michigan2005"){
-              for(i in 1:length(data)){
-                pList[[i]] <- data[[i]] %>% ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
-              }
+          
+          else if (dataset == "MSKCC"){
+            for(i in 1:length(data)){
+              pList[[i]] <- switch(var,
+                                   CopyNumberCluster = {data[[i]] %>% 
+                                       filter(!is.na(Copy.number.Cluster)) %>% 
+                                       ggplot(aes(x = Copy.number.Cluster, y = Expression, fill=Copy.number.Cluster)) + geom_boxplot()
+                                   },
+                                   
+                                   Gleason = {data[[i]]  %>% 
+                                       filter(!(is.na(Gleason))) %>% 
+                                       ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot()
+                                   }
+              )
               if(overlay == "Yes")  pList[[i]] <- pList[[i]] + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
               
               pList[[i]] <- pList[[i]] +  facet_wrap(~Symbol) 
-            }  
-          
-           else if (dataset == "Michigan2012"){
-             for(i in 1:length(data)){
-              pList[[i]] <- data[[i]] %>% ggplot(aes(x = Group, y = Expression, fill=Group)) + geom_boxplot()
-             }
-             if(overlay == "Yes")  pList[[i]] <- pList[[i]] + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
-             
-             pList[[i]] <- pList[[i]] +  facet_wrap(~Symbol) 
-           }
-          lapply(pList,print)
+            }
           }
+          else if (dataset == "Michigan2005"){
+            for(i in 1:length(data)){
+              pList[[i]] <- data[[i]] %>% ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+            }
+            if(overlay == "Yes")  pList[[i]] <- pList[[i]] + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
+            
+            pList[[i]] <- pList[[i]] +  facet_wrap(~Symbol) 
+          }  
           
-
+          else if (dataset == "Michigan2012"){
+            for(i in 1:length(data)){
+              pList[[i]] <- data[[i]] %>% ggplot(aes(x = Group, y = Expression, fill=Group)) + geom_boxplot()
+            }
+            if(overlay == "Yes")  pList[[i]] <- pList[[i]] + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
+            
+            pList[[i]] <- pList[[i]] +  facet_wrap(~Symbol) 
+          }
+          lapply(pList,print)
         }
+        
+        
+      }
       dev.off()
-      }      
-
-    )
+    }      
+    
+  )
   
-
+  
   
   output$anovaResult <- renderPrint({
     dataset <- getBoxplotDataset()  
@@ -1006,7 +1009,7 @@ shinyServer(function(input, output,session){
     } else  genes <- getGeneList()
     
     data <- filterByGene(dataset,genes)
-
+    
     var <- getCambridgeVariable()
     
     
@@ -1055,88 +1058,88 @@ shinyServer(function(input, output,session){
     
     dataset <- input$rpDataset
     
-        plotType <- input$inputType_survival
-        if(plotType == "Single Gene") {
-          genes <- getCurrentGene()
-        }
-        else {
-          genes<- getGeneList()
-    
-        }
+    plotType <- input$inputType_survival
+    if(plotType == "Single Gene") {
+      genes <- getCurrentGene()
+    }
+    else {
+      genes<- getGeneList()
+      
+    }
     
     data <- filterByGene(dataset, genes)
     combined.data <- data %>% 
-          filter(!is.na(Time) & !is.na(Event))
-
+      filter(!is.na(Time) & !is.na(Event))
+    
     
     combined.data
     
   })
   
   #prepareSurvival <- reactive({
-    
-#    dataset <- input$rpDataset
-    
-#    plotType <- input$inputType_survival
-#    if(plotType == "Single Gene") {
-#      currentGene <- getCurrentGene()
-#    }
-#    else {
-      
-#      currentGene <- getGeneList()
-      
-#    }
-    
-    
-    
+  
+  #    dataset <- input$rpDataset
+  
+  #    plotType <- input$inputType_survival
+  #    if(plotType == "Single Gene") {
+  #      currentGene <- getCurrentGene()
+  #    }
+  #    else {
+  
+  #      currentGene <- getGeneList()
+  
+  #    }
+  
+  
+  
   #  if(dataset == "MSKCC"){
-      
+  
   #    probes <- fd_taylor %>% filter(Gene == currentGene) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-      
+  
   #    taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
   #      gather(geo_accession,Expression,-ID)
   #    
   #    summary_stats <- taylor %>% group_by(ID) %>% 
-   #     summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
-      
+  #     summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+  
   #    mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
   #    mu <- summary_stats$mean[which.max(summary_stats$iqr)]
   #    sd <- summary_stats$sd[which.max(summary_stats$iqr)]
-      
+  
   #    taylor <- filter(taylor, ID== mostVarProbe)
-      
+  
   #    taylor <- full_join(taylor,pd_taylor)
-      
-      
+  
+  
   #    combined.data <- taylor %>% 
   #      filter(!is.na(Event) & !is.na(Time))
-      
+  
   #  } else if (dataset == "Cambridge"){
-      
+  
   #    camcap <- getSelectedGeneCambridge()
-      
+  
   #    camcap <- full_join(camcap,pd_camcap) %>% 
   #      mutate(Time = FollowUpTime, Event = ifelse(BCR=="Y",1,0))
-      
+  
   #    combined.data <- camcap %>% 
   #      filter(!is.na(Time) & !is.na(Event))
-      
-      
+  
+  
   #  } else{
-   #   stockholm <- getSelectedGeneStockholm()
-      
+  #   stockholm <- getSelectedGeneStockholm()
+  
   #    stockholm <- full_join(stockholm,pd_stockholm) %>% 
   #      mutate(Time = FollowUpTime, Event = ifelse(BCR=="Y",1,0))
-      
+  
   #    combined.data <- stockholm %>% 
   #      filter(!is.na(Time) & !is.na(Event))
-      
-      
- #   }
-    
-#    combined.data
-    
- # })
+  
+  
+  #   }
+  
+  #    combined.data
+  
+  # })
   
   output$rpSummary <- renderTable({
     
@@ -1156,7 +1159,7 @@ shinyServer(function(input, output,session){
     pVals <- NULL
     cOffs <- NULL
     
-
+    
     genes <- genes[genes %in% combined.data$Symbol]
     
     
@@ -1179,7 +1182,7 @@ shinyServer(function(input, output,session){
       pVals[i] <- newPval
       
       if(newPval < 0.05){
-      
+        
         ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
         ps  <- signif(ps2[1], digits = 3)
         cOffs[i] <- ps  
@@ -1193,15 +1196,15 @@ shinyServer(function(input, output,session){
     df
     
     #if(input$cutoffMethod == "RP"){
-      
-     # summary <- ifelse(newPval <0.05, ". The partitioning and survival curves will apear below", ". Unfortunately, no significant partitioning of the expression values could be found")
-    #  paste("Recursive Partitioning was run on ", currentGene, "from the", getRpDataset(), "dataset",summary)
-  #  } else if(input$cutoffMehod == "Median") {
-      
-  #    print("Selecting expression cut-off based on median expression of the gene")
-  #  }
     
-  #  else print("Using manual cut-off of; ",as.numeric(input$expCutoff))
+    # summary <- ifelse(newPval <0.05, ". The partitioning and survival curves will apear below", ". Unfortunately, no significant partitioning of the expression values could be found")
+    #  paste("Recursive Partitioning was run on ", currentGene, "from the", getRpDataset(), "dataset",summary)
+    #  } else if(input$cutoffMehod == "Median") {
+    
+    #    print("Selecting expression cut-off based on median expression of the gene")
+    #  }
+    
+    #  else print("Using manual cut-off of; ",as.numeric(input$expCutoff))
     
     
   })
@@ -1236,20 +1239,20 @@ shinyServer(function(input, output,session){
     message("Gene for RP plot is ", currentGene)
     data <- filter(combined.data, Symbol == currentGene)
     
-#    results <- rpAnalysis(data)
+    #    results <- rpAnalysis(data)
     
     
-#    ctree_xfs <- results[[1]]
-#    newPval <- results[[2]]
+    #    ctree_xfs <- results[[1]]
+    #    newPval <- results[[2]]
     
-#    ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
-#    ps  <- signif(ps2[1], digits = 3)
+    #    ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
+    #    ps  <- signif(ps2[1], digits = 3)
     
     
     
-#    combined.data <- prepareSurvival()
-#    surv.xfs <- Surv((as.numeric(as.character(combined.data$Time))/12), combined.data$Event)
-#    combined.data$surv.xfs <- surv.xfs
+    #    combined.data <- prepareSurvival()
+    #    surv.xfs <- Surv((as.numeric(as.character(combined.data$Time))/12), combined.data$Event)
+    #    combined.data$surv.xfs <- surv.xfs
     
     surv.xfs <- Surv((as.numeric(as.character(data$Time))/12), data$Event)
     data$surv.xfs <- surv.xfs
@@ -1265,13 +1268,13 @@ shinyServer(function(input, output,session){
         ps  <- signif(ps2[1], digits = 3)
         plot(ctree(surv.xfs~Expression, data=data))
       }
-     
+      
       else {
         med <- median(data$Expression)
         p <- ggplot(data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=med,col="red",lty=2) + ggtitle("Partitioning using median expression")
         print(p)
       }
-       
+      
     }
     
     else{
@@ -1380,7 +1383,7 @@ shinyServer(function(input, output,session){
     }
     
   })
-
+  
   
   
   output$survivalPlotPDF <- downloadHandler(
@@ -1391,7 +1394,7 @@ shinyServer(function(input, output,session){
       
       if(input$survivalPlotFormat == "pdf") pdf(file, width=12, height=6.3)
       else png(file, width=1200,height=600)
-    
+      
       plotType <- input$inputType_survival
       if(plotType == "Single Gene") {
         currentGene <- getCurrentGene()
@@ -1659,7 +1662,7 @@ shinyServer(function(input, output,session){
     
     return(list(geneMatrix, colMatrix))
   })
-
+  
   
   
   doClustering <- reactive({
@@ -1690,7 +1693,7 @@ shinyServer(function(input, output,session){
     
     hmcol <- rev(brewer.pal(11 , "RdBu"))
     
-
+    
     if(getDistFun() == "Correlation") distfun <- function(x) as.dist(1 - cor(t(x)))
     else distfun <- dist
     
@@ -1739,14 +1742,14 @@ shinyServer(function(input, output,session){
   )
   
   
-
+  
   output$dendrogram <- renderPlot({
     
     hm <- prepareHeatmap()
     colMatrix <- hm[[2]]
     clusObj <- doClustering()
     
-
+    
     h <- min(as.numeric(input$hCut),max(clusObj$height))
     k <- input$kGrps
     
@@ -1761,9 +1764,9 @@ shinyServer(function(input, output,session){
     plotDendroAndColors.mod(clusObj,colors = as.matrix(colMatrix),abHeight = h,k=k,cutType=input$cutType)    
   }
   
-)
+  )
   
-
+  
   
   output$sampleBreakown <- renderPlot({
     
@@ -1781,8 +1784,8 @@ shinyServer(function(input, output,session){
       kGrps <- cutree(clusObj,h=h)
     }
     newGrps <- tbl_df(data.frame(geo_accession=names(kGrps), Cluster = factor(kGrps)))
-                      
-                      
+    
+    
     if(dataset == "Cambridge"){
       
       new_pheno <- left_join(pd_camcap,newGrps) %>% filter(!is.na(Cluster))
@@ -1800,7 +1803,7 @@ shinyServer(function(input, output,session){
       grid.arrange(p0,p1,p2)
       
     }
-
+    
     else{
       
       new_pheno <- left_join(pd_taylor,newGrps) %>% filter(!is.na(Cluster))
@@ -1812,7 +1815,7 @@ shinyServer(function(input, output,session){
     }
     
     
-    }
+  }
   )
   
   getCopyNumberTable <- function(genes){
@@ -1873,7 +1876,7 @@ shinyServer(function(input, output,session){
     
     cn.all
     
-
+    
     
     
   })
@@ -1883,7 +1886,7 @@ shinyServer(function(input, output,session){
     
     if(input$inputType_cn == "Single Gene") {
       genes <- getCurrentGene()
-
+      
       
     } else  genes <- getGeneList()
     
@@ -1891,14 +1894,13 @@ shinyServer(function(input, output,session){
       group_by(Symbol) %>% 
       summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
       gather(Event,Percentage,-Symbol) %>% 
-      
       mutate(Cohort = "Cambridge")
+      
     
     stockholm.cnts <- filter(stockholm.cn, Symbol %in% genes) %>% 
       group_by(Symbol) %>% 
       summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
       gather(Event,Percentage,-Symbol) %>% 
-      
       mutate(Cohort = "Stockholm")
     
     taylor.cnts <- filter(taylor.cn, Symbol %in% genes) %>% 
@@ -1906,16 +1908,16 @@ shinyServer(function(input, output,session){
       summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
       gather(Event,Percentage,-Symbol) %>% 
       mutate(Cohort = "MSKCC")
-    
+
     cn.all <- bind_rows(camcap.cnts,stockholm.cnts,taylor.cnts) %>% 
       mutate(Event = factor(Event, levels=c("DEL","NEUTRAL","AMP")))
     
     cn.all
     
-    p <- ggplot(cn.all, aes(x = Event, y=Count,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
+    p <- ggplot(cn.all, aes(x = Event, y=Percentage,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
     print(p)
   })
-
+  
   
   output$copyNumberPDF <- downloadHandler(
     filename = function(){
@@ -1991,16 +1993,16 @@ shinyServer(function(input, output,session){
       if(covar == "iCluster"){
         
         data <- select(cordata, geo_accession,Expression, iCluster, Symbol) %>% 
-        filter(iCluster %in% c("clust1","clust2","clust3","clust4","clust5")) %>% 
-#        mutate(Symbol=gsub(genes[1], "Gene1",Symbol)) %>% 
- #       mutate(Symbol=gsub(genes[2], "Gene2",Symbol)) %>% 
-        spread(Symbol,Expression)
-  #      cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
+          filter(iCluster %in% c("clust1","clust2","clust3","clust4","clust5")) %>% 
+          #        mutate(Symbol=gsub(genes[1], "Gene1",Symbol)) %>% 
+          #       mutate(Symbol=gsub(genes[2], "Gene2",Symbol)) %>% 
+          spread(Symbol,Expression)
+        #      cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
         df <- as.data.frame(data)
         p <- ggpairs(df, columns = 3:ncol(df),col="iCluster")
         
-#        ggplot(data, aes(x = Gene1, y=Gene2,col=iCluster)) + geom_point() + xlab(genes[1]) + ylab(genes[2]) +  scale_fill_manual(values=iclusPal) + ggtitle(paste("Correlation = ",cor))
-                
+        #        ggplot(data, aes(x = Gene1, y=Gene2,col=iCluster)) + geom_point() + xlab(genes[1]) + ylab(genes[2]) +  scale_fill_manual(values=iclusPal) + ggtitle(paste("Correlation = ",cor))
+        
       }
       
       else if(covar == "Gleason"){
@@ -2018,7 +2020,7 @@ shinyServer(function(input, output,session){
           spread(Symbol,Expression)
         df <- as.data.frame(data)
         p <- ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
-    
+        
       }
       
       else {
@@ -2028,8 +2030,8 @@ shinyServer(function(input, output,session){
         df <- as.data.frame(data)
         p <- ggpairs(df, columns = 3:ncol(df))
       }
-        
-
+      
+      
       
     }
     
@@ -2054,7 +2056,7 @@ shinyServer(function(input, output,session){
           spread(Symbol,Expression)
         df <- as.data.frame(data)
         p <- ggpairs(df, columns = 3:ncol(df),col="Gleason")
-
+        
       }
       
       else {
@@ -2145,7 +2147,7 @@ shinyServer(function(input, output,session){
   
   
   
-
+  
   
   
   output$CorrelationPDF <- downloadHandler(
@@ -2324,8 +2326,8 @@ shinyServer(function(input, output,session){
         
       }
       
-    print(p)   
-   dev.off()   
+      print(p)   
+      dev.off()   
     }
     
     
@@ -2334,7 +2336,7 @@ shinyServer(function(input, output,session){
   
   
   
-
+  
   output$geneProfileScript <- downloadHandler(
     filename = function() {
       paste(input$profileBasename, '.R', sep='')
@@ -2367,7 +2369,7 @@ shinyServer(function(input, output,session){
       
       
       if(dataset == "Cambridge"){
-      
+        
         cat(file=file,as.name("if(!require(prostateCancerCamcap)) {\n source('http://www.bioconductor.org/biocLite.R')\n biocLite('prostateCancerCamcap')\n}\n"),append=TRUE)
         
         cat(file=file,as.name("library(dplyr)\n"),append=TRUE)
@@ -2381,7 +2383,7 @@ shinyServer(function(input, output,session){
         cat(file=file,as.name("gather(geo_accession,Expression,-ID)\n"),append=TRUE)
         cat(file=file,as.name("fd <- fd_camcap\n"),append=TRUE)
         cat(file=file,as.name("pd <-  mutate(pd_camcap, Gleason=factor(Gleason,levels=c('5=3+2','6=2+4','6=3+3', '7=3+4','7=4+3','8=3+5','8=4+4','9=4+5','9=5+4','10=5+5',NA)))\n"),append=TRUE)
-
+        
       }
       
       else if (dataset == "Stockholm"){
@@ -2399,7 +2401,7 @@ shinyServer(function(input, output,session){
         cat(file=file,as.name("gather(geo_accession,Expression,-ID)\n"),append=TRUE)
         cat(file=file,as.name("fd <- fd_stockholm\n"),append=TRUE)
         cat(file=file,as.name("pd <-  mutate(pd_stockholm, Gleason=factor(Gleason,levels=c('5=3+2','6=2+4','6=3+3', '7=3+4','7=4+3','8=3+5','8=4+4','9=4+5','9=5+4','10=5+5',NA))) %>% \n"),append=TRUE)
-
+        
       }
       
       else if(dataset =="MSKCC"){
@@ -2454,7 +2456,7 @@ shinyServer(function(input, output,session){
         
         cat(file=file,as.name("if(!require(prostateCancerGrasso)) {\n source('http://www.bioconductor.org/biocLite.R')\nbiocLite('prostateCancerGrasso')\n}\n"),append=TRUE)
         
-
+        
         cat(file=file,as.name("###Convert into data convenient for dplyr\n"),append=TRUE)
         cat(file=file,as.name("data(grasso,package = 'prostateCancerGrasso')\n"),append=TRUE)
         cat(file=file,as.name("pd_grasso <- tbl_df(pData(grasso))\n"),append=TRUE)
@@ -2471,18 +2473,18 @@ shinyServer(function(input, output,session){
         
       }
       
-        cat(file=file, as.name("summary_stats <- data %>% group_by(ID) %>% \n"),append=TRUE)
-        cat(file=file, as.name("summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))\n"),append=TRUE)
-        cat(file=file, as.name("data <- left_join(data,summary_stats) %>% mutate(Z = (Expression - mean) / sd)\n"),append=TRUE)
-        cat(file=file, as.name("mostVarProbes <- left_join(summary_stats,fd) %>% \n"),append=TRUE)
-        cat(file=file, as.name("arrange(Symbol,desc(iqr)) %>% \n"),append=TRUE)
-        cat(file=file ,as.name("distinct(Symbol) %>% \n"),append=TRUE)
-        cat(file=file, as.name("select(ID) %>%  as.matrix %>%  as.character\n"),append=TRUE)        
-        cat(file=file, as.name("data <- filter(data, ID %in% mostVarProbes)\n"),append=TRUE)
-        cat(file=file, as.name("data <- left_join(data, select(fd, ID, Symbol))\n"),append=TRUE)
-        cat(file=file, as.name("data <- left_join(data, pd)\n"),append=TRUE)
-        
-        
+      cat(file=file, as.name("summary_stats <- data %>% group_by(ID) %>% \n"),append=TRUE)
+      cat(file=file, as.name("summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))\n"),append=TRUE)
+      cat(file=file, as.name("data <- left_join(data,summary_stats) %>% mutate(Z = (Expression - mean) / sd)\n"),append=TRUE)
+      cat(file=file, as.name("mostVarProbes <- left_join(summary_stats,fd) %>% \n"),append=TRUE)
+      cat(file=file, as.name("arrange(Symbol,desc(iqr)) %>% \n"),append=TRUE)
+      cat(file=file ,as.name("distinct(Symbol) %>% \n"),append=TRUE)
+      cat(file=file, as.name("select(ID) %>%  as.matrix %>%  as.character\n"),append=TRUE)        
+      cat(file=file, as.name("data <- filter(data, ID %in% mostVarProbes)\n"),append=TRUE)
+      cat(file=file, as.name("data <- left_join(data, select(fd, ID, Symbol))\n"),append=TRUE)
+      cat(file=file, as.name("data <- left_join(data, pd)\n"),append=TRUE)
+      
+      
       doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
       if(doZ){
         cat(file=file, as.name("data <- mutate(data, Expression=Z)\n"),append=TRUE)
@@ -2492,11 +2494,11 @@ shinyServer(function(input, output,session){
       overlay <- getCambridgeOverlay()
       
       if(dataset == "Cambridge"){
-      
+        
         if(var=="iCluster") cat(file=file,as.name("p <- data %>%  filter(Sample_Group == 'Tumour',!is.na(iCluster)) %>% ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal)\n"),append=TRUE)
         else if(var == "Gleason") cat(file=file, as.name("p <- data  %>% filter(Sample_Group == 'Tumour') %>% filter(!(is.na(Gleason))) %>% ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot()\n"),append=TRUE)
         else if(var == "Sample_Group") cat(file=file, as.name("p <- data %>% mutate(Sample_Group = factor(Sample_Group,levels=c('Benign','Tumour','CRPC'))) %>% ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()\n"),append=TRUE)
-          
+        
       }
       
       else if(dataset == "Stockholm"){
@@ -2520,7 +2522,7 @@ shinyServer(function(input, output,session){
       paste(input$survivalBasename, '.R', sep='')
     },
     content = function(file) {
-  
+      
       cat(file=file,as.name("##Load the required libraries\n"))
       cat(file=file,as.name("library(ggplot2)\n"),append=TRUE)
       cat(file=file,as.name("library(tidyr)\n"),append=TRUE)
@@ -2528,7 +2530,7 @@ shinyServer(function(input, output,session){
       cat(file=file,as.name("library(dplyr)\n"),append=TRUE)
       cat(file=file,as.name("library(party)\n"),append=TRUE)
       cat(file=file,as.name("library(survival)\n"),append=TRUE)
-
+      
       dataset <- input$rpDataset
       
       if(input$inputType_survival == "Single Gene"){
@@ -2635,7 +2637,7 @@ shinyServer(function(input, output,session){
       
     }
   )
-    
+  
   
   output$correlationScript <- downloadHandler(
     filename = function() {
@@ -2805,7 +2807,7 @@ shinyServer(function(input, output,session){
         cat(file=file, as.name("p <- ggpairs(df, columns = 3:ncol(df),col='Gleason')\n"),append=TRUE)
         
       }
-        
+      
       else if(covar == "Sample_Group"){
         cat(file=file, as.name("data <- select(data, geo_accession,Expression, Sample_Group, Symbol) %>% \n"),append=TRUE)
         cat(file=file, as.name("spread(Symbol,Expression)\n"),append=TRUE)
@@ -2821,10 +2823,10 @@ shinyServer(function(input, output,session){
         
       }
       cat(file=file,as.name("print(p)\n"),append=TRUE)       
-      }
-      
-
-  
+    }
+    
+    
+    
   )
   
   
@@ -2849,152 +2851,152 @@ shinyServer(function(input, output,session){
         cat(file=file,as.name(paste0('myfile <- \"' , inFile$name, '\"\n')),append=TRUE)
         cat(file=file,as.name("genes <- read.delim(myfile)[,1]\n"),append=TRUE)
       }
-     
-    dataset <- input$heatmapDataset
-    
-    if(dataset == "MSKCC"){
-      cat(file=file,as.name("if(!require(prostateCancerTaylor)) {\n source('http://www.bioconductor.org/biocLite.R') \n biocLite('prostateCancerTaylor')\n}\n"),append=TRUE)
       
-      cat(file=file,as.name("library(dplyr)\n"),append=TRUE)
-      cat(file=file,as.name("###Convert into data convenient for dplyr\n"),append=TRUE)
-      cat(file=file,as.name("data(taylor,package = 'prostateCancerTaylor')\n"),append=TRUE)
-      cat(file=file,as.name("pd_taylor <- tbl_df(pData(taylor))\n"),append=TRUE)
-      cat(file=file,as.name("fd_taylor <- tbl_df(fData(taylor))\n"),append=TRUE)
-      cat(file=file,as.name("exp_taylor <- tbl_df(data.frame(ID = as.character(featureNames(taylor)),log2(exprs(taylor))))n"),append=TRUE)
+      dataset <- input$heatmapDataset
       
+      if(dataset == "MSKCC"){
+        cat(file=file,as.name("if(!require(prostateCancerTaylor)) {\n source('http://www.bioconductor.org/biocLite.R') \n biocLite('prostateCancerTaylor')\n}\n"),append=TRUE)
+        
+        cat(file=file,as.name("library(dplyr)\n"),append=TRUE)
+        cat(file=file,as.name("###Convert into data convenient for dplyr\n"),append=TRUE)
+        cat(file=file,as.name("data(taylor,package = 'prostateCancerTaylor')\n"),append=TRUE)
+        cat(file=file,as.name("pd_taylor <- tbl_df(pData(taylor))\n"),append=TRUE)
+        cat(file=file,as.name("fd_taylor <- tbl_df(fData(taylor))\n"),append=TRUE)
+        cat(file=file,as.name("exp_taylor <- tbl_df(data.frame(ID = as.character(featureNames(taylor)),log2(exprs(taylor))))n"),append=TRUE)
+        
+        
+        cat(file=file, as.name("probes <- fd_taylor %>% filter(Gene %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character\n"),append=TRUE)
+        cat(file=file, as.name("taylor <- exp_taylor  %>% filter(ID %in% probes) %>% \n"),append=TRUE)
+        cat(file=file, as.name("gather(geo_accession,Expression,-ID)\n"),append=TRUE)
+        cat(file=file, as.name("summary_stats <- taylor %>% group_by(ID) %>% \n"),append=TRUE)
+        cat(file=file, as.name("summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))\n"),append=TRUE)
+        cat(file=file, as.name("mostVarProbes <- left_join(summary_stats,fd_taylor) %>% \n"),append=TRUE)
+        cat(file=file, as.name("arrange(Gene,desc(iqr)) %>% \n"),append=TRUE)
+        cat(file=file, as.name("distinct(Gene) %>% \n"),append=TRUE)
+        cat(file=file, as.name("select(ID) %>%  as.matrix %>%  as.character\n"),append=TRUE)
+        cat(file=file, as.name("samples <- filter(pd_taylor, Sample_Group == 'prostate cancer') %>% \n"),append=TRUE)
+        cat(file=file, as.name("select(geo_accession) %>% as.matrix %>% as.character\n"),append=TRUE)
+        cat(file=file, as.name("taylor <- filter(taylor, ID %in% mostVarProbes,geo_accession %in% samples)\n"),append=TRUE)
+        cat(file=file, as.name("geneMatrix <- taylor %>% \n"),append=TRUE)
+        cat(file=file, as.name("spread(geo_accession,Expression) %>% data.frame\n"),append=TRUE)
+        cat(file=file, as.name("geneMatrix <- as.matrix(geneMatrix[,-1])\n"),append=TRUE)
+        cat(file=file, as.name("symbols <- filter(fd_taylor, ID %in% mostVarProbes) %>% select(Gene) %>% as.matrix %>% as.character\n"),append=TRUE)
+        cat(file=file, as.name("rownames(geneMatrix) <- symbols\n"),append=TRUE)
+        cat(file=file, as.name("pd <- left_join(taylor,pd_taylor) %>% distinct(geo_accession)\n"),append=TRUE)
+        cat(file=file, as.name("colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)\n"),append=TRUE)
+        cat(file=file, as.name("grp <- pd$Copy.number.Cluster\n"),append=TRUE)
+        cat(file=file, as.name("cols <- brewer.pal(9,'Set1')[1:length(levels(factor(as.character(grp))))]\n"),append=TRUE)
+        cat(file=file, as.name("grp <- as.factor(as.character(grp))\n"),append=TRUE)
+        cat(file=file, as.name("levels(grp) <- cols\n"),append=TRUE)
+        cat(file=file, as.name("colMatrix[,1] <- as.character(grp)\n"),append=TRUE)
+        cat(file=file, as.name("grp <- pd$Gleason\n"),append=TRUE)
+        cat(file=file, as.name("cols <- brewer.pal(8,'Set2')[1:length(levels(factor(as.character(grp))))]\n"),append=TRUE)
+        cat(file=file, as.name("grp <- as.factor(as.character(grp))\n"),append=TRUE)
+        cat(file=file, as.name("levels(grp) <- cols\n"),append=TRUE)
+        cat(file=file, as.name("colMatrix[,2] <- as.character(grp)\n"),append=TRUE)
+        cat(file=file, as.name("colnames(colMatrix) <- c('Copy Number Cluster', 'Gleason')\n"),append=TRUE)
+      }  
+      else if(dataset == "Cambridge") {
+        cat(file=file,as.name("if(!require(prostateCancerCamcap)) {\n source('http://www.bioconductor.org/biocLite.R')\n biocLite('prostateCancerCamcap')\n}\n"),append=TRUE)
+        
+        cat(file=file,as.name("library(dplyr)\n"),append=TRUE)
+        cat(file=file,as.name("###Convert into data convenient for dplyr\n"),append=TRUE)
+        cat(file=file,as.name("data(camcap,package = 'prostateCancerCamcap')\n"),append=TRUE)
+        cat(file=file,as.name("pd_camcap <- tbl_df(pData(camcap))\n"),append=TRUE)
+        cat(file=file,as.name("fd_camcap <- tbl_df(fData(camcap))\n"),append=TRUE)
+        cat(file=file,as.name("exp_camcap <- tbl_df(data.frame(ID = as.character(featureNames(camcap)),exprs(camcap)))\n"),append=TRUE)
+        
+        cat(file=file, as.name("probes <- fd_camcap %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character\n"),append=TRUE)
+        cat(file=file, as.name("camcap <- exp_camcap  %>% filter(ID %in% probes) %>% gather(geo_accession,Expression,-ID)\n"),append=TRUE)
+        cat(file=file, as.name("summary_stats <- camcap %>% group_by(ID) %>% summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))\n"),append=TRUE)
+        cat(file=file, as.name("mostVarProbes <- left_join(summary_stats,fd_camcap) %>% arrange(Symbol,desc(iqr)) %>% distinct(Symbol) %>%   select(ID) %>%  as.matrix %>%  as.character\n"),append=TRUE)
+        cat(file=file, as.name("samples <- filter(pd_camcap, Sample_Group == 'Tumour') %>% select(geo_accession) %>% as.matrix %>% as.character\n"),append=TRUE)
+        cat(file=file, as.name("camcap <- filter(camcap, ID %in% mostVarProbes,geo_accession %in% samples) \n"),append=TRUE)
+        cat(file=file, as.name("geneMatrix <- camcap %>% spread(geo_accession,Expression) %>% data.frame\n"),append=TRUE)
+        cat(file=file, as.name("geneMatrix <- as.matrix(geneMatrix[,-1])\n"),append=TRUE)
+        cat(file=file, as.name("symbols <- filter(fd_camcap, ID %in% mostVarProbes) %>% select(Symbol) %>% as.matrix %>% as.character\n"),append=TRUE)
+        cat(file=file, as.name("rownames(geneMatrix) <- symbols\n"),append=TRUE)
+        cat(file=file, as.name("pd <- left_join(camcap,pd_camcap) %>% distinct(geo_accession)\n"),append=TRUE)
+        cat(file=file, as.name("colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)\n"),append=TRUE)
+        cat(file=file, as.name("grp <- pd$iCluster\n"),append=TRUE)
+        cat(file=file, as.name("cols <- brewer.pal(5,'Set1')[1:length(levels(factor(as.character(grp))))]\n"),append=TRUE)
+        cat(file=file, as.name(" grp <- as.factor(as.character(grp))\n"),append=TRUE)
+        cat(file=file, as.name("levels(grp) <- cols\n"),append=TRUE)
+        cat(file=file, as.name("colMatrix[,1] <- as.character(grp)\n"),append=TRUE)
+        cat(file=file, as.name("grp <- pd$Gleason\n"),append=TRUE)
+        cat(file=file, as.name("cols <- brewer.pal(8,'Set2')[1:length(levels(factor(as.character(grp))))]\n"),append=TRUE)
+        cat(file=file, as.name("grp <- as.factor(as.character(grp))\n"),append=TRUE)
+        cat(file=file, as.name("levels(grp) <- cols\n"),append=TRUE)
+        cat(file=file, as.name("colMatrix[,2] <- as.character(grp)\n"),append=TRUE)
+        cat(file=file, as.name("colnames(colMatrix) <- c('iCluster', 'Gleason')\n"),append=TRUE)
+      }
       
-      cat(file=file, as.name("probes <- fd_taylor %>% filter(Gene %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character\n"),append=TRUE)
-      cat(file=file, as.name("taylor <- exp_taylor  %>% filter(ID %in% probes) %>% \n"),append=TRUE)
-      cat(file=file, as.name("gather(geo_accession,Expression,-ID)\n"),append=TRUE)
-      cat(file=file, as.name("summary_stats <- taylor %>% group_by(ID) %>% \n"),append=TRUE)
-      cat(file=file, as.name("summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))\n"),append=TRUE)
-      cat(file=file, as.name("mostVarProbes <- left_join(summary_stats,fd_taylor) %>% \n"),append=TRUE)
-      cat(file=file, as.name("arrange(Gene,desc(iqr)) %>% \n"),append=TRUE)
-      cat(file=file, as.name("distinct(Gene) %>% \n"),append=TRUE)
-      cat(file=file, as.name("select(ID) %>%  as.matrix %>%  as.character\n"),append=TRUE)
-      cat(file=file, as.name("samples <- filter(pd_taylor, Sample_Group == 'prostate cancer') %>% \n"),append=TRUE)
-      cat(file=file, as.name("select(geo_accession) %>% as.matrix %>% as.character\n"),append=TRUE)
-      cat(file=file, as.name("taylor <- filter(taylor, ID %in% mostVarProbes,geo_accession %in% samples)\n"),append=TRUE)
-      cat(file=file, as.name("geneMatrix <- taylor %>% \n"),append=TRUE)
-      cat(file=file, as.name("spread(geo_accession,Expression) %>% data.frame\n"),append=TRUE)
-      cat(file=file, as.name("geneMatrix <- as.matrix(geneMatrix[,-1])\n"),append=TRUE)
-      cat(file=file, as.name("symbols <- filter(fd_taylor, ID %in% mostVarProbes) %>% select(Gene) %>% as.matrix %>% as.character\n"),append=TRUE)
-      cat(file=file, as.name("rownames(geneMatrix) <- symbols\n"),append=TRUE)
-      cat(file=file, as.name("pd <- left_join(taylor,pd_taylor) %>% distinct(geo_accession)\n"),append=TRUE)
-      cat(file=file, as.name("colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)\n"),append=TRUE)
-      cat(file=file, as.name("grp <- pd$Copy.number.Cluster\n"),append=TRUE)
-      cat(file=file, as.name("cols <- brewer.pal(9,'Set1')[1:length(levels(factor(as.character(grp))))]\n"),append=TRUE)
-      cat(file=file, as.name("grp <- as.factor(as.character(grp))\n"),append=TRUE)
-      cat(file=file, as.name("levels(grp) <- cols\n"),append=TRUE)
-      cat(file=file, as.name("colMatrix[,1] <- as.character(grp)\n"),append=TRUE)
-      cat(file=file, as.name("grp <- pd$Gleason\n"),append=TRUE)
-      cat(file=file, as.name("cols <- brewer.pal(8,'Set2')[1:length(levels(factor(as.character(grp))))]\n"),append=TRUE)
-      cat(file=file, as.name("grp <- as.factor(as.character(grp))\n"),append=TRUE)
-      cat(file=file, as.name("levels(grp) <- cols\n"),append=TRUE)
-      cat(file=file, as.name("colMatrix[,2] <- as.character(grp)\n"),append=TRUE)
-      cat(file=file, as.name("colnames(colMatrix) <- c('Copy Number Cluster', 'Gleason')\n"),append=TRUE)
-    }  
-    else if(dataset == "Cambridge") {
-      cat(file=file,as.name("if(!require(prostateCancerCamcap)) {\n source('http://www.bioconductor.org/biocLite.R')\n biocLite('prostateCancerCamcap')\n}\n"),append=TRUE)
+      else if (dataset=="Stockholm"){
+        cat(file=file,as.name("if(!require(prostateCancerStockholm)) {\n source('http://www.bioconductor.org/biocLite.R')\n biocLite('prostateCancerStockholm')\n}\n"),append=TRUE)
+        
+        cat(file=file,as.name("library(dplyr)\n"),append=TRUE)
+        cat(file=file,as.name("###Convert into data convenient for dplyr\n"),append=TRUE)
+        cat(file=file,as.name("data(stockholm,package = 'prostateCancerStockholm')\n"),append=TRUE)
+        cat(file=file,as.name("pd_stockholm <- tbl_df(pData(stockholm))\n"),append=TRUE)
+        cat(file=file,as.name("fd_stockholm <- tbl_df(fData(stockholm))\n"),append=TRUE)
+        cat(file=file,as.name("exp_stockholm <- tbl_df(data.frame(ID = as.character(featureNames(stockholm)),exprs(stockholm)))\n"),append=TRUE)
+        
+        cat(file=file, as.name("probes <- fd_stockholm %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character\n"),append=TRUE)
+        cat(file=file, as.name("stockholm <- exp_stockholm  %>% filter(ID %in% probes) %>% gather(geo_accession,Expression,-ID)\n"),append=TRUE)
+        cat(file=file, as.name("summary_stats <- stockholm %>% group_by(ID) %>% summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))\n"),append=TRUE)
+        cat(file=file, as.name("mostVarProbes <- left_join(summary_stats,fd_camcap) %>% arrange(Symbol,desc(iqr)) %>% distinct(Symbol) %>%   select(ID) %>%  as.matrix %>%  as.character\n"),append=TRUE)
+        #      cat(file=file, as.name("stockholm <- filter(stockholm, ID %in% mostVarProbes,geo_accession %in% samples) \n"),append=TRUE)
+        cat(file=file, as.name("geneMatrix <- stockholm %>% spread(geo_accession,Expression) %>% data.frame\n"),append=TRUE)
+        cat(file=file, as.name("geneMatrix <- as.matrix(geneMatrix[,-1])\n"),append=TRUE)
+        cat(file=file, as.name("symbols <- filter(fd_stockholm, ID %in% mostVarProbes) %>% select(Symbol) %>% as.matrix %>% as.character\n"),append=TRUE)
+        cat(file=file, as.name("rownames(geneMatrix) <- symbols\n"),append=TRUE)
+        cat(file=file, as.name("pd <- left_join(camcap,pd_camcap) %>% distinct(geo_accession)\n"),append=TRUE)
+        cat(file=file, as.name("colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)\n"),append=TRUE)
+        cat(file=file, as.name("grp <- pd$iCluster\n"),append=TRUE)
+        cat(file=file, as.name("cols <- brewer.pal(5,'Set1')[1:length(levels(factor(as.character(grp))))]\n"),append=TRUE)
+        cat(file=file, as.name(" grp <- as.factor(as.character(grp))\n"),append=TRUE)
+        cat(file=file, as.name("levels(grp) <- cols\n"),append=TRUE)
+        cat(file=file, as.name("colMatrix[,1] <- as.character(grp)\n"),append=TRUE)
+        cat(file=file, as.name("grp <- pd$Gleason\n"),append=TRUE)
+        cat(file=file, as.name("cols <- brewer.pal(8,'Set2')[1:length(levels(factor(as.character(grp))))]\n"),append=TRUE)
+        cat(file=file, as.name("grp <- as.factor(as.character(grp))\n"),append=TRUE)
+        cat(file=file, as.name("levels(grp) <- cols\n"),append=TRUE)
+        cat(file=file, as.name("colMatrix[,2] <- as.character(grp)\n"),append=TRUE)
+        cat(file=file, as.name("colnames(colMatrix) <- c('iCluster', 'Gleason')\n"),append=TRUE)
+        
+        
+      }
       
-      cat(file=file,as.name("library(dplyr)\n"),append=TRUE)
-      cat(file=file,as.name("###Convert into data convenient for dplyr\n"),append=TRUE)
-      cat(file=file,as.name("data(camcap,package = 'prostateCancerCamcap')\n"),append=TRUE)
-      cat(file=file,as.name("pd_camcap <- tbl_df(pData(camcap))\n"),append=TRUE)
-      cat(file=file,as.name("fd_camcap <- tbl_df(fData(camcap))\n"),append=TRUE)
-      cat(file=file,as.name("exp_camcap <- tbl_df(data.frame(ID = as.character(featureNames(camcap)),exprs(camcap)))\n"),append=TRUE)
+      if(getDistFun() == "Correlation") cat(file=file, as.name("distfun <- function(x) as.dist(1 - cor(t(x)))\n"),append=TRUE)
+      else cat(file=file, as.name("distfun <- dist\n"),append=TRUE)
       
-      cat(file=file, as.name("probes <- fd_camcap %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character\n"),append=TRUE)
-      cat(file=file, as.name("camcap <- exp_camcap  %>% filter(ID %in% probes) %>% gather(geo_accession,Expression,-ID)\n"),append=TRUE)
-      cat(file=file, as.name("summary_stats <- camcap %>% group_by(ID) %>% summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))\n"),append=TRUE)
-      cat(file=file, as.name("mostVarProbes <- left_join(summary_stats,fd_camcap) %>% arrange(Symbol,desc(iqr)) %>% distinct(Symbol) %>%   select(ID) %>%  as.matrix %>%  as.character\n"),append=TRUE)
-      cat(file=file, as.name("samples <- filter(pd_camcap, Sample_Group == 'Tumour') %>% select(geo_accession) %>% as.matrix %>% as.character\n"),append=TRUE)
-      cat(file=file, as.name("camcap <- filter(camcap, ID %in% mostVarProbes,geo_accession %in% samples) \n"),append=TRUE)
-      cat(file=file, as.name("geneMatrix <- camcap %>% spread(geo_accession,Expression) %>% data.frame\n"),append=TRUE)
-      cat(file=file, as.name("geneMatrix <- as.matrix(geneMatrix[,-1])\n"),append=TRUE)
-      cat(file=file, as.name("symbols <- filter(fd_camcap, ID %in% mostVarProbes) %>% select(Symbol) %>% as.matrix %>% as.character\n"),append=TRUE)
-      cat(file=file, as.name("rownames(geneMatrix) <- symbols\n"),append=TRUE)
-      cat(file=file, as.name("pd <- left_join(camcap,pd_camcap) %>% distinct(geo_accession)\n"),append=TRUE)
-      cat(file=file, as.name("colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)\n"),append=TRUE)
-      cat(file=file, as.name("grp <- pd$iCluster\n"),append=TRUE)
-      cat(file=file, as.name("cols <- brewer.pal(5,'Set1')[1:length(levels(factor(as.character(grp))))]\n"),append=TRUE)
-      cat(file=file, as.name(" grp <- as.factor(as.character(grp))\n"),append=TRUE)
-      cat(file=file, as.name("levels(grp) <- cols\n"),append=TRUE)
-      cat(file=file, as.name("colMatrix[,1] <- as.character(grp)\n"),append=TRUE)
-      cat(file=file, as.name("grp <- pd$Gleason\n"),append=TRUE)
-      cat(file=file, as.name("cols <- brewer.pal(8,'Set2')[1:length(levels(factor(as.character(grp))))]\n"),append=TRUE)
-      cat(file=file, as.name("grp <- as.factor(as.character(grp))\n"),append=TRUE)
-      cat(file=file, as.name("levels(grp) <- cols\n"),append=TRUE)
-      cat(file=file, as.name("colMatrix[,2] <- as.character(grp)\n"),append=TRUE)
-      cat(file=file, as.name("colnames(colMatrix) <- c('iCluster', 'Gleason')\n"),append=TRUE)
+      hclustfun <- getHclustMethod()
+      
+      cat(file=file, as.name(paste0("hclustfun <- function(x) hclust(x,method='",hclustfun,"')\n")),append=TRUE)
+      
+      cat(file=file,as.name("dMat <- as.dist(distfun(t(geneMatrix)))\n"),append=TRUE)
+      
+      cat(file=file, as.name("clusObj <- hclustfun(dMat)\n"),append=TRUE)
+      
+      cat(file=file, as.name("hmcol <- rev(brewer.pal(11 , 'RdBu'))\n"),append=TRUE)  
+      
+      if(getDistFun() == "Correlation") cat(file=file, as.name("distfun <- function(x) as.dist(1 - cor(t(x)))\n"),append=TRUE)
+      else cat(file=file, as.name("distfun <- dist\n"),append=TRUE)
+      
+      scale <- getScaleMethod()
+      
+      cat(file=file, as.name(paste0("scale <- '", scale,"'\n")),append=TRUE)
+      
+      if(getReordRows() == "Yes"){
+        
+        cat(file=file, as.name("heatmap.2(geneMatrix,Colv = as.dendrogram(clusObj),col=hmcol,distfun=distfun,hclustfun = hclustfun,scale=scale,trace='none',cexRow = 0.9)\n"),append=TRUE)
+        
+      }
+      else cat(file=file, as.name("heatmap.2(geneMatrix,Colv = as.dendrogram(clusObj),col=hmcol,distfun=distfun,Rowv=NA,hclustfun = hclustfun,scale=scale,trace='none',cexRow = 0.9)\n"),append=TRUE)
+      
     }
+    
+  )
   
-    else if (dataset=="Stockholm"){
-      cat(file=file,as.name("if(!require(prostateCancerStockholm)) {\n source('http://www.bioconductor.org/biocLite.R')\n biocLite('prostateCancerStockholm')\n}\n"),append=TRUE)
-      
-      cat(file=file,as.name("library(dplyr)\n"),append=TRUE)
-      cat(file=file,as.name("###Convert into data convenient for dplyr\n"),append=TRUE)
-      cat(file=file,as.name("data(stockholm,package = 'prostateCancerStockholm')\n"),append=TRUE)
-      cat(file=file,as.name("pd_stockholm <- tbl_df(pData(stockholm))\n"),append=TRUE)
-      cat(file=file,as.name("fd_stockholm <- tbl_df(fData(stockholm))\n"),append=TRUE)
-      cat(file=file,as.name("exp_stockholm <- tbl_df(data.frame(ID = as.character(featureNames(stockholm)),exprs(stockholm)))\n"),append=TRUE)
-      
-      cat(file=file, as.name("probes <- fd_stockholm %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character\n"),append=TRUE)
-      cat(file=file, as.name("stockholm <- exp_stockholm  %>% filter(ID %in% probes) %>% gather(geo_accession,Expression,-ID)\n"),append=TRUE)
-      cat(file=file, as.name("summary_stats <- stockholm %>% group_by(ID) %>% summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))\n"),append=TRUE)
-      cat(file=file, as.name("mostVarProbes <- left_join(summary_stats,fd_camcap) %>% arrange(Symbol,desc(iqr)) %>% distinct(Symbol) %>%   select(ID) %>%  as.matrix %>%  as.character\n"),append=TRUE)
-#      cat(file=file, as.name("stockholm <- filter(stockholm, ID %in% mostVarProbes,geo_accession %in% samples) \n"),append=TRUE)
-      cat(file=file, as.name("geneMatrix <- stockholm %>% spread(geo_accession,Expression) %>% data.frame\n"),append=TRUE)
-      cat(file=file, as.name("geneMatrix <- as.matrix(geneMatrix[,-1])\n"),append=TRUE)
-      cat(file=file, as.name("symbols <- filter(fd_stockholm, ID %in% mostVarProbes) %>% select(Symbol) %>% as.matrix %>% as.character\n"),append=TRUE)
-      cat(file=file, as.name("rownames(geneMatrix) <- symbols\n"),append=TRUE)
-      cat(file=file, as.name("pd <- left_join(camcap,pd_camcap) %>% distinct(geo_accession)\n"),append=TRUE)
-      cat(file=file, as.name("colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)\n"),append=TRUE)
-      cat(file=file, as.name("grp <- pd$iCluster\n"),append=TRUE)
-      cat(file=file, as.name("cols <- brewer.pal(5,'Set1')[1:length(levels(factor(as.character(grp))))]\n"),append=TRUE)
-      cat(file=file, as.name(" grp <- as.factor(as.character(grp))\n"),append=TRUE)
-      cat(file=file, as.name("levels(grp) <- cols\n"),append=TRUE)
-      cat(file=file, as.name("colMatrix[,1] <- as.character(grp)\n"),append=TRUE)
-      cat(file=file, as.name("grp <- pd$Gleason\n"),append=TRUE)
-      cat(file=file, as.name("cols <- brewer.pal(8,'Set2')[1:length(levels(factor(as.character(grp))))]\n"),append=TRUE)
-      cat(file=file, as.name("grp <- as.factor(as.character(grp))\n"),append=TRUE)
-      cat(file=file, as.name("levels(grp) <- cols\n"),append=TRUE)
-      cat(file=file, as.name("colMatrix[,2] <- as.character(grp)\n"),append=TRUE)
-      cat(file=file, as.name("colnames(colMatrix) <- c('iCluster', 'Gleason')\n"),append=TRUE)
-      
-      
-    }
-    
-    if(getDistFun() == "Correlation") cat(file=file, as.name("distfun <- function(x) as.dist(1 - cor(t(x)))\n"),append=TRUE)
-    else cat(file=file, as.name("distfun <- dist\n"),append=TRUE)
-    
-    hclustfun <- getHclustMethod()
-    
-    cat(file=file, as.name(paste0("hclustfun <- function(x) hclust(x,method='",hclustfun,"')\n")),append=TRUE)
-  
-    cat(file=file,as.name("dMat <- as.dist(distfun(t(geneMatrix)))\n"),append=TRUE)
-    
-    cat(file=file, as.name("clusObj <- hclustfun(dMat)\n"),append=TRUE)
-  
-    cat(file=file, as.name("hmcol <- rev(brewer.pal(11 , 'RdBu'))\n"),append=TRUE)  
-    
-    if(getDistFun() == "Correlation") cat(file=file, as.name("distfun <- function(x) as.dist(1 - cor(t(x)))\n"),append=TRUE)
-    else cat(file=file, as.name("distfun <- dist\n"),append=TRUE)
-    
-    scale <- getScaleMethod()
-    
-    cat(file=file, as.name(paste0("scale <- '", scale,"'\n")),append=TRUE)
-    
-    if(getReordRows() == "Yes"){
-      
-      cat(file=file, as.name("heatmap.2(geneMatrix,Colv = as.dendrogram(clusObj),col=hmcol,distfun=distfun,hclustfun = hclustfun,scale=scale,trace='none',cexRow = 0.9)\n"),append=TRUE)
-      
-    }
-    else cat(file=file, as.name("heatmap.2(geneMatrix,Colv = as.dendrogram(clusObj),col=hmcol,distfun=distfun,Rowv=NA,hclustfun = hclustfun,scale=scale,trace='none',cexRow = 0.9)\n"),append=TRUE)
-    
-    }
-    
-    )
-    
 }
 )
