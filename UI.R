@@ -17,22 +17,21 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
            #      )
                  
             #     ),
-        tabPanel("Data Upload",
+        tabPanel("Data Input",
                  sidebarLayout(
                    sidebarPanel(
                      fluidRow(
                        h1("Gene Selector"),
                      selectInput("currentGene","Type a Gene Symbol",choices=c("A1BG","ESR1","AR","STAT3"),selected = "A1BG")
-                         #fluidRow(
-                       
-#                      column(8,DT::dataTableOutput("geneTable"))
+                  
                       #textInput("currentGene", "Type a Gene Symbol",value="A1BG")
                      ),
                    
                      #),
                       fileInput('file1', 'Gene List',
                                accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')),helpText("Your gene list must tab-delimited, with gene names in the first column"),
-                      helpText("If no gene list is uploaded, the genes ESR1, AR and STAT3 will be used")
+                      helpText("If no gene list is uploaded, the genes ESR1, AR and STAT3 will be used"),
+                      selectInput("theDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge")
                    )
                   ,
                    mainPanel(
@@ -70,7 +69,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  sidebarLayout(
                    sidebarPanel(
                      radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
-                     selectInput("boxplotDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
+  #                   selectInput("boxplotDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
                      selectInput("clinvar_boxplot", "Choose a Clinical Covariate",choices=c("iCluster","Gleason","Sample_Group"),selected="iCluster"),
                      helpText("The covariates you can plot will be different for the various datasets"),
                      radioButtons("z_cambridge","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
@@ -82,6 +81,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      selectInput("cambridgeGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3"),
                      h2("Output options"),
                      textInput("profileBasename", label = "What to call the output files",value="boxplot"),
+                     selectInput("boxplotTheme", "Pick a plot style",choices=c("ggplot2","bw","classic","minimal","light"),selected="ggplot2"),
                      radioButtons("profilePlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
                      helpText("Plots and R scripts will have the extension pdf (/png) and R respectively"),
                      downloadButton("cambridgeBoxplotPDF","Export current profile(s)...."),
@@ -111,7 +111,6 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
              sidebarLayout(
                 sidebarPanel(
                   radioButtons("inputType_survival", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
-                  selectInput("rpDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC"),selected = "Cambridge"),
                   radioButtons("cutoffMethod","Type of partitioning?",choices=c("RP","Median","Manual"),selected="RP"),
                   textInput("expCutOff", "Cut-off for partitioning",value = 6),
                   helpText("If you working on a gene list, you can select which gene to display the results for"),
@@ -139,7 +138,6 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  radioButtons("inputType_correlation", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
                  helpText("If you have selected Single Gene mode (above), now select a second gene to correlate with"),
                  selectInput("secondGene","Type a Gene Symbol",choices=keys(revmap(org.Hs.egSYMBOL)),selected = "A2M"),
-                 selectInput("corDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC","Michigan2005","Michigan2012"),selected = "Cambridge"),
                  selectInput("clinvar_cor", "Choose a Clinical Covariate to colour by...",choices=c("None", "iCluster","Gleason","Sample_Group"),selected="None"),
                  h2("Output options"),
                  textInput("correlationBasename", label = "What to call the output files",value="correlation"),
@@ -148,7 +146,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  downloadButton("correlationScript","Download R script....")
                ),
                mainPanel(
-                 plotOutput("corPlot",width = 1200,height=600)
+                 #plotOutput("corPlot",width = 1200,height=600)
                )
              )
     ),
@@ -156,7 +154,6 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
     tabPanel("Heatmap",
             sidebarLayout(
              sidebarPanel(
-                 selectInput("heatmapDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
                  radioButtons("distfun","Method to calulate distances",choices=c("Euclidean","Correlation"),selected="Euclidean"),
                  radioButtons("hclustfun", "Method of hierachical clustering",choices=c("ward","single","complete","average","mcquitty","median","centroid"),selected="complete"),
                  radioButtons("reordRows", "Re-order Rows?", choices = c("Yes","No"),selected = "Yes"),
