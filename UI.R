@@ -22,9 +22,8 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                    sidebarPanel(
                      fluidRow(
                        h1("Gene Selector"),
-                     selectInput("currentGene","Type a Gene Symbol",choices=keys(revmap(org.Hs.egSYMBOL)),selected = "A1BG")
-
-                     #fluidRow(
+                     selectInput("currentGene","Type a Gene Symbol",choices=c("A1BG","ESR1","AR","STAT3"),selected = "A1BG")
+                         #fluidRow(
                        
 #                      column(8,DT::dataTableOutput("geneTable"))
                       #textInput("currentGene", "Type a Gene Symbol",value="A1BG")
@@ -112,7 +111,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
              sidebarLayout(
                 sidebarPanel(
                   radioButtons("inputType_survival", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
-                  selectInput("rpDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC"),selected = "MSKCC"),
+                  selectInput("rpDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC"),selected = "Cambridge"),
                   radioButtons("cutoffMethod","Type of partitioning?",choices=c("RP","Median","Manual"),selected="RP"),
                   textInput("expCutOff", "Cut-off for partitioning",value = 6),
                   helpText("If you working on a gene list, you can select which gene to display the results for"),
@@ -157,7 +156,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
     tabPanel("Heatmap",
             sidebarLayout(
              sidebarPanel(
-                 selectInput("heatmapDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC"),selected = "MSKCC"),
+                 selectInput("heatmapDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
                  radioButtons("distfun","Method to calulate distances",choices=c("Euclidean","Correlation"),selected="Euclidean"),
                  radioButtons("hclustfun", "Method of hierachical clustering",choices=c("ward","single","complete","average","mcquitty","median","centroid"),selected="complete"),
                  radioButtons("reordRows", "Re-order Rows?", choices = c("Yes","No"),selected = "Yes"),

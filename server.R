@@ -1,3 +1,8 @@
+startLoad <- date()
+message("Started loading at:")
+print(startLoad)
+gc()
+
 library(shiny)
 library(ggplot2)
 
@@ -7,15 +12,14 @@ library(gridExtra)
 library(heatmap.plus)
 library(gplots)
 library(RColorBrewer)
-library(party)
-library(survival)
+
 library(knitr)
 library(Biobase)
 library(broom)
-library(WGCNA)
 library(GGally)
 
 library(DT)
+
 
 
 #if(!require(prostateCancerTaylor)) install_github("crukci-bioinformatics/prostateCancerTaylor");library(prostateCancerTaylor)
@@ -72,47 +76,64 @@ library(dplyr)
 
 data(camcap,package = "prostateCancerCamcap")
 db_camcap <- src_sqlite("camcap.sqlite3")
-pd_camcap <- tbl_df(pData(camcap))
-fd_camcap <- tbl_df(fData(camcap))
-exp_camcap <-
-  tbl_df(data.frame(ID = as.character(featureNames(camcap)),exprs(camcap)))
+#pd_camcap <- tbl_df(pData(camcap))
+
+pd_camcap <- collect(tbl("pd",src=db_camcap))
+fd_camcap <- collect(tbl("fd",src=db_camcap))
+
+#fd_camcap <- tbl_df(fData(camcap))
+#exp_camcap <-
+ # tbl_df(data.frame(ID = as.character(featureNames(camcap)),exprs(camcap)))
+
+exp_camcap <- tbl("expression",src=db_camcap)
 
 #loadStockholm <- function(){
 
-data(stockholm, package="prostateCancerStockholm")
+#data(stockholm, package="prostateCancerStockholm")
 db_stockholm <- src_sqlite("stockholm.sqlite3")
-pd_stockholm <- tbl_df(pData(stockholm))
-fd_stockholm <- tbl_df(fData(stockholm))
-exp_stockholm <- tbl_df(data.frame(ID=as.character(featureNames(stockholm)),exprs(stockholm)))
+#pd_stockholm <- tbl_df(pData(stockholm))
+#fd_stockholm <- tbl_df(fData(stockholm))
+pd_stockholm <- collect(tbl("pd",src=db_stockholm))
+fd_stockholm <- collect(tbl("fd",src=db_stockholm))
+
+
+#exp_stockholm <- tbl_df(data.frame(ID=as.character(featureNames(stockholm)),exprs(stockholm)))
 #}
+exp_stockholm <- tbl("expression",src=db_stockholm)
+
 
 
 #loadTaylor <- function(){
 
-data(taylor, package="prostateCancerTaylor")
+#data(taylor, package="prostateCancerTaylor")
 db_taylor <- src_sqlite("taylor.sqlite3")
-pd_taylor <- tbl_df(pData(taylor))
-fd_taylor <- tbl_df(fData(taylor))
-exp_taylor <- tbl_df(data.frame(ID=as.character(featureNames(taylor)),log2(exprs(taylor))))
+pd_taylor <- collect(tbl("pd",src=db_taylor))
+fd_taylor <- collect(tbl("fd",src=db_taylor))
+#exp_taylor <- tbl_df(data.frame(ID=as.character(featureNames(taylor)),log2(exprs(taylor))))
+exp_taylor <- tbl("expression",src=db_taylor)
 
 #}
 
 #loadVarambally <- function(){
+db_varambally <- src_sqlite("varambally.sqlite3")
+#data(varambally,package="prostateCancerVarambally")
+pd_varambally <- collect(tbl("pd",src=db_varambally))
+fd_varambally <- collect(tbl("fd",src=db_varambally))
 
-data(varambally,package="prostateCancerVarambally")
-pd_varambally <- tbl_df(pData(varambally))
-fd_varambally <- tbl_df(fData(varambally))
-exp_varambally <- tbl_df(data.frame(ID=as.character(featureNames(varambally)),log2(exprs(varambally))))
+#exp_varambally <- tbl_df(data.frame(ID=as.character(featureNames(varambally)),log2(exprs(varambally))))
+exp_varambally <- tbl("expression",src=db_varambally)
 
 #}
 
 #loadGrasso <- function(){
 
-data(grasso,package="prostateCancerGrasso")
-pd_grasso <- tbl_df(pData(grasso))
-fd_grasso <- tbl_df(fData(grasso))
-exp_grasso <- tbl_df(data.frame(ID=as.character(featureNames(grasso)),exprs(grasso)))
+#data(grasso,package="prostateCancerGrasso")
+db_grasso <- src_sqlite("grasso.sqlite3")
+pd_grasso <- collect(tbl("pd",src=db_grasso))
+fd_grasso <- collect(tbl("fd",src=db_grasso))
 
+#exp_grasso <- tbl_df(data.frame(ID=as.character(featureNames(grasso)),exprs(grasso)))
+exp_grasso <- tbl("expression",src=db_grasso)
 #}
 
 
@@ -124,6 +145,7 @@ gradeCols <- rev(brewer.pal(11, "RdYlGn"))
 message("READY FOR INPUT")
 
 
+
 #library(org.Hs.eg.db)
 
 #gList <- unique(as.character(as.matrix(select(fd_camcap,Symbol))))
@@ -132,27 +154,13 @@ message("READY FOR INPUT")
 
 #geneTable <- AnnotationDbi:::select(org.Hs.eg.db, keys=gList, keytype = "SYMBOL",columns=c("SYMBOL","GENENAME"))
 
-camcap.cn <- read.delim("data/2014-06-04_UK_OncoSNP_rank3_gene_matrix.txt") %>% 
-  gather(Sample, Call, -(EntrezID:position)) %>% 
-  tbl_df %>% 
-  select(Symbol,Sample,Call) %>% 
-  mutate(Cohort = "Cambridge")
-
-stockholm.cn <- read.delim("data/2016-01-06_Stockholm_0.9_CNA_threshold_geneXsample_mat.txt") %>% 
-  gather(Sample, Call, -(EntrezID:Symbol)) %>% 
-  tbl_df %>% 
-  select(Symbol,Sample,Call) %>% 
-  mutate(Cohort = "Stockholm")
-
-taylor.cn <- read.delim("data/2014-12-02_cna_matrix_localized_cap_w_clinical.txt") %>% 
-  gather(Sample, Call, -(EntrezID:GeneSymbol)) %>% 
-  tbl_df %>% 
-  mutate(Symbol = GeneSymbol) %>% 
-  select(Symbol,Sample,Call) %>% 
-  mutate(Cohort = "Taylor")
-
+endLoad <- date()
+message("Ended loading at:")
+print(endLoad)
 
 shinyServer(function(input, output,session){
+  
+
   
   getCurrentGene <- reactive({
     if(input$inputType == "Single Gene"){
@@ -517,13 +525,114 @@ shinyServer(function(input, output,session){
   })
   
   
+  prepareBoxplot <- reactive({
+    
+    dataset <- getBoxplotDataset()
+    
+    
+    plotType <- input$inputType
+    if(plotType == "Single Gene") {
+      genes <- getCurrentGene()
+    } else  genes <- getGeneList()
+    
+    if(dataset == "Cambridge"){
+      
+#      probes <- fd_camcap %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+       data <- collect(exp_camcap)  %>% filter(Symbol %in% genes)
+        #gather(geo_accession,Expression,-ID)
+      fd <- fd_camcap
+      pd <-  mutate(pd_camcap, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
+        mutate(Time = as.numeric(FollowUpTime), Event = ifelse(BCR=="Y",1,0))
+      
+    } else if (dataset == "Stockholm"){
+      
+#      probes <- fd_stockholm %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+      data<- collect(exp_stockholm)  %>% filter(Symbol %in% genes)
+#        gather(geo_accession,Expression,-ID)
+      fd <- fd_stockholm
+      pd <-  mutate(pd_stockholm, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
+        mutate(Time = as.numeric(FollowUpTime), Event = ifelse(BCR=="Y",1,0))
+    }
+    
+    else if(dataset == "MSKCC"){
+      
+      #probes <- fd_taylor %>% filter(Gene %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+#      data <- exp_taylor  %>% filter(ID %in% probes) %>% 
+ #       gather(geo_accession,Expression,-ID)
+      data <- collect(exp_taylor) %>% filter(Gene %in% genes)
+      
+      
+      fd <- fd_taylor %>% mutate(Symbol = Gene)
+      pd <- mutate(pd_taylor,Gleason = gsub("4+3", "7=4+3", pd_taylor$Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+3", "8=5+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+4", "7=3+4", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+3", "7=4+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+3", "6=3+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+5", "9=4+5", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+5", "8=3+5", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+4", "8=4+4", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA)))
+    }
+    
+    else if(dataset == "Michigan2005"){
+      
+      #probes <- fd_varambally %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+      #data <- exp_varambally  %>% filter(ID %in% probes) %>% 
+       # gather(geo_accession,Expression,-ID)
+      data <- collect(exp_varambally) %>% filter(Symbol %in% genes)
+      
+      fd <- fd_varambally
+      pd <- pd_varambally 
+    }
+    
+    else {
+      #probes <- fd_grasso %>% filter(GENE_SYMBOL %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
+      #data <- exp_grasso  %>% filter(ID %in% probes) %>% 
+      #  gather(geo_accession,Expression,-ID)
+      data <- collect(exp_grasso) %>% filter(GENE_SYMBOL %in% genes)
+      fd <- mutate(fd_grasso, Symbol = GENE_SYMBOL)
+      pd <- mutate(pd_grasso, Sample_Group = Group) 
+      
+    }
+    
+    
+    summary_stats <- data %>% group_by(ID) %>% 
+      summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+    
+    data <- left_join(data,summary_stats) %>% mutate(Z = (Expression - mean) / sd)
+    
+    #    mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
+    #    mu <- summary_stats$mean[which.max(summary_stats$iqr)]
+    #    sd <- summary_stats$sd[which.max(summary_stats$iqr)]
+    
+    #    data <- filter(data, ID== mostVarProbe) %>%
+    #      mutate(Z = (Expression -mu) /sd)
+    
+    #    data <- left_join(data,pd)
+    #    data <- left_join(data, fd)
+    
+    
+    
+    mostVarProbes <- left_join(summary_stats,fd) %>% 
+      arrange(Symbol,desc(iqr)) %>% 
+      distinct(Symbol) %>% 
+      select(ID) %>%  as.matrix %>%  as.character
+    
+    data <- filter(data, ID %in% mostVarProbes)
+    data <- left_join(data, select(fd, ID, Symbol))
+    data <- left_join(data, pd)
+    data    
+  
+    })
+  
+  
   filterByGene <-function(dataset, genes){
     
     
     if(dataset == "Cambridge"){
       
       probes <- fd_camcap %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-      data<- exp_camcap  %>% filter(ID %in% probes) %>% 
+      data<- collect(exp_camcap)  %>% filter(ID %in% probes) %>% 
         gather(geo_accession,Expression,-ID)
       fd <- fd_camcap
       pd <-  mutate(pd_camcap, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
@@ -653,7 +762,7 @@ shinyServer(function(input, output,session){
                                                                                                                                   "10=5+5"=gradeCols[10]))
                        },
                        Sample_Group ={data %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
-                           ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+                           ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot() + scale_fill_manual(values = c("darkseagreen1","darkorange1","firebrick1"))
                          
                        }
                        
@@ -742,7 +851,7 @@ shinyServer(function(input, output,session){
   singleBoxplot <- reactive({
     
     dataset <- getBoxplotDataset()
-    
+    #dataset <- prepareBoxplot()
     
     plotType <- input$inputType
     if(plotType == "Single Gene") {
@@ -750,8 +859,8 @@ shinyServer(function(input, output,session){
     } else  genes <- getGeneList()
     
     
-    data <- filterByGene(dataset, genes)
-    
+#    data <- filterByGene(dataset, genes)
+    data <- prepareBoxplot()
     
     
     doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
@@ -1008,7 +1117,9 @@ shinyServer(function(input, output,session){
       genes <- getCurrentGene()
     } else  genes <- getGeneList()
     
-    data <- filterByGene(dataset,genes)
+#    data <- filterByGene(dataset,genes)
+    
+    data <- prepareBoxplot()
     
     var <- getCambridgeVariable()
     
@@ -1056,6 +1167,9 @@ shinyServer(function(input, output,session){
   
   prepareSurvival <- reactive({
     
+    library(party)
+    library(survival)
+    
     dataset <- input$rpDataset
     
     plotType <- input$inputType_survival
@@ -1067,7 +1181,66 @@ shinyServer(function(input, output,session){
       
     }
     
-    data <- filterByGene(dataset, genes)
+    if(dataset == "Cambridge"){
+      
+      data <- collect(exp_camcap)  %>% filter(Symbol %in% genes)
+      fd <- fd_camcap
+      pd <-  mutate(pd_camcap, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
+        mutate(Time = as.numeric(FollowUpTime), Event = ifelse(BCR=="Y",1,0))
+      
+    } else if (dataset == "Stockholm"){
+      
+      data <- collect(exp_stockholm)  %>% filter(Symbol %in% genes)
+      
+      fd <- fd_stockholm
+      pd <-  mutate(pd_stockholm, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
+        mutate(Time = as.numeric(FollowUpTime), Event = ifelse(BCR=="Y",1,0))
+    }
+    
+    else if(dataset == "MSKCC"){
+      
+      data <- collect(exp_taylor)  %>% filter(Gene %in% genes)
+      
+      fd <- fd_taylor %>% mutate(Symbol = Gene)
+      pd <- mutate(pd_taylor,Gleason = gsub("4+3", "7=4+3", pd_taylor$Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+3", "8=5+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+4", "7=3+4", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+3", "7=4+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+3", "6=3+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+5", "9=4+5", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+5", "8=3+5", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+4", "8=4+4", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA)))
+    }
+    
+ 
+    
+    summary_stats <- data %>% group_by(ID) %>% 
+      summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+    
+    data <- left_join(data,summary_stats) %>% mutate(Z = (Expression - mean) / sd)
+    
+    #    mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
+    #    mu <- summary_stats$mean[which.max(summary_stats$iqr)]
+    #    sd <- summary_stats$sd[which.max(summary_stats$iqr)]
+    
+    #    data <- filter(data, ID== mostVarProbe) %>%
+    #      mutate(Z = (Expression -mu) /sd)
+    
+    #    data <- left_join(data,pd)
+    #    data <- left_join(data, fd)
+    
+    
+    
+    mostVarProbes <- left_join(summary_stats,fd) %>% 
+      arrange(Symbol,desc(iqr)) %>% 
+      distinct(Symbol) %>% 
+      select(ID) %>%  as.matrix %>%  as.character
+    
+    data <- filter(data, ID %in% mostVarProbes)
+    data <- left_join(data, select(fd, ID, Symbol))
+    data <- left_join(data, pd)
+
     combined.data <- data %>% 
       filter(!is.na(Time) & !is.na(Event))
     
@@ -1490,12 +1663,7 @@ shinyServer(function(input, output,session){
     
     if(dataset == "MSKCC"){
       
-      probes <- fd_taylor %>% filter(Gene %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-      
-      #      taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
-      #       gather(geo_accession,Expression,-ID)
-      taylor <- exp_taylor  %>% filter(ID %in% probes) %>% 
-        gather(geo_accession,Expression,-ID)
+      taylor <- collect(exp_taylor)  %>% filter(Gene %in% genes)
       
       summary_stats <- taylor %>% group_by(ID) %>% 
         summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
@@ -1514,7 +1682,7 @@ shinyServer(function(input, output,session){
       
       taylor <- filter(taylor, ID %in% mostVarProbes,geo_accession %in% samples)
       geneMatrix <- taylor %>% 
-        spread(geo_accession,Expression) %>% data.frame
+        spread(geo_accession,Expression) %>% select(-Gene) %>% data.frame
       
       geneMatrix <- as.matrix(geneMatrix[,-1])
       
@@ -1546,12 +1714,7 @@ shinyServer(function(input, output,session){
       
     } else if(dataset == "Cambridge"){
       
-      probes <- fd_camcap %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-      
-      #      taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
-      #       gather(geo_accession,Expression,-ID)
-      camcap <- exp_camcap  %>% filter(ID %in% probes) %>% 
-        gather(geo_accession,Expression,-ID)
+      camcap <- collect(exp_camcap)  %>% filter(Symbol %in% genes)
       
       summary_stats <- camcap %>% group_by(ID) %>% 
         summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
@@ -1567,7 +1730,7 @@ shinyServer(function(input, output,session){
       samples <- filter(pd_camcap, Sample_Group == "Tumour") %>% 
         select(geo_accession) %>% as.matrix %>% as.character
       
-      camcap <- filter(camcap, ID %in% mostVarProbes,geo_accession %in% samples) 
+      camcap <- filter(camcap, ID %in% mostVarProbes,geo_accession %in% samples) %>% select(-Symbol)
       
       geneMatrix <- camcap %>% 
         spread(geo_accession,Expression) %>% data.frame
@@ -1606,12 +1769,7 @@ shinyServer(function(input, output,session){
       
     } else{
       
-      probes <- fd_stockholm %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-      
-      #      taylor<- exp_taylor  %>% filter(ID %in% probes) %>% 
-      #       gather(geo_accession,Expression,-ID)
-      stockholm <- exp_stockholm  %>% filter(ID %in% probes) %>% 
-        gather(geo_accession,Expression,-ID)
+      stockholm <- collect(exp_stockholm)  %>% filter(Symbol %in% genes)
       
       summary_stats <- stockholm %>% group_by(ID) %>% 
         summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
@@ -1629,7 +1787,7 @@ shinyServer(function(input, output,session){
       stockholm <- filter(stockholm, ID %in% mostVarProbes,geo_accession %in% samples) 
       
       geneMatrix <- stockholm %>% 
-        spread(geo_accession,Expression) %>% data.frame
+        spread(geo_accession,Expression) %>% select(-Symbol) %>% data.frame
       
       geneMatrix <- as.matrix(geneMatrix[,-1])
       
@@ -1744,7 +1902,7 @@ shinyServer(function(input, output,session){
   
   
   output$dendrogram <- renderPlot({
-    
+    library(WGCNA)
     hm <- prepareHeatmap()
     colMatrix <- hm[[2]]
     clusObj <- doClustering()
@@ -1818,24 +1976,35 @@ shinyServer(function(input, output,session){
   }
   )
   
-  getCopyNumberTable <- function(genes){
+  getCopyNumberTable <- reactive({
+    
+    if(input$inputType_cn == "Single Gene") {
+      genes <- getCurrentGene()
+      
+      
+    } else  genes <- getGeneList()
+    
+    
+    camcap.cn <- collect(tbl("copyNumber",src=db_camcap))
+    stockholm.cn <- collect(tbl("copyNumber",src=db_stockholm))
+    taylor.cn <- collect(tbl("copyNumber",src=db_taylor))
     
     camcap.cnts <- filter(camcap.cn, Symbol %in% genes) %>% 
       group_by(Symbol) %>% 
-      summarise(NEUTRAL = sum(Call==0)/n(),DEL = -sum(Call==-1)/n(), AMP = sum(Call==1)/n())  %>% 
-      gather(Event,Count,-Symbol) %>% 
+      summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
+      gather(Event,Percentage,-Symbol) %>% 
       mutate(Cohort = "Cambridge")
     
     stockholm.cnts <- filter(stockholm.cn, Symbol %in% genes) %>% 
       group_by(Symbol) %>% 
-      summarise(NEUTRAL = sum(Call==0)/n(),DEL = -sum(Call==-1)/n(), AMP = sum(Call==1)/n())  %>% 
-      gather(Event,Count,-Symbol) %>% 
+      summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
+      gather(Event,Percentage,-Symbol) %>% 
       mutate(Cohort = "Stockholm")
     
     taylor.cnts <- filter(taylor.cn, Symbol %in% genes) %>% 
       group_by(Symbol) %>% 
-      summarise(NEUTRAL = sum(Call==0)/n(),DEL = -sum(Call==-1)/n(), AMP = sum(Call==1)/n())  %>% 
-      gather(Event,Count,-Symbol) %>% 
+      summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
+      gather(Event,Percentage,-Symbol) %>% 
       mutate(Cohort = "MSKCC")
     
     cn.all <- bind_rows(camcap.cnts,stockholm.cnts,taylor.cnts) %>% 
@@ -1844,75 +2013,21 @@ shinyServer(function(input, output,session){
     cn.all
   }
   
+  )
+  
   
   output$copyNumberTable <- renderTable({
     
-    if(input$inputType_cn == "Single Gene") {
-      genes <- getCurrentGene()
-      
-      
-    } else  genes <- getGeneList()
-    
-    camcap.cnts <- filter(camcap.cn, Symbol %in% genes) %>% 
-      group_by(Symbol) %>% 
-      summarise(NEUTRAL = sum(Call==0)/n(),DEL = -sum(Call==-1)/n(), AMP = sum(Call==1)/n())  %>% 
-      gather(Event,Count,-Symbol) %>% 
-      mutate(Cohort = "Cambridge")
-    
-    stockholm.cnts <- filter(stockholm.cn, Symbol %in% genes) %>% 
-      group_by(Symbol) %>% 
-      summarise(NEUTRAL = sum(Call==0)/n(),DEL = -sum(Call==-1)/n(), AMP = sum(Call==1)/n())  %>% 
-      gather(Event,Count,-Symbol) %>% 
-      mutate(Cohort = "Stockholm")
-    
-    taylor.cnts <- filter(taylor.cn, Symbol %in% genes) %>% 
-      group_by(Symbol) %>% 
-      summarise(NEUTRAL = sum(Call==0)/n(),DEL = -sum(Call==-1)/n(), AMP = sum(Call==1)/n())  %>% 
-      gather(Event,Count,-Symbol) %>% 
-      mutate(Cohort = "MSKCC")
-    
-    cn.all <- bind_rows(camcap.cnts,stockholm.cnts,taylor.cnts) %>% 
-      mutate(Event = factor(Event, levels=c("DEL","NEUTRAL","AMP")))
+    cn.all <- getCopyNumberTable()
     
     cn.all
-    
-    
-    
     
   })
   
   
   output$copyNumber <- renderPlot({
     
-    if(input$inputType_cn == "Single Gene") {
-      genes <- getCurrentGene()
-      
-      
-    } else  genes <- getGeneList()
-    
-    camcap.cnts <- filter(camcap.cn, Symbol %in% genes) %>% 
-      group_by(Symbol) %>% 
-      summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
-      gather(Event,Percentage,-Symbol) %>% 
-      mutate(Cohort = "Cambridge")
-      
-    
-    stockholm.cnts <- filter(stockholm.cn, Symbol %in% genes) %>% 
-      group_by(Symbol) %>% 
-      summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
-      gather(Event,Percentage,-Symbol) %>% 
-      mutate(Cohort = "Stockholm")
-    
-    taylor.cnts <- filter(taylor.cn, Symbol %in% genes) %>% 
-      group_by(Symbol) %>% 
-      summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
-      gather(Event,Percentage,-Symbol) %>% 
-      mutate(Cohort = "MSKCC")
-
-    cn.all <- bind_rows(camcap.cnts,stockholm.cnts,taylor.cnts) %>% 
-      mutate(Event = factor(Event, levels=c("DEL","NEUTRAL","AMP")))
-    
-    cn.all
+    cn.all <- getCopyNumberTable()
     
     p <- ggplot(cn.all, aes(x = Event, y=Percentage,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
     print(p)
@@ -1969,6 +2084,93 @@ shinyServer(function(input, output,session){
   )
   
   
+  prepareCorrelation <- reactive({
+    
+    plotType <- input$inputType_correlation
+    
+    if(plotType == "Single Gene") {
+      gene1 <- getCurrentGene()
+      gene2 <- input$secondGene
+      genes <- c(gene1,gene2)
+      
+    } else  genes <- getGeneList()
+    
+    
+    dataset <- getCorDataset()
+    
+    if(dataset == "Cambridge"){
+      
+      data <- collect(exp_camcap)  %>% filter(Symbol %in% genes)
+      fd <- fd_camcap
+      pd <-  mutate(pd_camcap, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
+        mutate(Time = as.numeric(FollowUpTime), Event = ifelse(BCR=="Y",1,0))
+      
+    } else if (dataset == "Stockholm"){
+      
+      data <- collect(exp_stockholm)  %>% filter(Symbol %in% genes)
+      fd <- fd_stockholm
+      pd <-  mutate(pd_stockholm, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
+        mutate(Time = as.numeric(FollowUpTime), Event = ifelse(BCR=="Y",1,0))
+    }
+    
+    else if(dataset == "MSKCC"){
+      
+      data <- collect(exp_taylor)  %>% filter(Gene %in% genes)
+      fd <- fd_taylor %>% mutate(Symbol = Gene)
+      pd <- mutate(pd_taylor,Gleason = gsub("4+3", "7=4+3", pd_taylor$Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+3", "8=5+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+4", "7=3+4", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+3", "7=4+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+3", "6=3+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+5", "9=4+5", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+5", "8=3+5", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+4", "8=4+4", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA)))
+    }
+    
+    else if(dataset == "Michigan2005"){
+      
+      data <- collect(exp_varambally)  %>% filter(Symbol %in% genes)
+      fd <- fd_varambally
+      pd <- pd_varambally 
+    }
+    
+    else {
+      data <- collect(exp_grasso)  %>% filter(GENE_SYMBOL %in% genes)
+      fd <- mutate(fd_grasso, Symbol = GENE_SYMBOL)
+      pd <- mutate(pd_grasso, Sample_Group = Group) 
+      
+    }
+    
+    
+    summary_stats <- data %>% group_by(ID) %>% 
+      summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+    
+    data <- left_join(data,summary_stats) %>% mutate(Z = (Expression - mean) / sd)
+    
+    #    mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
+    #    mu <- summary_stats$mean[which.max(summary_stats$iqr)]
+    #    sd <- summary_stats$sd[which.max(summary_stats$iqr)]
+    
+    #    data <- filter(data, ID== mostVarProbe) %>%
+    #      mutate(Z = (Expression -mu) /sd)
+    
+    #    data <- left_join(data,pd)
+    #    data <- left_join(data, fd)
+    
+    
+    
+    mostVarProbes <- left_join(summary_stats,fd) %>% 
+      arrange(Symbol,desc(iqr)) %>% 
+      distinct(Symbol) %>% 
+      select(ID) %>%  as.matrix %>%  as.character
+    
+    data <- filter(data, ID %in% mostVarProbes)
+    data <- left_join(data, select(fd, ID, Symbol))
+    data <- left_join(data, pd)
+    
+  })
+  
   
   output$corPlot <- renderPlot({
     
@@ -1984,7 +2186,9 @@ shinyServer(function(input, output,session){
     
     dataset <- getCorDataset()
     
-    cordata <- filterByGene(dataset, genes)
+    #cordata <- filterByGene(dataset, genes)
+    
+    cordata <- prepareCorrelation()
     
     covar <- input$clinvar_cor
     
@@ -2170,8 +2374,8 @@ shinyServer(function(input, output,session){
       
       dataset <- getCorDataset()
       
-      cordata <- filterByGene(dataset, genes)
-      
+      #cordata <- filterByGene(dataset, genes)
+      cordata <- prepareCorrelation()
       covar <- input$clinvar_cor
       
       if(dataset == "Cambridge"){

@@ -32,7 +32,8 @@ expression <-
   tbl_df(data.frame(ID = as.character(featureNames(stockholm)),exprs(stockholm))) %>% 
   gather(geo_accession,Expression,-ID)
 fd <- fd_stockholm
-pd <- pd_camcap
+pd <- pd_stockholm
+
 expression <- left_join(expression, select(fd, ID, Symbol))
 
 copy_to(db, expression, temporary = FALSE, indexes = list("Symbol"))
