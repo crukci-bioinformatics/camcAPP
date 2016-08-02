@@ -1,7 +1,7 @@
 
 
 library(shiny)
-library(org.Hs.eg.db)
+
 
 shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                   
@@ -20,12 +20,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
         tabPanel("Data Input",
                  sidebarLayout(
                    sidebarPanel(
-                     fluidRow(
-                       h1("Gene Selector"),
-                     selectInput("currentGene","Type a Gene Symbol",choices=c("A1BG","ESR1","AR","STAT3"),selected = "A1BG")
-                  
-                      #textInput("currentGene", "Type a Gene Symbol",value="A1BG")
-                     ),
+                     
                    
                      #),
                       fileInput('file1', 'Gene List',
@@ -68,7 +63,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
         tabPanel("Gene Profile",
                  sidebarLayout(
                    sidebarPanel(
-                     radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
+  #                   radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
   #                   selectInput("boxplotDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
                      selectInput("clinvar_boxplot", "Choose a Clinical Covariate",choices=c("iCluster","Gleason","Sample_Group"),selected="iCluster"),
                      helpText("The covariates you can plot will be different for the various datasets"),
@@ -98,7 +93,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      verbatimTextOutput("profileMapping"),
                      plotOutput("displayBoxplot",width = 1200,height=600),
                      h1("ANOVA analysis"),
-                     verbatimTextOutput("anovaResult")
+                     DT::dataTableOutput("anovaResult")
 
                    )
                    
@@ -110,7 +105,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
     tabPanel("Survival",
              sidebarLayout(
                 sidebarPanel(
-                  radioButtons("inputType_survival", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
+#                  radioButtons("inputType_survival", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
                   radioButtons("cutoffMethod","Type of partitioning?",choices=c("RP","Median","Manual"),selected="RP"),
                   textInput("expCutOff", "Cut-off for partitioning",value = 6),
                   helpText("If you working on a gene list, you can select which gene to display the results for"),
@@ -124,7 +119,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                 mainPanel(
                   verbatimTextOutput("survivalMapping"),
                   helpText("A recursive partitioning (RP) analysis is performed to determine if the samples can be split into groups based on the expression data from your chosen gene(s)."),
-                  tableOutput("rpSummary"),
+                  DT::dataTableOutput("rpSummary"),
                   plotOutput("rpPlot"),
                   plotOutput("survivalPlot"),helpText("The Kaplan-Meier plot is a useful way of summarising survival data. There is one curve for each group. Each curve starts at 100% probability of survival. The probability of freedom from biochemical recurrence is shown on the y axis and the time (in years) is shown on the x axis. The curve drops each time there is an 'event'. A cross is shown on each curve where a 'censoring'' event takes place. This is where someone drops out of the study for a reason not related to the study, e.g. the study ends before an event has occurred. These subjects are no longer included in any calculations. The lower the survival curve the worse prognosis the patients in that group have.")
                 )
@@ -136,8 +131,9 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
              sidebarLayout(
                sidebarPanel(
                  radioButtons("inputType_correlation", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
-                 helpText("If you have selected Single Gene mode (above), now select a second gene to correlate with"),
-                 selectInput("secondGene","Type a Gene Symbol",choices=keys(revmap(org.Hs.egSYMBOL)),selected = "A2M"),
+                  selectInput("correlationGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3"),
+#                 helpText("If you have selected Single Gene mode (above), now select a second gene to correlate with"),
+#                 selectInput("secondGene","Type a Gene Symbol",choices="A2M",selected = "A2M"),
                  selectInput("clinvar_cor", "Choose a Clinical Covariate to colour by...",choices=c("None", "iCluster","Gleason","Sample_Group"),selected="None"),
                  h2("Output options"),
                  textInput("correlationBasename", label = "What to call the output files",value="correlation"),
@@ -146,7 +142,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  downloadButton("correlationScript","Download R script....")
                ),
                mainPanel(
-                 #plotOutput("corPlot",width = 1200,height=600)
+                 plotOutput("corPlot",width = 1200,height=600)
                )
              )
     ),
@@ -182,7 +178,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
     tabPanel("Copy Number",
       sidebarLayout(
        sidebarPanel(
-         radioButtons("inputType_cn", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),                 h2("Output options"),
+#         radioButtons("inputType_cn", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),                 h2("Output options"),
          textInput("copyNumberBasename", label = "What to call the output files",value="example"),
          radioButtons("copyNumberPlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
          downloadButton("copyNumberPDF","Export plot...."),
@@ -191,7 +187,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
         mainPanel(
           helpText("The Proportion of amplifications and deletions will be shown for your chosen gene(s)."),
           plotOutput("copyNumber",width=1200,height=600),
-          tableOutput("copyNumberTable")
+          DT::dataTableOutput("copyNumberTable")
         )
         
       )

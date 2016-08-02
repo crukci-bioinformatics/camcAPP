@@ -17,9 +17,10 @@ library(knitr)
 library(Biobase)
 library(broom)
 library(GGally)
-
+library(survival)
+library(party)
 library(DT)
-
+library(org.Hs.eg.db)
 
 
 #if(!require(prostateCancerTaylor)) install_github("crukci-bioinformatics/prostateCancerTaylor");library(prostateCancerTaylor)
@@ -113,6 +114,14 @@ exp_grasso <- tbl("expression",src=db_grasso)
 
 ## dplyr needs to be the last package loaded, otherwise the 'select' function seems to be over-written
 
+library(org.Hs.eg.db)
+
+
+
+
+geneTable <- AnnotationDbi:::select(org.Hs.eg.db, keys=keys(org.Hs.eg.db), keytype = "ENTREZID",columns=c("SYMBOL","GENENAME"))
+
+
 select <- dplyr::select
 iclusPal <- brewer.pal(5, "Set1")
 gradeCols <- rev(brewer.pal(11, "RdYlGn"))
@@ -127,16 +136,46 @@ print(endLoad)
 
 shinyServer(function(input, output,session){
 
-
+ # output$geneTable <- DT:::renderDataTable(datatable(geneTable,
+#                                           rownames=FALSE,
+#                                           selection="single",
+#                                           options=list(searchHighlight=TRUE)
+#                                                    ),
+#                                          server=TRUE)
+  
+#  getCurrentGene <- reactive({
+#    if(input$inputType == "Single Gene"){
+#      updateTextInput(session, inputId = "profileBasename", value=paste0(input$currentGene,"-profile"))
+#      updateTextInput(session, inputId = "survivalBasename", value=paste0(input$currentGene,"-survival"))
+#      updateTextInput(session, inputId = "copyNumberBasename", value=paste0(input$currentGene,"-copyNumber"))
+#      updateTextInput(session, inputId = "correlationBasename", value=paste0(input$currentGene,"-versus-",getSecondGene()))
+#    }
+#    input$currentGene
+#  })
+  
   
   getCurrentGene <- reactive({
-    if(input$inputType == "Single Gene"){
-      updateTextInput(session, inputId = "profileBasename", value=paste0(input$currentGene,"-profile"))
-      updateTextInput(session, inputId = "survivalBasename", value=paste0(input$currentGene,"-survival"))
-      updateTextInput(session, inputId = "copyNumberBasename", value=paste0(input$currentGene,"-copyNumber"))
-      updateTextInput(session, inputId = "correlationBasename", value=paste0(input$currentGene,"-versus-",getSecondGene()))
-    }
-    input$currentGene
+    
+    selectedRow <- as.numeric(input$geneTable_rows_selected)
+    
+    if(!is.null(selectedRow)){
+      message("Row selected:-", selectedRow)
+      print(geneTable[selectedRow,])
+      
+      currentGene <- as.character(geneTable$SYMBOL[selectedRow])
+      message("Current gene is......   ",currentGene)
+      if(input$inputType == "Single Gene"){
+        updateTextInput(session, inputId = "profileBasename", value=paste0(currentGene,"-profile"))
+        updateTextInput(session, inputId = "survivalBasename", value=paste0(currentGene,"-survival"))
+        updateTextInput(session, inputId = "copyNumberBasename", value=paste0(currentGene,"-copyNumber"))
+        updateTextInput(session, inputId = "correlationBasename", value=paste0(currentGene,"-versus-",getSecondGene()))
+      }
+
+      
+    } else currentGene = "A1BG"
+    
+    currentGene
+    
   })
   
   getSecondGene <- reactive({
@@ -152,20 +191,17 @@ shinyServer(function(input, output,session){
   
   
   #    print(inFile$name)
-  genes <- read.delim(inFile$datapath)[,1]
+  genes <- read.delim(inFile$datapath,stringsAsFactors = FALSE)[,1]
   #   print(dim(genes))
   #   if(input$inputType != "Single Gene") updateTextInput(session, inputId = "profileBasename",value=paste0(basename(input$datapath),"-profile"))
   updateSelectInput(session, inputId = "cambridgeGeneChoice",choices = as.character(genes),selected=as.character(genes)[1])
   updateSelectInput(session, inputId = "survivalGeneChoice",choices = as.character(genes),selected=as.character(genes)[1])
   
-  if(input$inputType != "Single Gene"){
-    inFile <- input$file1
     updateTextInput(session, inputId = "profileBasename", value=paste0(basename(inFile$name),"-profile"))
     updateTextInput(session, inputId = "survivalBasename", value=paste0(as.character(genes)[1],"-survival"))
     updateTextInput(session, inputId = "heatmapBasename", value=paste0(basename(inFile$name),"-heatmap"))
     updateTextInput(session, inputId = "copyNumberBasename", value=paste0(basename(inFile$name),"-copyNumber"))
-  }
-  
+
   genes
   
   })
@@ -177,13 +213,11 @@ shinyServer(function(input, output,session){
     ##Genes from gene list currently uploaded
     ##Gene from correlation page
     
-    gene1 <- getCurrentGene()
+#    gene1 <- getCurrentGene()
     genes <- getGeneList()
-    gene2 <- getSecondGene()
-    
-    genelist <- unique(c(gene1,gene2,genes))
-    
-    genelist
+ #   gene2 <- getSecondGene()
+    genes  
+
   }
   )
     
@@ -206,6 +240,22 @@ shinyServer(function(input, output,session){
     input$cambridgeCombPlot
   })
   
+  getDistFun <- reactive({
+    input$distfun
+    
+  })
+  
+  getReordRows <- reactive({
+    input$reordRows
+  })
+  
+  getHclustMethod <- reactive({
+    input$hclustfun
+  })
+  
+  getScaleMethod <- reactive({
+    input$scale
+  })
   
   
   getDataset <- reactive({
@@ -339,18 +389,15 @@ shinyServer(function(input, output,session){
   prepareBoxplot <- reactive({
     
    data <- prepareExpressionMatrix() 
-    
+   dataset <- getDataset()
    plotType <- input$inputType
    
-   if(plotType == "Single Gene") {
-     genes <- getCurrentGene()
-   } else {
-     
+
      if (input$cambridgeCombPlot == "Yes"){
        genes <- getGeneList()
      }
      else genes <- input$cambridgeGeneChoice
-   }
+   
      
      
 
@@ -477,7 +524,7 @@ shinyServer(function(input, output,session){
    )
    
                 
-   p1
+   p1 + ggtitle(paste("Profile of genes in ", dataset))
    
    
     
@@ -495,18 +542,14 @@ shinyServer(function(input, output,session){
     data <- prepareExpressionMatrix() 
     message("Have data been re-calculated?")
 
+    dataset <- getDataset()
+    
 
-    
-    if(plotType == "Single Gene") {
-      genes <- getCurrentGene()
-    } else {
-      
-      if (input$cambridgeCombPlot == "Yes"){
-        genes <- getGeneList()
-      }
-      else genes <- input$cambridgeGeneChoice
+    if (input$cambridgeCombPlot == "Yes"){
+      genes <- getGeneList()
     }
-    
+    else genes <- input$cambridgeGeneChoice
+
     
     
     
@@ -642,24 +685,20 @@ shinyServer(function(input, output,session){
   )
   
   
-  output$anovaResult <- renderPrint({
+  anovaTable <- reactive({
+    
     dataset <- getDataset()  
-    plotType <- input$inputType
-    
-    
-    if(plotType == "Single Gene") {
-      genes <- getCurrentGene()
-    } else  genes <- getGeneList()
-    
-    #    data <- filterByGene(dataset,genes)
+    genes <- getGeneList()
     
     data <- prepareExpressionMatrix()
+    
+    data <- filter(data, Symbol %in% genes)
     
     var <- getCambridgeVariable()
     
     
     if(dataset == "Cambridge"){
-      switch(var,
+      df <- switch(var,
              iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals"),
              
              Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals"),
@@ -672,7 +711,7 @@ shinyServer(function(input, output,session){
     else if (dataset == "Stockholm"){
       
       
-      switch(var,
+      df <-  switch(var,
              iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals"),
              
              Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals")
@@ -682,7 +721,7 @@ shinyServer(function(input, output,session){
     
     else if (dataset == "MSKCC"){
       
-      switch(var,
+      df <-  switch(var,
              CopyNumberCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Copy.number.Cluster,data=.)))%>% filter(term != "Residuals"),
              Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals")
       )
@@ -690,13 +729,26 @@ shinyServer(function(input, output,session){
     }
     
     else{
-      group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.)))%>% filter(term != "Residuals")
+      df <-  group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)
       
     }
     
+    datatable(df)
+    
+    
+  })
+  
+  
+  output$anovaResult <- DT::renderDataTable({
+
+    anovaTable()
     
   }
   )
+  
+  
+  
+  
   
   output$cambridgeBoxplotPDF <- downloadHandler(
     filename = function(){
@@ -724,21 +776,15 @@ shinyServer(function(input, output,session){
   
 
   
-  output$rpSummary <- renderTable({
+  rpSummary <- reactive({
     
     combined.data <- prepareExpressionMatrix()
     
     combined.data <- filter(combined.data, !is.na(Event), !is.na(Time))
     
-    plotType <- input$inputType_survival
-    if(plotType == "Single Gene") {
-      genes <- getCurrentGene()
-    }
-    else {
-      
+
       genes <- as.character(getGeneList())
-      
-    }
+
     message("Gene list is....")
     print(genes)
     pVals <- NULL
@@ -778,22 +824,15 @@ shinyServer(function(input, output,session){
     
     df <- data.frame(Gene = genes,RP_p.value=pVals, RP_Cut.off = cOffs)
     
-    df
-    
-    #if(input$cutoffMethod == "RP"){
-    
-    # summary <- ifelse(newPval <0.05, ". The partitioning and survival curves will apear below", ". Unfortunately, no significant partitioning of the expression values could be found")
-    #  paste("Recursive Partitioning was run on ", currentGene, "from the", getRpDataset(), "dataset",summary)
-    #  } else if(input$cutoffMehod == "Median") {
-    
-    #    print("Selecting expression cut-off based on median expression of the gene")
-    #  }
-    
-    #  else print("Using manual cut-off of; ",as.numeric(input$expCutoff))
-    
-    
+  datatable(df)
+  
   })
   
+  
+  output$rpSummary <- DT:::renderDataTable({
+    
+    rpSummary()
+  })
   
   rpAnalysis <- function(combined.data){
     surv.xfs <- Surv((as.numeric(as.character(combined.data$Time))/12), combined.data$Event)
@@ -813,14 +852,9 @@ shinyServer(function(input, output,session){
     
     combined.data <- filter(combined.data, !is.na(Event), !is.na(Time))
     plotType <- input$inputType_survival
-    if(plotType == "Single Gene") {
-      currentGene <- getCurrentGene()
-    }
-    else {
+    
+    currentGene <- input$survivalGeneChoice
       
-      currentGene <- input$survivalGeneChoice
-      
-    }
     
     message("Gene for RP plot is ", currentGene)
     data <- filter(combined.data, Symbol == currentGene)
@@ -887,16 +921,10 @@ shinyServer(function(input, output,session){
   output$survivalPlot <- renderPlot({
     combined.data <- prepareExpressionMatrix()
     combined.data <- filter(combined.data, !is.na(Event), !is.na(Time))
-    plotType <- input$inputType_survival
-    if(plotType == "Single Gene") {
-      currentGene <- getCurrentGene()
-    }
-    else {
-      
-      currentGene <- input$survivalGeneChoice
-      
-    }
     
+    currentGene <- input$survivalGeneChoice
+      
+
     updateTextInput(session, "survivalBasename",value=paste0(currentGene,"-survival"))
     
     data <- filter(combined.data, Symbol == currentGene)
@@ -981,15 +1009,9 @@ shinyServer(function(input, output,session){
       if(input$survivalPlotFormat == "pdf") pdf(file, width=12, height=6.3)
       else png(file, width=1200,height=600)
       
-      plotType <- input$inputType_survival
-      if(plotType == "Single Gene") {
-        currentGene <- getCurrentGene()
-      }
-      else {
+      currentGene <- input$survivalGeneChoice
         
-        currentGene <- input$survivalGeneChoice
-        
-      }
+
       combined.data <- prepareExpressionMatrix()
       combined.data <- filter(combined.data, !is.na(Event), !is.na(Time))
       
@@ -1179,6 +1201,7 @@ shinyServer(function(input, output,session){
     
     genes <- getGeneList()
     data <- prepareExpressionMatrix()
+    dataset <- getDataset()  
     
     if(dataset == "MSKCC"){
     
@@ -1189,16 +1212,14 @@ shinyServer(function(input, output,session){
       
       
       
-      taylor <- filter(taylor,geo_accession %in% samples)
+      taylor <- filter(taylor,geo_accession %in% samples) %>% select(geo_accession,Expression,Symbol)
       geneMatrix <- taylor %>% 
-        spread(geo_accession,Expression) %>% select(-Gene) %>% data.frame
-      
+        spread(geo_accession,Expression)%>% data.frame
+      symbols <- geneMatrix[,1]
       geneMatrix <- as.matrix(geneMatrix[,-1])
       
       
-      symbols <- filter(fd_taylor, ID %in% mostVarProbes) %>% 
-        select(Gene) %>% as.matrix %>% as.character
-      
+
       rownames(geneMatrix) <- symbols
       
       pd <- left_join(taylor,pd_taylor) %>% distinct(geo_accession)
@@ -1226,27 +1247,18 @@ shinyServer(function(input, output,session){
       
       camcap <- data
       
-      summary_stats <- camcap %>% group_by(ID) %>% 
-        summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
-      
-
-      
-      
-      
-      
       samples <- filter(pd_camcap, Sample_Group == "Tumour") %>% 
         select(geo_accession) %>% as.matrix %>% as.character
       
-      camcap <- filter(camcap, geo_accession %in% samples) %>% select(-Symbol)
+      camcap <- filter(camcap, geo_accession %in% samples) %>% select(geo_accession,Expression,Symbol)
       
       geneMatrix <- camcap %>% 
         spread(geo_accession,Expression) %>% data.frame
       
+      symbols <- geneMatrix[,1]
+      
       geneMatrix <- as.matrix(geneMatrix[,-1])
-      
-      symbols <- filter(fd_camcap, ID %in% mostVarProbes) %>% 
-        select(Symbol) %>% as.matrix %>% as.character
-      
+  
       rownames(geneMatrix) <- symbols
       
       
@@ -1280,16 +1292,15 @@ shinyServer(function(input, output,session){
     
       samples <-  select(pd_stockholm,geo_accession) %>% as.matrix %>% as.character
       
-      stockholm <- filter(stockholm,geo_accession %in% samples) 
+      stockholm <- filter(stockholm,geo_accession %in% samples)  %>% select(geo_accession,Expression,Symbol)
       
       geneMatrix <- stockholm %>% 
-        spread(geo_accession,Expression) %>% select(-Symbol) %>% data.frame
+        spread(geo_accession,Expression) %>% data.frame
       
+      symbols <- geneMatrix[,1]
       geneMatrix <- as.matrix(geneMatrix[,-1])
       
-      symbols <- filter(fd_stockholm, ID %in% mostVarProbes) %>% 
-        select(Symbol) %>% as.matrix %>% as.character
-      
+
       rownames(geneMatrix) <- symbols
       
       
@@ -1327,7 +1338,7 @@ shinyServer(function(input, output,session){
     colMatrix <- hm[[2]]
     clusObj <- doClustering()
     
-    dataset <- getHeatmapDataset()
+    dataset <- getDataset()
     
     if(input$cutType == "k"){
       kGrps <- cutree(clusObj,k=input$kGrps)
@@ -1372,13 +1383,209 @@ shinyServer(function(input, output,session){
   )
   
   
+  
+  
+  
+  ##########################################
+  
+  
+  output$corPlot <- renderPlot({
+    
+    genes <- getGeneList()
+    
+    
+    dataset <- getDataset()
+    
+    #cordata <- filterByGene(dataset, genes)
+    
+    cordata <- prepareExpressionMatrix()
+    
+    covar <- input$clinvar_cor
+    
+    if(input$inputType_correlation == "Gene List"){
+    
+      if(dataset == "Cambridge"){
+        
+        if(covar == "iCluster"){
+          
+          data <- select(cordata, geo_accession,Expression, iCluster, Symbol) %>% 
+            filter(iCluster %in% c("clust1","clust2","clust3","clust4","clust5")) %>% 
+            #        mutate(Symbol=gsub(genes[1], "Gene1",Symbol)) %>% 
+            #       mutate(Symbol=gsub(genes[2], "Gene2",Symbol)) %>% 
+            spread(Symbol,Expression)
+          #      cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df),col="iCluster")
+          
+          #        ggplot(data, aes(x = Gene1, y=Gene2,col=iCluster)) + geom_point() + xlab(genes[1]) + ylab(genes[2]) +  scale_fill_manual(values=iclusPal) + ggtitle(paste("Correlation = ",cor))
+          
+        }
+        
+        else if(covar == "Gleason"){
+          
+          data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df),col="Gleason")
+          
+        }
+        
+        else if(covar == "Sample_Group"){
+          
+          data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
+          
+        }
+        
+        else {
+          
+          data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df))
+        }
+        
+        
+        
+      }
+      
+      else if (dataset == "Stockholm"){
+        
+        if(covar == "iCluster"){
+          
+          data <- select(cordata, geo_accession,Expression, iCluster, Symbol) %>% 
+            filter(iCluster %in% c("clust1","clust2","clust3","clust4","clust5")) %>% 
+            #        mutate(Symbol=gsub(genes[1], "Gene1",Symbol)) %>% 
+            #       mutate(Symbol=gsub(genes[2], "Gene2",Symbol)) %>% 
+            spread(Symbol,Expression)
+          #      cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df),col="iCluster")
+          
+        }
+        
+        else if(covar == "Gleason"){
+          
+          data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df),col="Gleason")
+          
+        }
+        
+        else {
+          
+          data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df))
+          
+        }
+        
+        
+      }
+      
+      else if (dataset=="MSKCC"){
+        
+        if(covar == "CopyNumberCluster"){
+          
+          data <- select(cordata, geo_accession,Expression, Copy.number.Cluster, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
+          p <- ggpairs(df, columns = 3:ncol(df),col="Copy.number.Cluster")
+        }
+        else if(covar == "Gleason"){
+          
+          
+          data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df),col="Gleason")
+        }
+        
+        else {
+          
+          data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df))
+          
+        }
+        
+        
+      }
+      
+      else if (dataset == "Michigan2005"){
+        
+        if(covar == "Sample_Group"){
+          data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
+          
+        }
+        else{
+          data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df))
+          
+        }
+        
+      }
+      
+      else if (dataset == "Michigan2012"){
+        
+        if(covar == "Sample_Group"){
+          data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
+          
+        }
+        else{
+          data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+            spread(Symbol,Expression)
+          df <- as.data.frame(data)
+          p <- ggpairs(df, columns = 3:ncol(df))
+          
+        }
+        
+      }
+      
+    }
+    
+    else {
+      gene1 <- filter(cordata, Symbol == input$correlationGeneChoice) %>% mutate(Gene1 = Expression)
+    
+    genes.other <- setdiff(genes,input$correlationGeneChoice)
+    plist <- NULL  
+    for(i in 1:length(genes.other)){
+      
+      gene2 <- filter(cordata, Symbol == genes.other[i]) %>% mutate(Gene2 = Expression)
+      df <- mutate(gene1,Gene2 = gene2$Gene2)
+      plist[[i]] <-  ggplot(df, aes(y = Expression, x=Gene2)) + geom_point() + ylab(input$correlationGeneChoice) + xlab(genes.other[i])
+    }
+    
+    p <- do.call("grid.arrange",c(plist,ncol=2))
+    
+    }
+    
+    print(p)
+    
+  }
+  )
+  
   ##########################################
   
   
   getCopyNumberTable <- reactive({
     
-      genes <- getCurrentGene()
-      genes <- c(genes,getGeneList())
+#      genes <- getCurrentGene()
+      genes <- getGeneList()
     
     message("Retrieving copy-number data....")
     
@@ -1413,29 +1620,27 @@ shinyServer(function(input, output,session){
   )
   
   
-  output$copyNumberTable <- renderTable({
+  copyNumberTable <- reactive({
     
     cn.all <- getCopyNumberTable()
     
-    if(input$inputType_cn == "Single Gene") {
-      genes <- getCurrentGene()
-      
-      
-    } else  genes <- getGeneList()
+    genes <- getGeneList()
     
-    cn.all <- filter(cn.all, Symbol %in% genes)
-    
+    cn.all <- filter(cn.all, Symbol %in% genes) %>% 
+      mutate(Percentage = abs(Percentage))
+    datatable(cn.all)
   })
+  
+  output$copyNumberTable <- DT:::renderDataTable({
+    copyNumberTable()
+  })
+  
   
   
   output$copyNumber <- renderPlot({
     
     cn.all <- getCopyNumberTable()
-    if(input$inputType_cn == "Single Gene") {
-      genes <- getCurrentGene()
-      
-      
-    } else  genes <- getGeneList()
+    genes <- getGeneList()
     
     cn.all <- filter(cn.all, Symbol %in% genes)
     
@@ -1453,11 +1658,7 @@ shinyServer(function(input, output,session){
       if(input$correlationPlotFormat == "pdf") pdf(file, width=12, height=6.3)
       else png(file, width=1200,height=600)
       
-      if(input$inputType_cn == "Single Gene") {
-        genes <- getCurrentGene()
-        
-        
-      } else  genes <- getGeneList()
+      genes <- getGeneList()
       
       camcap.cnts <- filter(camcap.cn, Symbol %in% genes) %>% 
         group_by(Symbol) %>% 
