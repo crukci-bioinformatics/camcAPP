@@ -290,7 +290,7 @@ shinyServer(function(input, output,session){
     if(dataset == "Cambridge"){
       
       #      probes <- fd_camcap %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-      data <- collect(exp_camcap)  %>% filter(Symbol %in% genes)
+      data <- collect(exp_camcap,n=Inf)  %>% filter(Symbol %in% genes)
       #gather(geo_accession,Expression,-ID)
       fd <- fd_camcap
       pd <-  mutate(pd_camcap, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
@@ -299,7 +299,7 @@ shinyServer(function(input, output,session){
     } else if (dataset == "Stockholm"){
       
       #      probes <- fd_stockholm %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-      data<- collect(exp_stockholm)  %>% filter(Symbol %in% genes)
+      data<- collect(exp_stockholm,n=Inf)  %>% filter(Symbol %in% genes)
       #        gather(geo_accession,Expression,-ID)
       fd <- fd_stockholm
       pd <-  mutate(pd_stockholm, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
@@ -311,7 +311,7 @@ shinyServer(function(input, output,session){
       #probes <- fd_taylor %>% filter(Gene %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
       #      data <- exp_taylor  %>% filter(ID %in% probes) %>% 
       #       gather(geo_accession,Expression,-ID)
-      data <- collect(exp_taylor) %>% filter(Gene %in% genes)
+      data <- collect(exp_taylor,n=Inf) %>% filter(Gene %in% genes)
       
       
       fd <- fd_taylor %>% mutate(Symbol = Gene)
@@ -332,7 +332,7 @@ shinyServer(function(input, output,session){
       #probes <- fd_varambally %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
       #data <- exp_varambally  %>% filter(ID %in% probes) %>% 
       # gather(geo_accession,Expression,-ID)
-      data <- collect(exp_varambally) %>% filter(Symbol %in% genes)
+      data <- collect(exp_varambally,n=Inf) %>% filter(Symbol %in% genes)
       
       fd <- fd_varambally
       pd <- pd_varambally 
@@ -342,7 +342,7 @@ shinyServer(function(input, output,session){
       #probes <- fd_grasso %>% filter(GENE_SYMBOL %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
       #data <- exp_grasso  %>% filter(ID %in% probes) %>% 
       #  gather(geo_accession,Expression,-ID)
-      data <- collect(exp_grasso) %>% filter(GENE_SYMBOL %in% genes)
+      data <- collect(exp_grasso,n=Inf) %>% filter(GENE_SYMBOL %in% genes)
       fd <- mutate(fd_grasso, Symbol = GENE_SYMBOL)
       pd <- mutate(pd_grasso, Sample_Group = Group) 
       
@@ -368,7 +368,7 @@ shinyServer(function(input, output,session){
     
     mostVarProbes <- left_join(summary_stats,fd) %>% 
       arrange(Symbol,desc(iqr)) %>% 
-      distinct(Symbol) %>% 
+      distinct(Symbol,.keep_all=TRUE) %>% 
       select(ID) %>%  as.matrix %>%  as.character
     
     data <- filter(data, ID %in% mostVarProbes)
@@ -1222,7 +1222,7 @@ shinyServer(function(input, output,session){
 
       rownames(geneMatrix) <- symbols
       
-      pd <- left_join(taylor,pd_taylor) %>% distinct(geo_accession)
+      pd <- left_join(taylor,pd_taylor) %>% distinct(geo_accession,.keep_all=TRUE)
       
       colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)
       grp <- pd$Copy.number.Cluster
@@ -1262,7 +1262,7 @@ shinyServer(function(input, output,session){
       rownames(geneMatrix) <- symbols
       
       
-      pd <- left_join(camcap,pd_camcap) %>% distinct(geo_accession)
+      pd <- left_join(camcap,pd_camcap) %>% distinct(geo_accession,.keep_all=TRUE)
       
       colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)
       grp <- pd$iCluster
@@ -1304,7 +1304,7 @@ shinyServer(function(input, output,session){
       rownames(geneMatrix) <- symbols
       
       
-      pd <- left_join(stockholm,pd_stockholm) %>% distinct(geo_accession)
+      pd <- left_join(stockholm,pd_stockholm) %>% distinct(geo_accession,.keep_all=TRUE)
       
       colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)
       grp <- pd$iCluster
@@ -1589,9 +1589,9 @@ shinyServer(function(input, output,session){
     
     message("Retrieving copy-number data....")
     
-    camcap.cn <- collect(tbl("copyNumber",src=db_camcap))
-    stockholm.cn <- collect(tbl("copyNumber",src=db_stockholm))
-    taylor.cn <- collect(tbl("copyNumber",src=db_taylor))
+    camcap.cn <- collect(tbl("copyNumber",src=db_camcap),n=Inf)
+    stockholm.cn <- collect(tbl("copyNumber",src=db_stockholm),n=Inf)
+    taylor.cn <- collect(tbl("copyNumber",src=db_taylor),n=Inf)
     
     camcap.cnts <- filter(camcap.cn, Symbol %in% genes) %>% 
       group_by(Symbol) %>% 
