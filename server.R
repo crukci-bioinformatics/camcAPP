@@ -354,16 +354,7 @@ shinyServer(function(input, output,session){
     
     data <- left_join(data,summary_stats) %>% mutate(Z = (Expression - mean) / sd)
     
-    #    mostVarProbe <- as.character(summary_stats$ID[which.max(summary_stats$iqr)])
-    #    mu <- summary_stats$mean[which.max(summary_stats$iqr)]
-    #    sd <- summary_stats$sd[which.max(summary_stats$iqr)]
-    
-    #    data <- filter(data, ID== mostVarProbe) %>%
-    #      mutate(Z = (Expression -mu) /sd)
-    
-    #    data <- left_join(data,pd)
-    #    data <- left_join(data, fd)
-    
+
     
     
     mostVarProbes <- left_join(summary_stats,fd) %>% 
@@ -524,7 +515,7 @@ shinyServer(function(input, output,session){
    )
    
                 
-   p1 + ggtitle(paste("Profile of genes in ", dataset))
+   p1 + ggtitle(paste("Profile of genes in ", dataset, "Dataset"))
    
    
     
@@ -536,150 +527,9 @@ shinyServer(function(input, output,session){
   
   output$displayBoxplot <- renderPlot({
     
-    message("Preparing the boxplot")
-    plotType <- input$inputType
+    p1 <- prepareBoxplot()
     
-    data <- prepareExpressionMatrix() 
-    message("Have data been re-calculated?")
-
-    dataset <- getDataset()
-    
-
-    if (input$cambridgeCombPlot == "Yes"){
-      genes <- getGeneList()
-    }
-    else genes <- input$cambridgeGeneChoice
-
-    
-    
-    
-    
-    #    data <- filterByGene(dataset, genes)
-    data <- data %>% 
-      filter(Symbol %in% genes)
-    
-    doZ <- ifelse(getCambridgeZ() == "Yes",TRUE,FALSE)
-    
-    if(doZ) data <- mutate(data, Expression=Z)
-    
-    var <- getCambridgeVariable()
-    overlay <- getCambridgeOverlay()
-    
-    
-    if(dataset == "Cambridge"){
-      
-      p1 <- switch(var,
-                   iCluster = {data %>% 
-                       filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
-                       ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
-                   },
-                   
-                   Gleason = {data  %>% 
-                       filter(Sample_Group == "Tumour") %>% 
-                       filter(!(is.na(Gleason))) %>% 
-                       ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() + scale_fill_manual(values = c("5=3+2"= gradeCols[1], 
-                                                                                                                              "6=3+3"=gradeCols[2],
-                                                                                                                              "6=2+4"= gradeCols[3], 
-                                                                                                                              "7=3+4" = gradeCols[4],
-                                                                                                                              "7=4+3" = gradeCols[5],
-                                                                                                                              "8=3+5" = gradeCols[6],
-                                                                                                                              "8=4+4"=gradeCols[7],
-                                                                                                                              "9=4+5"=gradeCols[8],
-                                                                                                                              "9=5+4"=gradeCols[9],
-                                                                                                                              "10=5+5"=gradeCols[10]))
-                   },
-                   Sample_Group ={data %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
-                       ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot() + scale_fill_manual(values = c("darkseagreen1","darkorange1","firebrick1"))
-                     
-                   }
-                   
-      )
-    }
-    
-    else if(dataset == "Stockholm"){
-      
-      p1 <- switch(var,
-                   iCluster = {data %>% 
-                       ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
-                   },
-                   
-                   Gleason = {data  %>% 
-                       filter(!(is.na(Gleason))) %>% 
-                       ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() + scale_fill_manual(values = c("5=3+2"= gradeCols[1], 
-                                                                                                                              "6=3+3"=gradeCols[2],
-                                                                                                                              "6=2+4"= gradeCols[3], 
-                                                                                                                              "7=3+4" = gradeCols[4],
-                                                                                                                              "7=4+3" = gradeCols[5],
-                                                                                                                              "8=3+5" = gradeCols[6],
-                                                                                                                              "8=4+4"=gradeCols[7],
-                                                                                                                              "9=4+5"=gradeCols[8],
-                                                                                                                              "9=5+4"=gradeCols[9],
-                                                                                                                              "10=5+5"=gradeCols[10]))
-                   }
-                   
-      )
-      
-    }
-    
-    else if(dataset == "MSKCC"){
-      
-      p1 <- switch(var,
-                   CopyNumberCluster = {data %>% 
-                       filter(!is.na(Copy.number.Cluster)) %>% 
-                       ggplot(aes(x = Copy.number.Cluster, y = Expression, fill=Copy.number.Cluster)) + geom_boxplot()
-                   },
-                   
-                   Gleason = {data  %>% 
-                       filter(!(is.na(Gleason))) %>% 
-                       ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot()+ scale_fill_manual(values = c("5=3+2"= gradeCols[1], 
-                                                                                                                             "6=3+3"=gradeCols[2],
-                                                                                                                             "6=2+4"= gradeCols[3], 
-                                                                                                                             "7=3+4" = gradeCols[4],
-                                                                                                                             "7=4+3" = gradeCols[5],
-                                                                                                                             "8=3+5" = gradeCols[6],
-                                                                                                                             "8=4+4"=gradeCols[7],
-                                                                                                                             "9=4+5"=gradeCols[8],
-                                                                                                                             "9=5+4"=gradeCols[9],
-                                                                                                                             "10=5+5"=gradeCols[10]))
-                   }
-      )
-      
-    }
-    
-    else if(dataset == "Michigan2005"){
-      
-      
-      p1 <- data %>% ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
-    }
-    
-    else if(dataset == "Michigan2012"){
-      
-      p1 <- data %>% ggplot(aes(x = Group, y = Expression, fill=Group)) + geom_boxplot()
-      
-    }
-    
-    
-    if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
-    
-    p1 <- p1 +  facet_wrap(~Symbol) 
-    
-    
-    theme <- input$boxplotTheme
-    
-    p1 <- switch(theme,
-                 ggplot2 = p1,
-                 bw = p1 + theme_bw(),
-                 classic = p1 + theme_classic(),
-                 minimal = p1 + theme_minimal(),
-                 light = p1 + theme_light()
-    )
-    
-    
-    p1
-    
-    
-    
-    p1  
+    print(p1)
     
   }
   )
@@ -1388,8 +1238,7 @@ shinyServer(function(input, output,session){
   
   ##########################################
   
-  
-  output$corPlot <- renderPlot({
+  doCorPlot <- reactive({
     
     genes <- getGeneList()
     
@@ -1402,8 +1251,8 @@ shinyServer(function(input, output,session){
     
     covar <- input$clinvar_cor
     
-    if(input$inputType_correlation == "Gene List"){
-    
+    if(input$inputType_correlation == "All Pairwise"){
+      
       if(dataset == "Cambridge"){
         
         if(covar == "iCluster"){
@@ -1415,7 +1264,7 @@ shinyServer(function(input, output,session){
             spread(Symbol,Expression)
           #      cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
           df <- as.data.frame(data)
-          p <- ggpairs(df, columns = 3:ncol(df),col="iCluster")
+          p <- ggpairs(df, columns = 3:ncol(df),mapping= aes(col=iCluster))
           
           #        ggplot(data, aes(x = Gene1, y=Gene2,col=iCluster)) + geom_point() + xlab(genes[1]) + ylab(genes[2]) +  scale_fill_manual(values=iclusPal) + ggtitle(paste("Correlation = ",cor))
           
@@ -1426,7 +1275,7 @@ shinyServer(function(input, output,session){
           data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
             spread(Symbol,Expression)
           df <- as.data.frame(data)
-          p <- ggpairs(df, columns = 3:ncol(df),col="Gleason")
+          p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Gleason))
           
         }
         
@@ -1435,7 +1284,7 @@ shinyServer(function(input, output,session){
           data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
             spread(Symbol,Expression)
           df <- as.data.frame(data)
-          p <- ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
+          p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Sample_Group))
           
         }
         
@@ -1462,7 +1311,7 @@ shinyServer(function(input, output,session){
             spread(Symbol,Expression)
           #      cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
           df <- as.data.frame(data)
-          p <- ggpairs(df, columns = 3:ncol(df),col="iCluster")
+          p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=iCluster))
           
         }
         
@@ -1471,7 +1320,7 @@ shinyServer(function(input, output,session){
           data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
             spread(Symbol,Expression)
           df <- as.data.frame(data)
-          p <- ggpairs(df, columns = 3:ncol(df),col="Gleason")
+          p <- ggpairs(df, columns = 3:ncol(df),maping=aes(col=Gleason))
           
         }
         
@@ -1495,7 +1344,7 @@ shinyServer(function(input, output,session){
             spread(Symbol,Expression)
           df <- as.data.frame(data)
           cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
-          p <- ggpairs(df, columns = 3:ncol(df),col="Copy.number.Cluster")
+          p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Copy.number.Cluster))
         }
         else if(covar == "Gleason"){
           
@@ -1503,7 +1352,7 @@ shinyServer(function(input, output,session){
           data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
             spread(Symbol,Expression)
           df <- as.data.frame(data)
-          p <- ggpairs(df, columns = 3:ncol(df),col="Gleason")
+          p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Gleason))
         }
         
         else {
@@ -1524,7 +1373,7 @@ shinyServer(function(input, output,session){
           data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
             spread(Symbol,Expression)
           df <- as.data.frame(data)
-          p <- ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
+          p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Sample_Group))
           
         }
         else{
@@ -1543,7 +1392,7 @@ shinyServer(function(input, output,session){
           data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
             spread(Symbol,Expression)
           df <- as.data.frame(data)
-          p <- ggpairs(df, columns = 3:ncol(df),col="Sample_Group")
+          p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Sample_Group))
           
         }
         else{
@@ -1560,24 +1409,52 @@ shinyServer(function(input, output,session){
     
     else {
       gene1 <- filter(cordata, Symbol == input$correlationGeneChoice) %>% mutate(Gene1 = Expression)
-    
-    genes.other <- setdiff(genes,input$correlationGeneChoice)
-    plist <- NULL  
-    for(i in 1:length(genes.other)){
       
-      gene2 <- filter(cordata, Symbol == genes.other[i]) %>% mutate(Gene2 = Expression)
-      df <- mutate(gene1,Gene2 = gene2$Gene2)
-      plist[[i]] <-  ggplot(df, aes(y = Expression, x=Gene2)) + geom_point() + ylab(input$correlationGeneChoice) + xlab(genes.other[i])
+      genes.other <- setdiff(genes,input$correlationGeneChoice)
+      plist <- NULL  
+      for(i in 1:length(genes.other)){
+        
+        gene2 <- filter(cordata, Symbol == genes.other[i]) %>% mutate(Gene2 = Expression)
+        df <- mutate(gene1,Gene2 = gene2$Gene2)
+        plist[[i]] <-  ggplot(df, aes(y = Expression, x=Gene2)) + geom_point() + ylab(input$correlationGeneChoice) + xlab(genes.other[i])
+      }
+      
+      p <- do.call("grid.arrange",c(plist,ncol=2))
+      
     }
     
-    p <- do.call("grid.arrange",c(plist,ncol=2))
+    p
     
-    }
     
+  })
+  
+
+  
+  output$corPlot <- renderPlot({
+    
+    p <- doCorPlot()
     print(p)
     
-  }
+  })
+  
+  
+  output$CorrelationPDF <- downloadHandler(
+    filename = function(){
+      paste0(input$correlationBasename,".",input$correlationPlotFormat)
+    },
+    content = function(file) {
+      
+      if(input$correlationPlotFormat == "pdf") pdf(file, width=12, height=6.3)
+      else png(file, width=1200,height=600)
+      
+      p <- doCorPlot()
+      print(p)
+      dev.off()
+    }
+    
+    
   )
+  
   
   ##########################################
   
@@ -1637,14 +1514,34 @@ shinyServer(function(input, output,session){
   
   
   
-  output$copyNumber <- renderPlot({
-    
+  doCopyNumberPlot <-reactive({
     cn.all <- getCopyNumberTable()
     genes <- getGeneList()
-    
+    dataset <- getDataset()
     cn.all <- filter(cn.all, Symbol %in% genes)
-    
+    theme <- input$cnTheme
     p <- ggplot(cn.all, aes(x = Event, y=Percentage,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
+    
+    p <- switch(theme,
+                ggplot2 = p,
+                bw = p + theme_bw(),
+                classic = p + theme_classic(),
+                minimal = p + theme_minimal(),
+                light = p + theme_light()
+    )
+    
+    
+    p <- p + ggtitle(paste("Copy Number Profile of genes in the ", dataset, "Dataset"))
+    p
+    
+  }
+  
+  )
+  
+  output$copyNumber <- renderPlot({
+    
+       
+    p <- doCopyNumberPlot()
     print(p)
   })
   
@@ -1655,47 +1552,469 @@ shinyServer(function(input, output,session){
     },
     content = function(file) {
       
-      if(input$correlationPlotFormat == "pdf") pdf(file, width=12, height=6.3)
+      if(input$copyNumberPlotFormat == "pdf") pdf(file, width=12, height=6.3)
       else png(file, width=1200,height=600)
       
-      genes <- getGeneList()
+      p <- doCopyNumberPlot()
+      print(p)
+      
+      dev.off()
+    }
+    
+  )
+  
+  ##########################################
+  
+  output$quickPlot <- renderPlot({
+    
+   doQuickPlot()
+    
+  }
+  )
+  
+  prepareSingleGeneData <- reactive({
+    
+    genes <- input$currentGene
+    
+    dataset <- input$quickDataset
+    
+    if(dataset == "Cambridge"){
+      
+      data <- collect(exp_camcap,n=Inf)  %>% filter(Symbol %in% genes)
+      fd <- fd_camcap
+      pd <-  mutate(pd_camcap, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
+        mutate(Time = as.numeric(FollowUpTime), Event = ifelse(BCR=="Y",1,0))
+      
+    } else if (dataset == "Stockholm"){
+      
+      data<- collect(exp_stockholm,n=Inf)  %>% filter(Symbol %in% genes)
+      fd <- fd_stockholm
+      pd <-  mutate(pd_stockholm, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
+        mutate(Time = as.numeric(FollowUpTime), Event = ifelse(BCR=="Y",1,0))
+    }
+    
+    else if(dataset == "MSKCC"){
+      
+      data <- collect(exp_taylor,n=Inf) %>% filter(Gene %in% genes)
+      
+      
+      fd <- fd_taylor %>% mutate(Symbol = Gene)
+      pd <- mutate(pd_taylor,Gleason = gsub("4+3", "7=4+3", pd_taylor$Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+3", "8=5+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+4", "7=3+4", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+3", "7=4+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+3", "6=3+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+5", "9=4+5", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+5", "8=3+5", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+4", "8=4+4", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA)))
+      
+    }
+    
+    else if(dataset == "Michigan2005"){
+      
+      data <- collect(exp_varambally,n=Inf) %>% filter(Symbol %in% genes)
+      
+      fd <- fd_varambally
+      pd <- pd_varambally 
+    }
+    
+    else {
+      data <- collect(exp_grasso,n=Inf) %>% filter(GENE_SYMBOL %in% genes)
+      fd <- mutate(fd_grasso, Symbol = GENE_SYMBOL)
+      pd <- mutate(pd_grasso, Sample_Group = Group) 
+      
+    }
+    
+    
+    summary_stats <- data %>% group_by(ID) %>% 
+      summarise(mean=mean(Expression,na.rm=TRUE),sd=sd(Expression,na.rm=TRUE),iqr=IQR(Expression,na.rm=TRUE))
+    
+    data <- left_join(data,summary_stats) %>% mutate(Z = (Expression - mean) / sd)
+    
+    
+    
+    
+    mostVarProbes <- left_join(summary_stats,fd) %>% 
+      arrange(Symbol,desc(iqr)) %>% 
+      distinct(Symbol,.keep_all=TRUE) %>% 
+      select(ID) %>%  as.matrix %>%  as.character
+    
+    data <- filter(data, ID %in% mostVarProbes)
+    data <- left_join(data, select(fd, ID, Symbol))
+    data <- left_join(data, pd)
+    data  
+    
+    
+  })
+ 
+  doQuickPlot <- reactive({
+    
+    plotType <- input$displayType
+    
+    data <- prepareSingleGeneData()
+    
+    dataset <- input$quickDataset
+    genes <- input$currentGene
+    
+    currentGene <- input$currentGene
+    
+    if(plotType == "Boxplot"){
+      
+      
+      doZ <- ifelse(input$quick_z_cambridge == "Yes",TRUE,FALSE)
+      
+      
+      if(doZ) data <- mutate(data, Expression=Z)
+      
+      var <- input$quick_clinvar_boxplot
+      overlay <- input$quick_overlay_cambridge
+      
+      
+      if(dataset == "Cambridge"){
+        
+        p1 <- switch(var,
+                     iCluster = {data %>% 
+                         filter(Sample_Group == "Tumour",!is.na(iCluster)) %>% 
+                         ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
+                     },
+                     
+                     Gleason = {data  %>% 
+                         filter(Sample_Group == "Tumour") %>% 
+                         filter(!(is.na(Gleason))) %>% 
+                         ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() + scale_fill_manual(values = c("5=3+2"= gradeCols[1], 
+                                                                                                                                "6=3+3"=gradeCols[2],
+                                                                                                                                "6=2+4"= gradeCols[3], 
+                                                                                                                                "7=3+4" = gradeCols[4],
+                                                                                                                                "7=4+3" = gradeCols[5],
+                                                                                                                                "8=3+5" = gradeCols[6],
+                                                                                                                                "8=4+4"=gradeCols[7],
+                                                                                                                                "9=4+5"=gradeCols[8],
+                                                                                                                                "9=5+4"=gradeCols[9],
+                                                                                                                                "10=5+5"=gradeCols[10]))
+                     },
+                     Sample_Group ={data %>% mutate(Sample_Group = factor(Sample_Group,levels=c("Benign","Tumour","CRPC"))) %>% 
+                         ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot() + scale_fill_manual(values = c("darkseagreen1","darkorange1","firebrick1"))
+                       
+                     }
+                     
+        )
+      }
+      
+      else if(dataset == "Stockholm"){
+        
+        p1 <- switch(var,
+                     iCluster = {data %>% 
+                         ggplot(aes(x = iCluster, y = Expression, fill=iCluster)) + geom_boxplot() +  scale_fill_manual(values=iclusPal) 
+                     },
+                     
+                     Gleason = {data  %>% 
+                         filter(!(is.na(Gleason))) %>% 
+                         ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot() + scale_fill_manual(values = c("5=3+2"= gradeCols[1], 
+                                                                                                                                "6=3+3"=gradeCols[2],
+                                                                                                                                "6=2+4"= gradeCols[3], 
+                                                                                                                                "7=3+4" = gradeCols[4],
+                                                                                                                                "7=4+3" = gradeCols[5],
+                                                                                                                                "8=3+5" = gradeCols[6],
+                                                                                                                                "8=4+4"=gradeCols[7],
+                                                                                                                                "9=4+5"=gradeCols[8],
+                                                                                                                                "9=5+4"=gradeCols[9],
+                                                                                                                                "10=5+5"=gradeCols[10]))
+                     }
+                     
+        )
+        
+      }
+      
+      else if(dataset == "MSKCC"){
+        
+        p1 <- switch(var,
+                     CopyNumberCluster = {data %>% 
+                         filter(!is.na(Copy.number.Cluster)) %>% 
+                         ggplot(aes(x = Copy.number.Cluster, y = Expression, fill=Copy.number.Cluster)) + geom_boxplot()
+                     },
+                     
+                     Gleason = {data  %>% 
+                         filter(!(is.na(Gleason))) %>% 
+                         ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot()+ scale_fill_manual(values = c("5=3+2"= gradeCols[1], 
+                                                                                                                               "6=3+3"=gradeCols[2],
+                                                                                                                               "6=2+4"= gradeCols[3], 
+                                                                                                                               "7=3+4" = gradeCols[4],
+                                                                                                                               "7=4+3" = gradeCols[5],
+                                                                                                                               "8=3+5" = gradeCols[6],
+                                                                                                                               "8=4+4"=gradeCols[7],
+                                                                                                                               "9=4+5"=gradeCols[8],
+                                                                                                                               "9=5+4"=gradeCols[9],
+                                                                                                                               "10=5+5"=gradeCols[10]))
+                     }
+        )
+        
+      }
+      
+      else if(dataset == "Michigan2005"){
+        
+        
+        p1 <- data %>% ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+      }
+      
+      else if(dataset == "Michigan2012"){
+        
+        p1 <- data %>% ggplot(aes(x = Group, y = Expression, fill=Group)) + geom_boxplot()
+        
+      }
+      
+      
+      if(overlay == "Yes")  p1 <- p1 + geom_jitter(position=position_jitter(width = .05),alpha=0.75) 
+      
+      p1 <- p1 +  facet_wrap(~Symbol) 
+      
+      
+      theme <- input$quickTheme
+      
+      p1 <- switch(theme,
+                   ggplot2 = p1,
+                   bw = p1 + theme_bw(),
+                   classic = p1 + theme_classic(),
+                   minimal = p1 + theme_minimal(),
+                   light = p1 + theme_light()
+      )
+      
+      
+      p1 <- p1 + ggtitle(paste("Profile of genes in ", dataset, "Dataset"))
+      
+      print(p1)
+      
+      
+    } else if ((plotType == "Survival")){
+      
+        data <- filter(data, !is.na(Event) & !is.na(Time))
+        
+        surv.xfs <- Surv((as.numeric(as.character(data$Time))/12), data$Event)
+      
+        results <- rpAnalysis(data)
+        
+        data$surv.xfs <- surv.xfs
+        ctree_xfs <- results[[1]]
+        newPval <- results[[2]]
+        
+        if(newPval<0.05) {
+          
+          
+          ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
+          ps  <- signif(ps2[1], digits = 3)
+          
+          
+          if(length(ps2)==1) {
+            data$geneexp_cp <- data$Expression<=ps2[1]
+            nt                       <- table(data$geneexp_cp)
+            geneexp.survfit.xfs      <- survfit(surv.xfs~geneexp_cp,data=data)
+            plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(2,4))
+            legend("bottomleft", c(paste(currentGene, ">", ps, "n=", nt[[1]]), paste(currentGene, "<=", ps, "n=", nt[[2]])), col=c(2,4), lty=1, lwd=1.5, bty="n")
+            newPval2                 <- NA
+          }
+          
+        }
+        
+        else{
+          ps <- round(median(data$Expression),3)
+          data$geneexp_cp <- data$Expression<= ps
+          nt                       <- table(data$geneexp_cp)
+          geneexp.survfit.xfs      <- survfit(surv.xfs~geneexp_cp,data=data)
+          
+          test <- survdiff(surv.xfs~geneexp_cp,data=data)
+          
+          newPval <- round(pchisq(test$chisq, df = length(test$n)-1, lower.tail=FALSE),3)
+          
+          plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(2,4))
+          legend("bottomleft", c(paste(currentGene, ">", ps, "n=", nt[[1]]), paste(currentGene, "<=", ps, "n=", nt[[2]])), col=c(2,4), lty=1, lwd=1.5, bty="n")
+          
+        }
+      
+    } else if (plotType == "Copy Number"){
+      
+      camcap.cn <- collect(tbl("copyNumber",src=db_camcap),n=Inf)
+      stockholm.cn <- collect(tbl("copyNumber",src=db_stockholm),n=Inf)
+      taylor.cn <- collect(tbl("copyNumber",src=db_taylor),n=Inf)
       
       camcap.cnts <- filter(camcap.cn, Symbol %in% genes) %>% 
         group_by(Symbol) %>% 
         summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
         gather(Event,Percentage,-Symbol) %>% 
-        
         mutate(Cohort = "Cambridge")
       
       stockholm.cnts <- filter(stockholm.cn, Symbol %in% genes) %>% 
         group_by(Symbol) %>% 
         summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
         gather(Event,Percentage,-Symbol) %>% 
-        
         mutate(Cohort = "Stockholm")
       
       taylor.cnts <- filter(taylor.cn, Symbol %in% genes) %>% 
         group_by(Symbol) %>% 
         summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
         gather(Event,Percentage,-Symbol) %>% 
-        
         mutate(Cohort = "MSKCC")
       
       cn.all <- bind_rows(camcap.cnts,stockholm.cnts,taylor.cnts) %>% 
         mutate(Event = factor(Event, levels=c("DEL","NEUTRAL","AMP")))
       
-      cn.all
+      p <- ggplot(cn.all, aes(x = Event, y=Percentage,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
+      theme <- input$quickTheme
       
-      p <- ggplot(cn.all, aes(x = Event, y=Count,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
+      p <- switch(theme,
+                   ggplot2 = p,
+                   bw = p + theme_bw(),
+                   classic = p + theme_classic(),
+                   minimal = p + theme_minimal(),
+                   light = p + theme_light()
+      )
+      
+      
       print(p)
-      dev.off()
       
+    }
+    
+
+    
+  })
+  
+  
+  
+  output$genePDF <- downloadHandler(
+    filename = function(){
+      paste0(input$copyNumberBasename,".",input$copyNumberPlotFormat)
+    },
+    content = function(file) {
+      
+      if(input$correlationPlotFormat == "pdf") pdf(file, width=12, height=6.3)
+      else png(file, width=1200,height=600)
+    
+           
+      doQuickPlot()
+      dev.off()
     }
     
   )
   
   
+  doQuickTable <- reactive({
+    
+    plotType <- input$displayType
+    
+    data <- prepareSingleGeneData()
+    
+    dataset <- input$quickDataset
+    
+    genes <- input$currentGene
+    
+    if(plotType == "Boxplot"){
+      
+      var <- getCambridgeVariable()
+      
+      
+      if(dataset == "Cambridge"){
+        df <- switch(var,
+                     iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals"),
+                     
+                     Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals"),
+                     
+                     Sample_Group = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.))) %>% filter(term != "Residuals")
+                     
+        )
+      }
+      
+      else if (dataset == "Stockholm"){
+        
+        
+        df <-  switch(var,
+                      iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals"),
+                      
+                      Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals")
+        )
+        
+      }
+      
+      else if (dataset == "MSKCC"){
+        
+        df <-  switch(var,
+                      CopyNumberCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Copy.number.Cluster,data=.)))%>% filter(term != "Residuals"),
+                      Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals")
+        )
+        
+      }
+      
+      else{
+        df <-  group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)
+        
+      }
+      
+      datatable(df)
+      
+    } else if (plotType=="Survival"){
+      data <- filter(data, !is.na(Event) & !is.na(Time))
+      
+      results <- rpAnalysis(data)
+      message("RP analysis done")
+      
+      ctree_xfs <- results[[1]]
+      newPval <- results[[2]]
+      
+      pVals <- newPval
+      
+      if(newPval < 0.05){
+        
+        ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
+        ps  <- signif(ps2[1], digits = 3)
+        cOffs <- ps  
+      } else cOffs <- NA
+      
+      df <- data.frame(Gene = genes,RP_p.value=pVals, RP_Cut.off = cOffs)
+      
+    } else if (plotType == "Copy Number"){
+      
+      camcap.cn <- collect(tbl("copyNumber",src=db_camcap),n=Inf)
+      stockholm.cn <- collect(tbl("copyNumber",src=db_stockholm),n=Inf)
+      taylor.cn <- collect(tbl("copyNumber",src=db_taylor),n=Inf)
+      
+      camcap.cnts <- filter(camcap.cn, Symbol %in% genes) %>% 
+        group_by(Symbol) %>% 
+        summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
+        gather(Event,Percentage,-Symbol) %>% 
+        mutate(Cohort = "Cambridge")
+      
+      stockholm.cnts <- filter(stockholm.cn, Symbol %in% genes) %>% 
+        group_by(Symbol) %>% 
+        summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
+        gather(Event,Percentage,-Symbol) %>% 
+        mutate(Cohort = "Stockholm")
+      
+      taylor.cnts <- filter(taylor.cn, Symbol %in% genes) %>% 
+        group_by(Symbol) %>% 
+        summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
+        gather(Event,Percentage,-Symbol) %>% 
+        mutate(Cohort = "MSKCC")
+      
+      cn.all <- bind_rows(camcap.cnts,stockholm.cnts,taylor.cnts) %>% 
+        mutate(Event = factor(Event, levels=c("DEL","NEUTRAL","AMP")))
+      
+      df <- filter(cn.all, Symbol %in% genes) %>% 
+        mutate(Percentage = abs(Percentage))
+      
+    }
+    
+
+    
+    
+    datatable(df)
+    
+    
+  })
   
- 
+  output$quickTable <- renderDataTable(
+    
+    doQuickTable()
+    
+  )
+  
+  
 }
 )

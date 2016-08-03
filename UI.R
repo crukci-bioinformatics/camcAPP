@@ -23,9 +23,12 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      
                    
                      #),
+  #                   radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
                       fileInput('file1', 'Gene List',
                                accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')),helpText("Your gene list must tab-delimited, with gene names in the first column"),
                       helpText("If no gene list is uploaded, the genes ESR1, AR and STAT3 will be used"),
+   #                   textInput("currentGene", "Gene of Interest", value="A1BG"),
+                      helpText("If you want to analyse a single-gene, see the Quick Analysis tab"),
                       selectInput("theDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge")
                    )
                   ,
@@ -63,7 +66,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
         tabPanel("Gene Profile",
                  sidebarLayout(
                    sidebarPanel(
-  #                   radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
+
   #                   selectInput("boxplotDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
                      selectInput("clinvar_boxplot", "Choose a Clinical Covariate",choices=c("iCluster","Gleason","Sample_Group"),selected="iCluster"),
                      helpText("The covariates you can plot will be different for the various datasets"),
@@ -130,7 +133,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
     tabPanel("Gene Correlation",
              sidebarLayout(
                sidebarPanel(
-                 radioButtons("inputType_correlation", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
+                 radioButtons("inputType_correlation", "Plot correlations with a single gene, or all Pairwise Correlations?", choices=c("Single Gene","All Pairwise"),selected="Single Gene"),
                   selectInput("correlationGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3"),
 #                 helpText("If you have selected Single Gene mode (above), now select a second gene to correlate with"),
 #                 selectInput("secondGene","Type a Gene Symbol",choices="A2M",selected = "A2M"),
@@ -181,6 +184,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
 #         radioButtons("inputType_cn", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),                 h2("Output options"),
          textInput("copyNumberBasename", label = "What to call the output files",value="example"),
          radioButtons("copyNumberPlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
+         selectInput("cnTheme", "Pick a plot style",choices=c("ggplot2","bw","classic","minimal","light"),selected="ggplot2"),
          downloadButton("copyNumberPDF","Export plot...."),
          downloadButton("copyNumberScript","Download R script....")
         ),
@@ -192,8 +196,35 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
         
       )
 
-    )
+    ),
 
+tabPanel("Quick Analysis",
+         sidebarLayout(
+           sidebarPanel(
+             textInput("currentGene", "Gene of Interest", value="A1BG"),
+             selectInput("quickDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
+             radioButtons("displayType", "Plot to display", choices=c("Boxplot","Survival","Copy Number"),selected="Boxplot"),
+             h2("Boxplot options"),
+             selectInput("quick_clinvar_boxplot", "Choose a Clinical Covariate",choices=c("iCluster","Gleason","Sample_Group"),selected="iCluster"),
+             helpText("The covariates you can plot will be different for the various datasets"),
+             radioButtons("quick_z_cambridge","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
+             radioButtons("quick_overlay_cambridge","Overlay individual points?",choices=c("Yes","No"),selected="Yes"),
+             h2("Output options"),
+             selectInput("quickTheme", "Pick a plot style",choices=c("ggplot2","bw","classic","minimal","light"),selected="ggplot2"),
+             textInput("geneBasename", label = "What to call the output files",value="example"),
+             radioButtons("genePlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
+             downloadButton("genePDF","Export Current plot...."),
+             downloadButton("geneScript","Download R script....")
+           ),
+           mainPanel(
+
+             plotOutput("quickPlot",width=1200,height=600),
+             DT::dataTableOutput("quickTable")
+           )
+           
+         )
+         
+)
 
                    
 )
