@@ -153,6 +153,87 @@ shinyServer(function(input, output,session){
 #    input$currentGene
 #  })
   
+  observeEvent(input$profilePlotFormat,{
+    
+    if(input$profilePlotFormat == "pdf"){
+      updateTextInput(session, "profileWidth",value=12)
+      updateTextInput(session, "profileHeight",value=6.3)
+    } else{
+      updateTextInput(session, "profileWidth",value=1200)
+      updateTextInput(session, "profileHeight",value=600)
+      
+    }
+    
+  })
+  
+  
+  observeEvent(input$survivalPlotFormat,{
+    
+    if(input$survivalPlotFormat == "pdf"){
+      updateTextInput(session, "survivalWidth",value=12)
+      updateTextInput(session, "survivalHeight",value=6.3)
+    } else{
+      updateTextInput(session, "survivalWidth",value=1200)
+      updateTextInput(session, "survivalHeight",value=600)
+      
+    }
+    
+  })
+  
+  observeEvent(input$correlationPlotFormat,{
+    
+    if(input$correlationPlotFormat == "pdf"){
+      updateTextInput(session, "correlationWidth",value=12)
+      updateTextInput(session, "correlationHeight",value=6.3)
+    } else{
+      updateTextInput(session, "correlationWidth",value=1200)
+      updateTextInput(session, "correlationHeight",value=600)
+      
+    }
+    
+  })
+
+  
+  observeEvent(input$heatmapPlotFormat,{
+    
+    if(input$heatmapPlotFormat == "pdf"){
+      updateTextInput(session, "heatmapWidth",value=12)
+      updateTextInput(session, "heatmapHeight",value=12)
+    } else{
+      updateTextInput(session, "heatmapWidth",value=1200)
+      updateTextInput(session, "heatmapHeight",value=1200)
+      
+    }
+    
+  })
+  
+
+  
+  observeEvent(input$copyNumberPlotFormat,{
+    
+    if(input$copyNumberPlotFormat == "pdf"){
+      updateTextInput(session, "copyNumberWidth",value=12)
+      updateTextInput(session, "copyNumberHeight",value=6.3)
+    } else{
+      updateTextInput(session, "copyNumberWidth",value=1200)
+      updateTextInput(session, "copyNumberHeight",value=600)
+      
+    }
+    
+  })
+  
+  observeEvent(input$genePlotFormat,{
+    
+    if(input$genePlotFormat == "pdf"){
+      updateTextInput(session, "geneWidth",value=12)
+      updateTextInput(session, "geneHeight",value=6.3)
+    } else{
+      updateTextInput(session, "geneWidth",value=1200)
+      updateTextInput(session, "geneHeight",value=600)
+      
+    }
+    
+  })
   
   getCurrentGene <- reactive({
     
@@ -605,10 +686,10 @@ shinyServer(function(input, output,session){
       paste0(input$profileBasename,".",input$profilePlotFormat)
     },
     content = function(file) {
-      
-      if(input$profilePlotFormat == "pdf") pdf(file, width=12, height=6.3)
-      else png(file, width=1200,height=600)
-      
+
+      if(input$profilePlotFormat == "pdf") pdf(file, width=as.numeric(input$profileWidth), height=as.numeric(input$profileHeight))
+      else png(file, width=as.numeric(input$profileWidth),height=as.numeric(input$profileHeight))
+        
 
 
         p1 <- prepareBoxplot()
@@ -856,8 +937,8 @@ shinyServer(function(input, output,session){
     },
     content = function(file) {
       
-      if(input$survivalPlotFormat == "pdf") pdf(file, width=12, height=6.3)
-      else png(file, width=1200,height=600)
+      if(input$survivalPlotFormat == "pdf") pdf(file, width=as.numeric(input$survivalWidth), height=as.numeric(input$survivalHeight))
+      else png(file, width=as.numeric(input$survivalWidth),height=as.numeric(input$survivalHeight))
       
       currentGene <- input$survivalGeneChoice
         
@@ -992,8 +1073,8 @@ shinyServer(function(input, output,session){
     },
     content = function(file) {
       
-      if(input$heatmapPlotFormat == "pdf") pdf(file, width=12, height=6.3)
-      else png(file, width=1200,height=600)
+      if(input$heatmapPlotFormat == "pdf") pdf(file, width=as.numeric(input$heatmapWidth), height=as.numeric(input$heatmapHeight))
+      else png(file, width=as.numeric(input$heatmapWidth),height=as.numeric(input$heatmapHeight))
       
       hm <- prepareHeatmap()
       geneMatrix <- hm[[1]]
@@ -1433,7 +1514,7 @@ shinyServer(function(input, output,session){
   output$corPlot <- renderPlot({
     
     p <- doCorPlot()
-    print(p)
+
     
   })
   
@@ -1444,8 +1525,8 @@ shinyServer(function(input, output,session){
     },
     content = function(file) {
       
-      if(input$correlationPlotFormat == "pdf") pdf(file, width=12, height=6.3)
-      else png(file, width=1200,height=600)
+      if(input$correlationPlotFormat == "pdf") pdf(file, width=as.numeric(input$correlationWidth), height=as.numeric(input$correlationHeight))
+      else png(file, width=as.numeric(input$correlationWidth),height=as.numeric(input$correlationHeight))
       
       p <- doCorPlot()
       print(p)
@@ -1552,8 +1633,9 @@ shinyServer(function(input, output,session){
     },
     content = function(file) {
       
-      if(input$copyNumberPlotFormat == "pdf") pdf(file, width=12, height=6.3)
-      else png(file, width=1200,height=600)
+      if(input$copyNumberPlotFormat == "pdf") pdf(file, width=as.numeric(input$copyNumberWidth), height=as.numeric(input$copyNumberHeight))
+      else png(file, width=as.numeric(input$copyNumberWidth),height=as.numeric(input$copyNumberHeight))
+      
       
       p <- doCopyNumberPlot()
       print(p)
@@ -1885,8 +1967,8 @@ shinyServer(function(input, output,session){
     },
     content = function(file) {
       
-      if(input$correlationPlotFormat == "pdf") pdf(file, width=12, height=6.3)
-      else png(file, width=1200,height=600)
+      if(input$genePlotFormat == "pdf") pdf(file, width=as.numeric(input$geneWidth), height=as.numeric(input$geneHeight))
+      else png(file, width=as.numeric(input$geneWidth),height=as.numeric(input$geneHeight))
     
            
       doQuickPlot()
