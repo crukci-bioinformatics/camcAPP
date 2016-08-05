@@ -1,4 +1,4 @@
-# Mining human prostate cancer datasets: The '*camcAPP*' shiny app
+# Mining human prostate cancer datasets: The 'camcAPP' shiny app
 
 camcAPP is a shiny app that allows various Prostate Cancer datasets to be interrogated through a web-based interface.
 
