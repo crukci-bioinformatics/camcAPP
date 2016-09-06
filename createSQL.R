@@ -1,4 +1,5 @@
 library(dplyr)
+library(tidyr)
 library(Biobase)
 db <- src_sqlite("camcap.sqlite3", create=TRUE)
   
