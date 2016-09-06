@@ -1,5 +1,5 @@
 library(dplyr)
-
+library(Biobase)
 db <- src_sqlite("camcap.sqlite3", create=TRUE)
   
 data(camcap,package = "prostateCancerCamcap")
