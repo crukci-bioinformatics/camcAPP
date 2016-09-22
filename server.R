@@ -1537,6 +1537,29 @@ shinyServer(function(input, output,session){
   
   ##########################################
   
+  getCopyNumberMatrix <- reactive({
+    dataset <- getDataset()
+    if(dataset == "Cambridge"){
+      
+      cn <- collect(tbl("copyNumber",src=db_camcap),n=Inf)
+      cnMat <- filter(cn, Symbol %in% genes) 
+      
+      
+    } else if (dataset == "Stockholm"){
+      
+      cn <- collect(tbl("copyNumber",src=db_stockholm),n=Inf)
+      cnMat <- filter(cn, Symbol %in% genes) 
+      
+    } else if (dataset == "MSKCC"){
+      
+      cn <- collect(tbl("copyNumber",src=db_taylor),n=Inf)
+      cnMat <- filter(cn, Symbol %in% genes) 
+      
+    }
+    
+    cnMat
+    
+  })
   
   getCopyNumberTable <- reactive({
     
@@ -1576,6 +1599,9 @@ shinyServer(function(input, output,session){
   )
   
   
+  
+
+  
   copyNumberTable <- reactive({
     
     cn.all <- getCopyNumberTable()
@@ -1594,25 +1620,38 @@ shinyServer(function(input, output,session){
   
   
   doCopyNumberPlot <-reactive({
-    cn.all <- getCopyNumberTable()
-    genes <- getGeneList()
-    dataset <- getDataset()
-    cn.all <- filter(cn.all, Symbol %in% genes)
-    theme <- input$cnTheme
-    p <- ggplot(cn.all, aes(x = Event, y=Percentage,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
+    plotType <- input$cnPlotType
     
-    p <- switch(theme,
-                ggplot2 = p,
-                bw = p + theme_bw(),
-                classic = p + theme_classic(),
-                minimal = p + theme_minimal(),
-                light = p + theme_light()
-    )
+    if(plotType == "Frequency"){
+      cn.all <- getCopyNumberTable()
+      genes <- getGeneList()
+      dataset <- getDataset()
+      cn.all <- filter(cn.all, Symbol %in% genes)
+      theme <- input$cnTheme
+      p <- ggplot(cn.all, aes(x = Event, y=Percentage,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
+      
+      p <- switch(theme,
+                  ggplot2 = p,
+                  bw = p + theme_bw(),
+                  classic = p + theme_classic(),
+                  minimal = p + theme_minimal(),
+                  light = p + theme_light()
+      )
+      
+      
+      p <- p + ggtitle(paste("Copy Number Profile of genes in the ", dataset, "Dataset"))
+      p
+    }
     
-    
-    p <- p + ggtitle(paste("Copy Number Profile of genes in the ", dataset, "Dataset"))
-    p
-    
+    else{
+      
+      cnMat <- getCopyNumberMatrix()
+      tmp <- spread(cnMat,Sample, Call)
+      ord <- hclust(dist(t(as.data.frame(tmp[,-1]))))$order
+      cnMat$X <- ord
+      ggplot(cnMat, aes(x = X, y = Symbol, fill=as.factor(Call))) + 
+        geom_tile() + scale_fill_manual(labels= c("Deletion", "Neutral", "Amplification"),values = c("deepskyblue","beige","firebrick"),name="Call")
+    }
   }
   
   )
