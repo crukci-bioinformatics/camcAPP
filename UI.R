@@ -66,11 +66,11 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
         tabPanel("Gene Profile",
                  sidebarLayout(
                    sidebarPanel(
-                     conditionalPanel(
-                       condition="($('html').hasClass('shiny-busy'))",
-                       p("Shiny is computing something.."),
-                       img(src="http://i.imgur.com/tbIq2nD.gif")
-                     ),
+ #                    conditionalPanel(
+#                       condition="($('html').hasClass('shiny-busy'))",
+#                       p("Shiny is computing something.."),
+#                       img(src="http://i.imgur.com/tbIq2nD.gif")
+#                     ),
   #                   selectInput("boxplotDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
                      selectInput("clinvar_boxplot", "Choose a Clinical Covariate",choices=c("iCluster","Gleason","Sample_Group"),selected="iCluster"),
                      helpText("The covariates you can plot will be different for the various datasets"),
@@ -117,11 +117,11 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
     tabPanel("Survival",
              sidebarLayout(
                 sidebarPanel(
-                  conditionalPanel(
-                    condition="($('html').hasClass('shiny-busy'))",
-                    p("Shiny is computing something.."),
-                    img(src="http://i.imgur.com/tbIq2nD.gif")
-                  ),
+ #                 conditionalPanel(
+#                    condition="($('html').hasClass('shiny-busy'))",
+#                    p("Shiny is computing something.."),
+#                    img(src="http://i.imgur.com/tbIq2nD.gif")
+#                  ),
 #                  radioButtons("inputType_survival", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
                   radioButtons("cutoffMethod","Type of partitioning?",choices=c("RP","Median","Manual"),selected="RP"),
                   textInput("expCutOff", "Cut-off for partitioning",value = 6),
@@ -151,11 +151,11 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
     tabPanel("Gene Correlation",
              sidebarLayout(
                sidebarPanel(
-                 conditionalPanel(
-                   condition="($('html').hasClass('shiny-busy'))",
-                   p("Shiny is computing something.."),
-                   img(src="http://i.imgur.com/tbIq2nD.gif")
-                 ),
+ #                conditionalPanel(
+#                   condition="($('html').hasClass('shiny-busy'))",
+#                   p("Shiny is computing something.."),
+#                   img(src="http://i.imgur.com/tbIq2nD.gif")
+#                 ),
                  radioButtons("inputType_correlation", "Plot correlations with a single gene, or all Pairwise Correlations?", choices=c("Single Gene","All Pairwise"),selected="Single Gene"),
                   selectInput("correlationGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3"),
 #                 helpText("If you have selected Single Gene mode (above), now select a second gene to correlate with"),
@@ -180,11 +180,11 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
     tabPanel("Heatmap",
             sidebarLayout(
              sidebarPanel(
-               conditionalPanel(
-                 condition="($('html').hasClass('shiny-busy'))",
-                 p("Shiny is computing something.."),
-                 img(src="http://i.imgur.com/tbIq2nD.gif")
-               ),
+ #              conditionalPanel(
+#                 condition="($('html').hasClass('shiny-busy'))",
+#                 p("Shiny is computing something.."),
+#                 img(src="http://i.imgur.com/tbIq2nD.gif")
+#               ),
                  radioButtons("distfun","Method to calulate distances",choices=c("Euclidean","Correlation"),selected="Euclidean"),
                  radioButtons("hclustfun", "Method of hierachical clustering",choices=c("ward","single","complete","average","mcquitty","median","centroid"),selected="complete"),
                  radioButtons("reordRows", "Re-order Rows?", choices = c("Yes","No"),selected = "Yes"),
@@ -217,11 +217,11 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
     tabPanel("Copy Number",
       sidebarLayout(
        sidebarPanel(
-         conditionalPanel(
-           condition="($('html').hasClass('shiny-busy'))",
-           p("Shiny is computing something.."),
-           img(src="http://i.imgur.com/tbIq2nD.gif")
-         ),
+ #        conditionalPanel(
+#           condition="($('html').hasClass('shiny-busy'))",
+#           p("Shiny is computing something.."),
+#           img(src="http://i.imgur.com/tbIq2nD.gif")
+#         ),
 #         radioButtons("inputType_cn", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),                 h2("Output options"),
          textInput("copyNumberBasename", label = "What to call the output files",value="example"),
          selectInput("cnPlotType", "Type of plot of show", choices=c("Frequency", "Heatmap"),selected="Frequency"),
@@ -247,11 +247,11 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
 tabPanel("Quick Analysis",
          sidebarLayout(
            sidebarPanel(
-             conditionalPanel(
-               condition="($('html').hasClass('shiny-busy'))",
-               p("Shiny is computing something.."),
-               img(src="http://i.imgur.com/tbIq2nD.gif")
-             ),
+ #            conditionalPanel(
+#               condition="($('html').hasClass('shiny-busy'))",
+#               p("Shiny is computing something.."),
+#               img(src="http://i.imgur.com/tbIq2nD.gif")
+#             ),
              textInput("currentGene", "Gene of Interest", value="A1BG"),
              selectInput("quickDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
              radioButtons("displayType", "Plot to display", choices=c("Boxplot","Survival","Copy Number"),selected="Boxplot"),
