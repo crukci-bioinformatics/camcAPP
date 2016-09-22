@@ -1767,7 +1767,7 @@ shinyServer(function(input, output,session){
     
   })
  
-  doQuickPlot <- reactive({
+  doQuickPlot <- eventReactive(input$go, {
     
     plotType <- input$displayType
     
@@ -2015,7 +2015,7 @@ shinyServer(function(input, output,session){
   )
   
   
-  doQuickTable <- reactive({
+  doQuickTable <- eventReactive(input$go, {
     
     plotType <- input$displayType
     
