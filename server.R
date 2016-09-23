@@ -2544,6 +2544,21 @@ shinyServer(function(input, output,session){
         
       }
       
+      else if(dataset == "MSKCC"){
+        
+        if(var =="CopyNumberCluster") cat(file=file, as.name("p<- data %>% ggplot(aes(x = Copy.number.Cluster, y = Expression, fill=iCluster)) + geom_boxplot()\n"),append=TRUE)
+        else if(var == "Gleason") cat(file=file, as.name("p <- data  %>% filter(!(is.na(Gleason))) %>%  ggplot(aes(x = Gleason, y = Expression, fill=Gleason)) + geom_boxplot()\n"),append=TRUE)
+        
+      }
+      
+      else {
+        
+        cat(file=file, as.name("p<- data %>% ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()\n"),append=TRUE)
+        
+        
+      }
+      
+      
       if(overlay=="Yes"){
         cat(file=file, as.name("p <- p + geom_jitter(position=position_jitter(width = .05),alpha=0.75)\n"),append=TRUE)
       }
@@ -2567,15 +2582,10 @@ shinyServer(function(input, output,session){
       cat(file=file,as.name("library(party)\n"),append=TRUE)
       cat(file=file,as.name("library(survival)\n"),append=TRUE)
       
-      dataset <- input$rpDataset
+      dataset <- input$theDataset
       
-      if(input$inputType_survival == "Single Gene"){
-        gene <- input$currentGene
-      }
-      else {
-        gene <- input$survivalGeneChoice
-      }
-      
+
+      gene <- input$survivalGeneChoice
       cat(file=file,as.name(paste0("genes <- '",gene,"'\n")),append=TRUE)
       
       if(dataset == "Cambridge"){
@@ -2624,7 +2634,7 @@ shinyServer(function(input, output,session){
         cat(file=file,as.name("data(taylor,package = 'prostateCancerTaylor')\n"),append=TRUE)
         cat(file=file,as.name("pd_taylor <- tbl_df(pData(taylor))\n"),append=TRUE)
         cat(file=file,as.name("fd_taylor <- tbl_df(fData(taylor))\n"),append=TRUE)
-        cat(file=file,as.name("exp_taylor <- tbl_df(data.frame(ID = as.character(featureNames(taylor)),log2(exprs(taylor)))\n"),append=TRUE)
+        cat(file=file,as.name("exp_taylor <- tbl_df(data.frame(ID = as.character(featureNames(taylor)),log2(exprs(taylor))))\n"),append=TRUE)
         
         
         cat(file=file,as.name("probes <- fd_taylor %>% filter(Gene %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character\n"),append=TRUE)
