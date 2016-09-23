@@ -1539,6 +1539,7 @@ shinyServer(function(input, output,session){
   
   getCopyNumberMatrix <- reactive({
     dataset <- getDataset()
+    genes <- getGeneList()
     if(dataset == "Cambridge"){
       
       cn <- collect(tbl("copyNumber",src=db_camcap),n=Inf)
