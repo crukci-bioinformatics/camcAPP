@@ -356,6 +356,45 @@ shinyServer(function(input, output,session){
     
   })
   
+  getQuickDataset <- reactive({
+    dataset <- input$quickDataset
+ #   covars <- switch(dataset,
+  #                   Cambridge=c("iCluster","Gleason","Sample_Group"),
+   #                  Stockholm=c("iCluster","Gleason"),
+    #                 MSKCC = c("CopyNumberCluster","Gleason"),
+     #                Michigan2005 = "Sample_Group",
+      #               Michigan2012 = "Sample_Group"
+    #)
+    
+    #updateSelectInput(session, inputId="quick_clinvar_boxplot", choices=covars,selected=covars[1])
+    dataset
+    
+  })
+  
+  observeEvent(input$quickDataset,{
+    dataset <- input$quickDataset
+    covars <- switch(dataset,
+                     Cambridge=c("iCluster","Gleason","Sample_Group"),
+                     Stockholm=c("iCluster","Gleason"),
+                     MSKCC = c("CopyNumberCluster","Gleason"),
+                     Michigan2005 = "Sample_Group",
+                     Michigan2012 = "Sample_Group"
+    )
+    
+    updateSelectInput(session, inputId="quick_clinvar_boxplot", choices=covars,selected=covars[1])
+    
+  })
+  
+  
+  observeEvent(input$displayType, {
+    dataset <- input$quickDataset
+    dataset2 <- ifelse(dataset %in% c("Cambridge","Stockholm","MSKCC"),dataset,"Cambridge")
+    if(input$displayType == "Survival") {
+      updateSelectInput(session, inputId="quickDataset", choices = c("Cambridge","Stockholm","MSKCC"),selected=dataset2)
+    }
+    else updateSelectInput(session, inputId="quickDataset", choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected=dataset)
+  })
+  
   
   
   
@@ -764,7 +803,10 @@ shinyServer(function(input, output,session){
           
           ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
           ps  <- signif(ps2[1], digits = 3)
-          cOffs[i] <- ps  
+          cOffs[i] <- ps
+          
+          if(length(ps2)==2) cOffs[i] <- paste(ps2[1], ps2[2], sep=":")
+          
         } else cOffs[i] <- NA
         
         
@@ -912,6 +954,18 @@ shinyServer(function(input, output,session){
             plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(2,4))
             legend("bottomleft", c(paste(currentGene, ">", ps, "n=", nt[[1]]), paste(currentGene, "<=", ps, "n=", nt[[2]])), col=c(2,4), lty=1, lwd=1.5, bty="n")
             newPval2                 <- NA
+          } else if (length(ps2 ) == 2){
+            
+            grps <- cut(data$Expression, breaks=c(min(data$Expression), ps2, max(data$Expression)))
+            levels(grps) <- c("Low","Mid", "High")  
+            data$geneexp_cp <- grps
+            nt                       <- table(grps)
+            geneexp.survfit.xfs      <- survfit(surv.xfs~geneexp_cp,data=data)
+            plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(1,2,4))
+            legend("bottomleft", c(paste(currentGene, "<", ps2[1], "n=", nt[[1]]), paste(ps2[1], "<", currentGene, "<", ps2[2], "n=",nt[[2]]), paste(currentGene, ">", ps2[2], "n=",nt[[3]])),
+                   col=c(1,2,4),lty=1,lwd=1.5,bty="n")
+            
+            
           }
           
         }
@@ -1837,7 +1891,7 @@ shinyServer(function(input, output,session){
     
     genes <- input$currentGene
     
-    dataset <- input$quickDataset
+    dataset <- getQuickDataset()
     
     if(dataset == "Cambridge"){
       
@@ -1915,7 +1969,7 @@ shinyServer(function(input, output,session){
     
     data <- prepareSingleGeneData()
     
-    dataset <- input$quickDataset
+    dataset <- getQuickDataset()
     genes <- input$currentGene
     
     currentGene <- input$currentGene
@@ -2073,7 +2127,7 @@ shinyServer(function(input, output,session){
           
           ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
           ps  <- signif(ps2[1], digits = 3)
-          
+          ps2 <- round(ps2,2)
           
           if(length(ps2)==1) {
             data$geneexp_cp <- data$Expression<=ps2[1]
@@ -2082,6 +2136,18 @@ shinyServer(function(input, output,session){
             plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(2,4))
             legend("bottomleft", c(paste(currentGene, ">", ps, "n=", nt[[1]]), paste(currentGene, "<=", ps, "n=", nt[[2]])), col=c(2,4), lty=1, lwd=1.5, bty="n")
             newPval2                 <- NA
+          } else if (length(ps2 ) == 2){
+            
+            grps <- cut(data$Expression, breaks=c(min(data$Expression), ps2, max(data$Expression)))
+            levels(grps) <- c("Low","Mid", "High")  
+            data$geneexp_cp <- grps
+            nt                       <- table(grps)
+            geneexp.survfit.xfs      <- survfit(surv.xfs~geneexp_cp,data=data)
+            plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(1,2,4))
+            legend("bottomleft", c(paste(currentGene, "<", ps2[1], "n=", nt[[1]]), paste(ps2[1], "<", currentGene, "<", ps2[2], "n=",nt[[2]]), paste(currentGene, ">", ps2[2], "n=",nt[[3]])),
+                   col=c(1,2,4),lty=1,lwd=1.5,bty="n")
+            
+            
           }
           
         }
@@ -2257,9 +2323,12 @@ shinyServer(function(input, output,session){
         ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
         ps  <- signif(ps2[1], digits = 3)
         cOffs <- ps  
+        
+        if(length(ps2)==2) cOffs <- paste(ps2[1], ps2[2], sep=":")
+        
       } else cOffs <- NA
-      
-      df <- data.frame(Gene = genes,RP_p.value=pVals, RP_Cut.off = cOffs)
+      cOffs <- round(cOffs,2)
+      df <- data.frame(Gene = genes,RP_p.value=pVals, "RP_Cut.off(s)" = cOffs)
       
     } else if (plotType == "Copy Number"){
       
