@@ -21,7 +21,7 @@ library(survival)
 library(party)
 library(DT)
 library(org.Hs.eg.db)
-
+library(ggthemes)
 
 #if(!require(prostateCancerTaylor)) install_github("crukci-bioinformatics/prostateCancerTaylor");library(prostateCancerTaylor)
 #if(!require(prostateCancerCamcap)) install_github("crukci-bioinformatics/prostateCancerCamcap");library(prostateCancerCamcap)
@@ -590,14 +590,23 @@ shinyServer(function(input, output,session){
                 bw = p1 + theme_bw(),
                 classic = p1 + theme_classic(),
                 minimal = p1 + theme_minimal(),
-                light = p1 + theme_light()
+                light = p1 + theme_light(),
+                "Wall Street Journal" = p1+theme_wsj(),
+                Economist = p1 + theme_economist(),
+                Excel = p1 + theme_excel(),
+                solarized = p1 + theme_solarized(),
+                stata = p1 + theme_stata(),
+                calc = p1 + theme_calc(),
+                dark = p1 + theme_dark(),
+                fivethirtyeight = p1 + theme_fivethirtyeight(),
+                tufte = p1 + theme_tufte()
+    
    )
-   
-                
+
    p1 + ggtitle(paste("Profile of genes in ", dataset, "Dataset"))
    
    
-    
+    #"dark","fivethirtyeight","tufte")
   }
   )
   
@@ -703,55 +712,66 @@ shinyServer(function(input, output,session){
   ##########################################
   
   
-
+  output$survivalWarn <- reactive({
+    dataset <- getDataset()
+    txt <- ifelse(dataset %in% c("Michigan2005", "Michigan2012"), paste("Warning: Survival data are not available for ", dataset),"")
+    txt
+    
+  })
   
+
   rpSummary <- reactive({
     
-    combined.data <- prepareExpressionMatrix()
+    dataset <- getDataset()
     
-    combined.data <- filter(combined.data, !is.na(Event), !is.na(Time))
+    if (dataset %in% c("Cambridge", "Stockholm", "MSKCC")){
     
-
-      genes <- as.character(getGeneList())
-
-    message("Gene list is....")
-    print(genes)
-    pVals <- NULL
-    cOffs <- NULL
-    
-    
-    genes <- genes[genes %in% combined.data$Symbol]
-    
-    
-    for(i in 1:length(genes)){
+      combined.data <- prepareExpressionMatrix()
       
-      currentGene <- genes[i]
-      message("Current Gene is", currentGene)
+      combined.data <- filter(combined.data, !is.na(Event), !is.na(Time))
       
-      if(currentGene %in% combined.data$Symbol) message("Gene was found in data")
-      else message("Gene was not found in data")
+  
+        genes <- as.character(getGeneList())
+  
+      message("Gene list is....")
+      print(genes)
+      pVals <- NULL
+      cOffs <- NULL
       
-      data <- filter(combined.data, Symbol == currentGene)
-      message("Entering rpAnalysis.......")
-      results <- rpAnalysis(data)
-      message("RP analysis done")
       
-      ctree_xfs <- results[[1]]
-      newPval <- results[[2]]
+      genes <- genes[genes %in% combined.data$Symbol]
       
-      pVals[i] <- newPval
       
-      if(newPval < 0.05){
+      for(i in 1:length(genes)){
         
-        ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
-        ps  <- signif(ps2[1], digits = 3)
-        cOffs[i] <- ps  
-      } else cOffs[i] <- NA
+        currentGene <- genes[i]
+        message("Current Gene is", currentGene)
+        
+        if(currentGene %in% combined.data$Symbol) message("Gene was found in data")
+        else message("Gene was not found in data")
+        
+        data <- filter(combined.data, Symbol == currentGene)
+        message("Entering rpAnalysis.......")
+        results <- rpAnalysis(data)
+        message("RP analysis done")
+        
+        ctree_xfs <- results[[1]]
+        newPval <- results[[2]]
+        
+        pVals[i] <- newPval
+        
+        if(newPval < 0.05){
+          
+          ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
+          ps  <- signif(ps2[1], digits = 3)
+          cOffs[i] <- ps  
+        } else cOffs[i] <- NA
+        
+        
+      }
       
-      
-    }
-    
-    df <- data.frame(Gene = genes,RP_p.value=pVals, RP_Cut.off = cOffs)
+      df <- data.frame(Gene = genes,RP_p.value=pVals, RP_Cut.off = cOffs)
+    } else df <- data.frame()
     
   datatable(df)
   
@@ -777,68 +797,73 @@ shinyServer(function(input, output,session){
   output$rpPlot <- renderPlot({
     
     
-    combined.data <- prepareExpressionMatrix()
+    dataset <- getDataset()
     
-    combined.data <- filter(combined.data, !is.na(Event), !is.na(Time))
-    plotType <- input$inputType_survival
+    if (dataset %in% c("Cambridge", "Stockholm", "MSKCC")){
     
-    currentGene <- input$survivalGeneChoice
+      combined.data <- prepareExpressionMatrix()
       
-    
-    message("Gene for RP plot is ", currentGene)
-    data <- filter(combined.data, Symbol == currentGene)
-    
-    #    results <- rpAnalysis(data)
-    
-    
-    #    ctree_xfs <- results[[1]]
-    #    newPval <- results[[2]]
-    
-    #    ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
-    #    ps  <- signif(ps2[1], digits = 3)
-    
-    
-    
-    #    combined.data <- prepareSurvival()
-    #    surv.xfs <- Surv((as.numeric(as.character(combined.data$Time))/12), combined.data$Event)
-    #    combined.data$surv.xfs <- surv.xfs
-    
-    surv.xfs <- Surv((as.numeric(as.character(data$Time))/12), data$Event)
-    data$surv.xfs <- surv.xfs
-    if(input$cutoffMethod == "RP"){
-      results <- rpAnalysis(data)
-      ctree_xfs <- results[[1]]
-      newPval <- results[[2]]
+      combined.data <- filter(combined.data, !is.na(Event), !is.na(Time))
+      plotType <- input$inputType_survival
       
-      if(newPval<0.05) {
+      currentGene <- input$survivalGeneChoice
         
+      
+      message("Gene for RP plot is ", currentGene)
+      data <- filter(combined.data, Symbol == currentGene)
+      
+      #    results <- rpAnalysis(data)
+      
+      
+      #    ctree_xfs <- results[[1]]
+      #    newPval <- results[[2]]
+      
+      #    ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
+      #    ps  <- signif(ps2[1], digits = 3)
+      
+      
+      
+      #    combined.data <- prepareSurvival()
+      #    surv.xfs <- Surv((as.numeric(as.character(combined.data$Time))/12), combined.data$Event)
+      #    combined.data$surv.xfs <- surv.xfs
+      
+      surv.xfs <- Surv((as.numeric(as.character(data$Time))/12), data$Event)
+      data$surv.xfs <- surv.xfs
+      if(input$cutoffMethod == "RP"){
+        results <- rpAnalysis(data)
+        ctree_xfs <- results[[1]]
+        newPval <- results[[2]]
         
-        ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
-        ps  <- signif(ps2[1], digits = 3)
-        plot(ctree(surv.xfs~Expression, data=data))
+        if(newPval<0.05) {
+          
+          
+          ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
+          ps  <- signif(ps2[1], digits = 3)
+          plot(ctree(surv.xfs~Expression, data=data))
+        }
+        
+        else {
+          med <- median(data$Expression)
+          p <- ggplot(data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=med,col="red",lty=2) + ggtitle("Partitioning using median expression")
+          print(p)
+        }
+        
       }
       
-      else {
-        med <- median(data$Expression)
-        p <- ggplot(data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=med,col="red",lty=2) + ggtitle("Partitioning using median expression")
-        print(p)
-      }
-      
-    }
-    
-    else{
-      
-      if (input$cutoffMethod == "Median") {
+      else{
         
-        med <- median(combined.data$Expression)
-        p <- ggplot(combined.data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=med,col="red",lty=2)
-        print(p)
+        if (input$cutoffMethod == "Median") {
+          
+          med <- median(combined.data$Expression)
+          p <- ggplot(combined.data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=med,col="red",lty=2)
+          print(p)
+        }
+        else  ggplot(combined.data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=as.numeric(input$expCutOff),col="red",lty=2) + ggtitle("Partitioning using defined cut-off")
+        
+        
       }
-      else  ggplot(combined.data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=as.numeric(input$expCutOff),col="red",lty=2) + ggtitle("Partitioning using defined cut-off")
-      
-      
-    }
     
+    } else ggplot()
     
     
     
@@ -848,46 +873,74 @@ shinyServer(function(input, output,session){
   
   
   output$survivalPlot <- renderPlot({
-    combined.data <- prepareExpressionMatrix()
-    combined.data <- filter(combined.data, !is.na(Event), !is.na(Time))
     
-    currentGene <- input$survivalGeneChoice
-      
-
-    updateTextInput(session, "survivalBasename",value=paste0(currentGene,"-survival"))
+    dataset <- getDataset()
     
-    data <- filter(combined.data, Symbol == currentGene)
-    updateTextInput(session, "expCutOff",value=round(median(data$Expression),2))
-    surv.xfs <- Surv((as.numeric(as.character(data$Time))/12), data$Event)
+    if (dataset %in% c("Cambridge", "Stockholm", "MSKCC")){
     
-    if(input$cutoffMethod == "RP"){
+      combined.data <- prepareExpressionMatrix()
+      combined.data <- filter(combined.data, !is.na(Event), !is.na(Time))
       
-      results <- rpAnalysis(data)
+      currentGene <- input$survivalGeneChoice
+        
+  
+      updateTextInput(session, "survivalBasename",value=paste0(currentGene,"-survival"))
       
-      data$surv.xfs <- surv.xfs
-      ctree_xfs <- results[[1]]
-      newPval <- results[[2]]
+      data <- filter(combined.data, Symbol == currentGene)
+      updateTextInput(session, "expCutOff",value=round(median(data$Expression),2))
+      surv.xfs <- Surv((as.numeric(as.character(data$Time))/12), data$Event)
       
-      if(newPval<0.05) {
+      if(input$cutoffMethod == "RP"){
         
+        results <- rpAnalysis(data)
         
-        ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
-        ps  <- signif(ps2[1], digits = 3)
+        data$surv.xfs <- surv.xfs
+        ctree_xfs <- results[[1]]
+        newPval <- results[[2]]
         
+        if(newPval<0.05) {
+          
+          
+          ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
+          ps  <- signif(ps2[1], digits = 3)
+          
+          
+          if(length(ps2)==1) {
+            data$geneexp_cp <- data$Expression<=ps2[1]
+            nt                       <- table(data$geneexp_cp)
+            geneexp.survfit.xfs      <- survfit(surv.xfs~geneexp_cp,data=data)
+            plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(2,4))
+            legend("bottomleft", c(paste(currentGene, ">", ps, "n=", nt[[1]]), paste(currentGene, "<=", ps, "n=", nt[[2]])), col=c(2,4), lty=1, lwd=1.5, bty="n")
+            newPval2                 <- NA
+          }
+          
+        }
         
-        if(length(ps2)==1) {
-          data$geneexp_cp <- data$Expression<=ps2[1]
+        else{
+          ps <- round(median(data$Expression),3)
+          data$geneexp_cp <- data$Expression<= ps
           nt                       <- table(data$geneexp_cp)
           geneexp.survfit.xfs      <- survfit(surv.xfs~geneexp_cp,data=data)
+          
+          test <- survdiff(surv.xfs~geneexp_cp,data=data)
+          
+          newPval <- round(pchisq(test$chisq, df = length(test$n)-1, lower.tail=FALSE),3)
+          
           plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(2,4))
           legend("bottomleft", c(paste(currentGene, ">", ps, "n=", nt[[1]]), paste(currentGene, "<=", ps, "n=", nt[[2]])), col=c(2,4), lty=1, lwd=1.5, bty="n")
-          newPval2                 <- NA
+          
         }
         
       }
       
       else{
-        ps <- round(median(data$Expression),3)
+        
+        if (input$cutoffMethod == "Median"){
+          
+          
+          ps <- round(median(data$Expression),3)
+        } else ps <- as.numeric(input$expCutOff)
+        
         data$geneexp_cp <- data$Expression<= ps
         nt                       <- table(data$geneexp_cp)
         geneexp.survfit.xfs      <- survfit(surv.xfs~geneexp_cp,data=data)
@@ -899,32 +952,10 @@ shinyServer(function(input, output,session){
         plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(2,4))
         legend("bottomleft", c(paste(currentGene, ">", ps, "n=", nt[[1]]), paste(currentGene, "<=", ps, "n=", nt[[2]])), col=c(2,4), lty=1, lwd=1.5, bty="n")
         
+        
       }
+    } else plot(1:10, type="n", axes=FALSE,xlab="",ylab="")
       
-    }
-    
-    else{
-      
-      if (input$cutoffMethod == "Median"){
-        
-        
-        ps <- round(median(data$Expression),3)
-      } else ps <- as.numeric(input$expCutOff)
-      
-      data$geneexp_cp <- data$Expression<= ps
-      nt                       <- table(data$geneexp_cp)
-      geneexp.survfit.xfs      <- survfit(surv.xfs~geneexp_cp,data=data)
-      
-      test <- survdiff(surv.xfs~geneexp_cp,data=data)
-      
-      newPval <- round(pchisq(test$chisq, df = length(test$n)-1, lower.tail=FALSE),3)
-      
-      plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(2,4))
-      legend("bottomleft", c(paste(currentGene, ">", ps, "n=", nt[[1]]), paste(currentGene, "<=", ps, "n=", nt[[2]])), col=c(2,4), lty=1, lwd=1.5, bty="n")
-      
-      
-    }
-    
   })
   
   
@@ -1215,7 +1246,7 @@ shinyServer(function(input, output,session){
       
       
       
-    } else{
+    } else if (dataset == "Stockholm") {
       
       stockholm <- data
     
@@ -1251,6 +1282,69 @@ shinyServer(function(input, output,session){
       levels(grp) <- cols
       colMatrix[,2] <- as.character(grp)
       colnames(colMatrix) <- c("iCluster", "Gleason")
+      
+    }
+    
+    else if (dataset =="Michigan2005"){
+      
+    
+      samples <-  select(pd_varambally,geo_accession) %>% as.matrix %>% as.character
+      
+      data <- filter(data,geo_accession %in% samples)  %>% select(geo_accession,Expression,Symbol)
+      
+      geneMatrix <- data %>% 
+        spread(geo_accession,Expression) %>% data.frame
+      
+      symbols <- geneMatrix[,1]
+      geneMatrix <- as.matrix(geneMatrix[,-1])
+      
+      
+      rownames(geneMatrix) <- symbols
+      
+      
+      pd <- left_join(data,pd_varambally) %>% distinct(geo_accession,.keep_all=TRUE)
+      
+      colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 1)
+      grp <- pd$Sample_Group
+      cols <- brewer.pal(5,"Set1")[1:length(levels(factor(as.character(grp))))]
+      
+      grp <- as.factor(as.character(grp))
+      levels(grp) <- cols
+      
+      colMatrix[,1] <- as.character(grp)
+      
+      colnames(colMatrix) <- "Sample_Group"
+    }
+    
+    
+    else if (dataset == "Michigan2012"){
+      
+      samples <-  select(pd_grasso,geo_accession) %>% as.matrix %>% as.character
+      
+      data <- filter(data,geo_accession %in% samples)  %>% select(geo_accession,Expression,Symbol)
+      
+      geneMatrix <- data %>% 
+        spread(geo_accession,Expression) %>% data.frame
+      
+      symbols <- geneMatrix[,1]
+      geneMatrix <- as.matrix(geneMatrix[,-1])
+      
+      
+      rownames(geneMatrix) <- symbols
+      
+      
+      pd <- left_join(data,pd_grasso) %>% distinct(geo_accession,.keep_all=TRUE)
+      
+      colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 1)
+      grp <- pd$Group
+      cols <- brewer.pal(5,"Set1")[1:length(levels(factor(as.character(grp))))]
+      
+      grp <- as.factor(as.character(grp))
+      levels(grp) <- cols
+      
+      colMatrix[,1] <- as.character(grp)
+      
+      colnames(colMatrix) <- "Sample_Group"
       
     }
     
@@ -1297,7 +1391,7 @@ shinyServer(function(input, output,session){
       
     }
     
-    else{
+    else if (dataset == "MSKCC") {
       
       new_pheno <- left_join(pd_taylor,newGrps) %>% filter(!is.na(Cluster))
       p0 <- ggplot(new_pheno, aes(x = Cluster,fill=Cluster)) + geom_bar() +  scale_fill_manual(values=as.character(rainbow(n=length(unique(kGrps))))) + coord_flip()
@@ -1307,6 +1401,22 @@ shinyServer(function(input, output,session){
       
     }
     
+    else if (dataset == "Michigan2005"){
+      
+      new_pheno <- left_join(pd_varambally,newGrps) 
+      p0 <- ggplot(new_pheno, aes(x = Cluster,fill=Cluster)) + geom_bar() +  scale_fill_manual(values=as.character(rainbow(n=length(unique(kGrps))))) + coord_flip()
+      p1 <- ggplot(new_pheno,aes(x=Sample_Group,fill=Sample_Group)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  
+      grid.arrange(p0,p1)
+      
+    }
+    
+    else if (dataset == "Michigan2012"){
+      
+      new_pheno <- left_join(pd_grasso,newGrps) 
+      p0 <- ggplot(new_pheno, aes(x = Cluster,fill=Cluster)) + geom_bar() +  scale_fill_manual(values=as.character(rainbow(n=length(unique(kGrps))))) + coord_flip()
+      p1 <- ggplot(new_pheno,aes(x=Group,fill=Group)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  
+      grid.arrange(p0,p1)
+    }
     
   }
   )
@@ -1501,6 +1611,25 @@ shinyServer(function(input, output,session){
       p <- do.call("grid.arrange",c(plist,ncol=2))
       
     }
+    theme <- input$corTheme
+    
+    p <- switch(theme,
+                ggplot2 = p,
+                bw = p + theme_bw(),
+                classic = p + theme_classic(),
+                minimal = p + theme_minimal(),
+                light = p + theme_light(),
+                "Wall Street Journal" = p + theme_wsj(),
+                Economist = p + theme_economist(),
+                Excel = p + theme_excel(),
+                solarized = p + theme_solarized(),
+                stata = p + theme_stata(),
+                calc = p + theme_calc(),
+                dark = p + theme_dark(),
+                fivethirtyeight = p + theme_fivethirtyeight(),
+                tufte = p + theme_tufte()
+                
+    )
     
     p
     
@@ -1589,10 +1718,11 @@ shinyServer(function(input, output,session){
       group_by(Symbol) %>% 
       summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
       gather(Event,Percentage,-Symbol) %>% 
-      mutate(Cohort = "MSKCC")
-    
+      mutate(Cohort = "MSKCC") 
+
     cn.all <- bind_rows(camcap.cnts,stockholm.cnts,taylor.cnts) %>% 
-      mutate(Event = factor(Event, levels=c("DEL","NEUTRAL","AMP")))
+      mutate(Event = factor(Event, levels=c("DEL","NEUTRAL","AMP"))) %>% 
+      mutate(Percentage = round(Percentage,1))
     
     cn.all
   }
@@ -1631,16 +1761,27 @@ shinyServer(function(input, output,session){
       theme <- input$cnTheme
       p <- ggplot(cn.all, aes(x = Event, y=Percentage,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
       
+
+      
       p <- switch(theme,
-                  ggplot2 = p,
-                  bw = p + theme_bw(),
-                  classic = p + theme_classic(),
-                  minimal = p + theme_minimal(),
-                  light = p + theme_light()
+                   ggplot2 = p,
+                   bw = p + theme_bw(),
+                   classic = p + theme_classic(),
+                   minimal = p + theme_minimal(),
+                   light = p + theme_light(),
+                   "Wall Street Journal" = p + theme_wsj(),
+                   Economist = p + theme_economist(),
+                   Excel = p + theme_excel(),
+                   solarized = p + theme_solarized(),
+                   stata = p + theme_stata(),
+                   calc = p + theme_calc(),
+                   dark = p + theme_dark(),
+                   fivethirtyeight = p + theme_fivethirtyeight(),
+                   tufte = p + theme_tufte()
+                   
       )
       
-      
-      p <- p + ggtitle(paste("Copy Number Profile of genes in the ", dataset, "Dataset"))
+      p <- p + ggtitle(paste("Frequency of alterations in Cambridge, Stockholm and MSKCC"))
       p
     }
     
@@ -1896,7 +2037,17 @@ shinyServer(function(input, output,session){
                    bw = p1 + theme_bw(),
                    classic = p1 + theme_classic(),
                    minimal = p1 + theme_minimal(),
-                   light = p1 + theme_light()
+                   light = p1 + theme_light(),
+                   "Wall Street Journal" = p1+theme_wsj(),
+                   Economist = p1 + theme_economist(),
+                   Excel = p1 + theme_excel(),
+                   solarized = p1 + theme_solarized(),
+                   stata = p1 + theme_stata(),
+                   calc = p1 + theme_calc(),
+                   dark = p1 + theme_dark(),
+                   fivethirtyeight = p1 + theme_fivethirtyeight(),
+                   tufte = p1 + theme_tufte()
+                   
       )
       
       
@@ -1980,14 +2131,26 @@ shinyServer(function(input, output,session){
       p <- ggplot(cn.all, aes(x = Event, y=Percentage,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
       theme <- input$quickTheme
       
+
+      
+      
       p <- switch(theme,
                    ggplot2 = p,
                    bw = p + theme_bw(),
                    classic = p + theme_classic(),
                    minimal = p + theme_minimal(),
-                   light = p + theme_light()
+                   light = p + theme_light(),
+                   "Wall Street Journal" = p+theme_wsj(),
+                   Economist = p + theme_economist(),
+                   Excel = p + theme_excel(),
+                   solarized = p + theme_solarized(),
+                   stata = p + theme_stata(),
+                   calc = p + theme_calc(),
+                   dark = p + theme_dark(),
+                   fivethirtyeight = p + theme_fivethirtyeight(),
+                   tufte = p + theme_tufte()
+                   
       )
-      
       
       print(p)
       
