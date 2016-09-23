@@ -2015,6 +2015,15 @@ shinyServer(function(input, output,session){
   )
   
   
+  output$geneCheck <- eventReactive(input$check, {
+    
+    theGene <- input$currentGene
+    allPoss <- keys(revmap(org.Hs.egSYMBOL))
+    
+    txt <- ifelse(theGene %in% allPoss, paste("Gene name", theGene, "is valid."), paste("Sorry, Gene name", theGene, "is not valid."))
+    txt
+  })
+  
   doQuickTable <- eventReactive(input$go, {
     
     plotType <- input$displayType

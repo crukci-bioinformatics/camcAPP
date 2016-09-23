@@ -255,6 +255,7 @@ tabPanel("Quick Analysis",
              textInput("currentGene", "Gene of Interest", value="A1BG"),
              selectInput("quickDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
              radioButtons("displayType", "Plot to display", choices=c("Boxplot","Survival","Copy Number"),selected="Boxplot"),
+            actionButton("check", "Check Gene Name"),
             actionButton("go","Go!"),
              h2("Boxplot options"),
              selectInput("quick_clinvar_boxplot", "Choose a Clinical Covariate",choices=c("iCluster","Gleason","Sample_Group"),selected="iCluster"),
@@ -273,7 +274,7 @@ tabPanel("Quick Analysis",
              downloadButton("geneScript","Download R script....")
            ),
            mainPanel(
-
+             verbatimTextOutput("geneCheck"),
              plotOutput("quickPlot",width=1200,height=600),
              DT::dataTableOutput("quickTable")
            )
