@@ -29,7 +29,19 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                       helpText("If no gene list is uploaded, the genes ESR1, AR and STAT3 will be used"),
    #                   textInput("currentGene", "Gene of Interest", value="A1BG"),
                       helpText("If you want to analyse a single-gene, see the Quick Analysis tab"),
-                      selectInput("theDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge")
+                      selectInput("theDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
+                      h2("Citation"),
+                      strong("If you use any of the images generated in a publication or presentation, please cite:"),
+                      em("Dunning et al. Mining the human prostate cancer datasets: The camcApp shiny app. In preparation"),br(),
+                      strong("Please also cite the relevant publication for the dataset;"),br(),
+                      h3("Cambridge and Stockholm"),
+                      em("Integration of copy number and transcriptomics provides risk stratification in prostate cancer: A discovery and validation cohort study. Ross-Adams et al. (2015) doi:10.1016/j.ebiom.2015.07.017"),
+                      h3("MSKCC"),
+                      em("Integrative genomic profiling of human prostate cancer. Taylor et al. (2010) doi:10.1016/j.ccr.2010.05.026"),
+                      h3("Michigan2005"),
+                      em("Integrative genomic and proteomic analysis of prostate cancer reveals signatures of metastatic progression. Varambally et al. (2005) doi:10.1016/j.ccr.2005.10.001"),
+                      h3("Michigan2012"),
+                      em("The Mutational Landscape of Lethal Castrate Resistant Prostate Cancer. Grasso et al. (2012) doi:10.1038/nature11125")
                    )
                   ,
                    mainPanel(
@@ -38,24 +50,24 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      helpText("This app was developed by"),a("Cancer Research Uk Cambridge Institute Bioinformatics Core",href="http://www.cruk.cam.ac.uk/core-facilities/bioinformatics-core"),
                      helpText("Source code available on github;"),code("https://github.com/crukci-bioinformatics/camcAPP"),
                      h3("Features"),
-                     h2("Profile a specified gene across different datasets"),
-                     helpText("Choose a gene from the 'Type a Gene Symbol' box and the first five tabs (Cambridge Profile ... Michigan-2012) will show the expression of this gene in different datasets. For each dataset, you can choose which clinical variable to group the samples on"),
+                     h2("Gene Profile"),
+                     helpText("Produces boxplots to visualise the distribution of the selected genes. For each dataset, you can choose which clinical variable to group the samples on"),
                      helpText("When choosing Cambridge or Stockholm, you will have the option to display the expression in the five different subtypes identified by Ross-Adams et al (2015). These subtypes were shown to have significantly different outcomes"),
                      img(src="km-from-paper.png"),
                      helpText("If multiple microarray probes are found for the gene, the probe with the highest inter-quartile range (IQR) will be picked"),
                      helpText("An ANOVA analysis will also be performed to assess whether there are different expression levels in the groups you have chosen"),
-                     helpText("You can also upload a gene list and the boxplots will be displayed for each gene individually [CURRENTLY CAMBRIDGE ONLY]"),
-                     helpText("An R script can be downloaded, allowing you to repeat the analysis or tweak as you wish"),
+                     helpText("The boxplot can be exported as a pdf or png image. An R script can be downloaded, allowing you to repeat the analysis or tweak as you wish"),
                      h2("Survival Analysis"),
-                     helpText("You can perform Recursive Partitioning on a selected gene in a dataset with survival information (Cambridge, Stockholm and MSKCC)"),
-                     helpText("If samples in the dataset can be allocated into different groups based on the expression of the gene, a Kaplan-Meir plot will be displayed"),
-                     helpText("Otherwise, no plots will be displayed"),
+                     helpText("You can perform Recursive Partitioning on a selected gene in a dataset with survival information (Cambridge, Stockholm and MSKCC). This analysis will determine if there are sub-groups of samples with significantly different expression level"),
+                     helpText("If samples in the dataset can be allocated into different groups based on the expression of the gene, a Kaplan-Meir plot will be displayed. Otherwise, the median expression level of the gene will be used to assign samples to high and low expression groups"),
                      h2("Gene Correlation"),
                      helpText("You can plot one gene against another in a specified dataset. Points on the plot are coloured according to sample group. The correlation is computed and displayed. "),
                      h2("Heatmap"),
-                     helpText("The uploaded gene list can be used to generate a heatmap from the chosen dataset. Control is given over the distance metric and clustering method")
-                     
-                     
+                     helpText("The uploaded gene list can be used to generate a heatmap from the chosen dataset. Control is given over the distance metric and clustering method. Samples can be partitioned into different groups based on the clustering, and the composition of each group can be interrogated"),
+                     h2("Copy Number"),
+                     helpText("For datasets with Copy number information (Cambridge, Stockholm and MSKCC), the frequency of alterations in different clinical covariates is displayed. A heatmap can also be generated"),
+                     helpText("We are very grateful to Emilie Lalonde from University of Toronto for supplying the data for these plots")
+
                   )
                  )
         ),
