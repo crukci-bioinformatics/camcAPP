@@ -1896,7 +1896,7 @@ shinyServer(function(input, output,session){
     
     cn.all <- data.frame()
     
-    if(!dataset %in% c("Michigan2005", "Michigan2012") & plotType == "Frequency by Dataset") {
+    if(!(dataset %in% c("Michigan2005", "Michigan2012") & plotType == "Frequency by Dataset")) {
       
 
       genes <- getGeneList()
