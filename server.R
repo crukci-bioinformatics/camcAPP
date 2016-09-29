@@ -1894,10 +1894,11 @@ shinyServer(function(input, output,session){
     dataset <- input$theDataset
     plotType <- input$cnPlotType
     
-    if(dataset %in% c("Michigan2005", "Michigan2012") & plotType == "Frequency by Dataset") {
-      cn.all <- data.frame()
-    } else{
+    cn.all <- data.frame()
     
+    if(!dataset %in% c("Michigan2005", "Michigan2012") & plotType == "Frequency by Dataset") {
+      
+
       genes <- getGeneList()
       cn.all <- getCopyNumberTable()
 
