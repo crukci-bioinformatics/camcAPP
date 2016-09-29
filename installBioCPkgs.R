@@ -4,5 +4,5 @@ library(devtools)
 source("http://www.bioconductor.org/biocLite.R")
 biocLite(c("org.Hs.eg.db","Biobase","ggplot2","dplyr","tidyr","gridExtra","heatmap.plus",
            "RColorBrewer","party","survival","knitr","broom","WGCNA","gplots",
-           "prostateCancerTaylor","prostateCancerCamcap","prostateCancerStockholm","prostateCancerGrasso","prostateCancerVarambally","GGally","DT"))
+           "prostateCancerTaylor","prostateCancerCamcap","prostateCancerStockholm","prostateCancerGrasso","prostateCancerVarambally","GGally","DT","ggthemes"))
 
