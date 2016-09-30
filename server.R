@@ -1780,7 +1780,8 @@ shinyServer(function(input, output,session){
     
     plotType <- input$cnPlotType
     
-  
+    cn.all <- data.frame()
+    
     if (plotType == "Frequency"){
       
       message("Retrieving copy-number data....")
