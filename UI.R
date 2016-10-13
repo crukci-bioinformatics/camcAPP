@@ -136,9 +136,9 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                     img(src="http://i.imgur.com/tbIq2nD.gif")
                   ),
 #                  radioButtons("inputType_survival", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
-                  radioButtons("cutoffMethod","Type of partitioning?",choices=c("RP","Median","Manual"),selected="RP"),
-                  textInput("expCutOff", "Cut-off for partitioning",value = 6),
-                  helpText("If you working on a gene list, you can select which gene to display the results for"),
+#                  radioButtons("cutoffMethod","Type of partitioning?",choices=c("RP","Median","Manual"),selected="RP"),
+
+                  helpText("You can select which gene to display the results for"),
                   selectInput("survivalGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3"),
                   h2("Output options"),
                   textInput("survivalBasename", label = "What to call the output files",value="survival"),
@@ -148,15 +148,21 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                   textInput("survivalWidth", label="Width of plot",value=12),
                   textInput("survivalHeight", label="Height of plot",value=6.3),
                   downloadButton("survivalPlotPDF","Export K-M plot...."),
-                  downloadButton("survivalScript","Download R script....")
+                  downloadButton("survivalScript","Download R script...."),
+                  h2("Citation for recursive partitioning (RP)"),
+                  em("[1] Torsten Hothorn, Kurt Hornik and Achim Zeileis (2006). Unbiased  Recursive Partitioning: A Conditional Inference Framework. Journal of  Computational and Graphical Statistics, 15(3), 651--674.")
                 ),
                 mainPanel(
 
                   verbatimTextOutput("survivalWarn"),
-                  helpText("A recursive partitioning (RP) analysis is performed to determine if the samples can be split into groups based on the expression data from your chosen gene(s)."),
+                  helpText("A recursive partitioning (RP) analysis [1] is performed to determine if the samples can be split into groups based on the expression data from your chosen gene(s). An RP p-value < 0.05 indicates a significant split. The p-value from RP and cut-off corresponding to a split are shown in the table below"),
+                  helpText("If no cut-off can be found with RP, the samples will be divided according to median expression level in the plots below"),
                   DT::dataTableOutput("rpSummary"),
+                  helpText("If a significant split of samples can be found using RP, the expression cut-off and number of samples in each group will be shown below. Othewise, a histogram of expression level will be shown with a line to indicate the median expression level"),
                   plotOutput("rpPlot"),
+                  helpText("The grouping of samples found by RP, or using median expression level, is used to construct a Kaplan-Meier plot"),
                   plotOutput("survivalPlot"),helpText("The Kaplan-Meier plot is a useful way of summarising survival data. There is one curve for each group. Each curve starts at 100% probability of survival. The probability of freedom from biochemical recurrence is shown on the y axis and the time (in years) is shown on the x axis. The curve drops each time there is an 'event'. A cross is shown on each curve where a 'censoring'' event takes place. This is where someone drops out of the study for a reason not related to the study, e.g. the study ends before an event has occurred. These subjects are no longer included in any calculations. The lower the survival curve the worse prognosis the patients in that group have.")
+
                 )
                 
              )

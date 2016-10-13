@@ -279,6 +279,7 @@ shinyServer(function(input, output,session){
   #   if(input$inputType != "Single Gene") updateTextInput(session, inputId = "profileBasename",value=paste0(basename(input$datapath),"-profile"))
   updateSelectInput(session, inputId = "cambridgeGeneChoice",choices = as.character(genes),selected=as.character(genes)[1])
   updateSelectInput(session, inputId = "survivalGeneChoice",choices = as.character(genes),selected=as.character(genes)[1])
+  updateSelectInput(session, inputId = "correlationGeneChoice", choices=as.character(genes),selected=as.character(genes)[1])
   
   updateTextInput(session, inputId = "profileBasename", value=paste0(basename(inFile$name),"-profile"))
   updateTextInput(session, inputId = "survivalBasename", value=paste0(as.character(genes)[1],"-survival"))
@@ -890,7 +891,7 @@ shinyServer(function(input, output,session){
       
       surv.xfs <- Surv((as.numeric(as.character(data$Time))/12), data$Event)
       data$surv.xfs <- surv.xfs
-      if(input$cutoffMethod == "RP"){
+#      if(input$cutoffMethod == "RP"){
         results <- rpAnalysis(data)
         ctree_xfs <- results[[1]]
         newPval <- results[[2]]
@@ -908,27 +909,15 @@ shinyServer(function(input, output,session){
           p <- ggplot(data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=med,col="red",lty=2) + ggtitle("Partitioning using median expression")
           print(p)
         }
-        
-      }
+
       
-      else{
-        
-        if (input$cutoffMethod == "Median") {
-          
-          med <- median(combined.data$Expression)
-          p <- ggplot(combined.data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=med,col="red",lty=2)
-          print(p)
-        }
-        else  ggplot(combined.data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=as.numeric(input$expCutOff),col="red",lty=2) + ggtitle("Partitioning using defined cut-off")
-        
-        
-      }
+
     
     } else ggplot()
     
     
-    
   }
+  
   )
   
   
@@ -951,7 +940,7 @@ shinyServer(function(input, output,session){
       updateTextInput(session, "expCutOff",value=round(median(data$Expression),2))
       surv.xfs <- Surv((as.numeric(as.character(data$Time))/12), data$Event)
       
-      if(input$cutoffMethod == "RP"){
+
         
         results <- rpAnalysis(data)
         
@@ -1004,29 +993,9 @@ shinyServer(function(input, output,session){
           
         }
         
-      }
+
       
-      else{
-        
-        if (input$cutoffMethod == "Median"){
-          
-          
-          ps <- round(median(data$Expression),3)
-        } else ps <- as.numeric(input$expCutOff)
-        
-        data$geneexp_cp <- data$Expression<= ps
-        nt                       <- table(data$geneexp_cp)
-        geneexp.survfit.xfs      <- survfit(surv.xfs~geneexp_cp,data=data)
-        
-        test <- survdiff(surv.xfs~geneexp_cp,data=data)
-        
-        newPval <- round(pchisq(test$chisq, df = length(test$n)-1, lower.tail=FALSE),3)
-        
-        plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(2,4))
-        legend("bottomleft", c(paste(currentGene, ">", ps, "n=", nt[[1]]), paste(currentGene, "<=", ps, "n=", nt[[2]])), col=c(2,4), lty=1, lwd=1.5, bty="n")
-        
-        
-      }
+
     } else plot(1:10, type="n", axes=FALSE,xlab="",ylab="")
       
   })
@@ -1052,7 +1021,7 @@ shinyServer(function(input, output,session){
       updateTextInput(session, "expCutOff",value=round(median(data$Expression),2))
       surv.xfs <- Surv((as.numeric(as.character(data$Time))/12), data$Event)
       
-      if(input$cutoffMethod == "RP"){
+
         
         results <- rpAnalysis(data)
         
@@ -1093,29 +1062,9 @@ shinyServer(function(input, output,session){
           
         }
         
-      }
+    
       
-      else{
-        
-        if (input$cutoffMethod == "Median"){
-          
-          
-          ps <- round(median(data$Expression),3)
-        } else ps <- as.numeric(input$expCutOff)
-        
-        data$geneexp_cp <- data$Expression<= ps
-        nt                       <- table(data$geneexp_cp)
-        geneexp.survfit.xfs      <- survfit(surv.xfs~geneexp_cp,data=data)
-        
-        test <- survdiff(surv.xfs~geneexp_cp,data=data)
-        
-        newPval <- round(pchisq(test$chisq, df = length(test$n)-1, lower.tail=FALSE),3)
-        
-        plot(geneexp.survfit.xfs, xlab="Time to BCR (years)", ylab="Probability of Freedom from Biochemical Recurrence", main=paste(currentGene,", p=", newPval), col=c(2,4))
-        legend("bottomleft", c(paste(currentGene, ">", ps, "n=", nt[[1]]), paste(currentGene, "<=", ps, "n=", nt[[2]])), col=c(2,4), lty=1, lwd=1.5, bty="n")
-        
-        
-      }
+
       
       
       dev.off()
