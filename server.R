@@ -1554,7 +1554,7 @@ shinyServer(function(input, output,session){
           data <- select(cordata, geo_accession,Expression, Copy.number.Cluster, Symbol) %>% 
             spread(Symbol,Expression)
           df <- as.data.frame(data)
-          cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
+#          cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
           p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Copy.number.Cluster))
         }
         else if(covar == "Gleason"){
