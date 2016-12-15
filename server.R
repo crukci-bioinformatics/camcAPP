@@ -88,19 +88,24 @@ exp_camcap <- tbl("expression",src=db_camcap)
 exp_camcap.curated <- tbl("expression",src=db_camcap.curated)
 
 db_stockholm <- src_sqlite("stockholm.sqlite3")
+
+db_stockholm.curated <- src_sqlite("stockholm.curated.sqlite3")
 pd_stockholm <- collect(tbl("pd",src=db_stockholm))
 fd_stockholm <- collect(tbl("fd",src=db_stockholm))
 
 
 exp_stockholm <- tbl("expression",src=db_stockholm)
+exp_stockholm.curated <- tbl("expression",src=db_stockholm.curated)
 
 
 
 db_taylor <- src_sqlite("taylor.sqlite3")
+db_taylor.curated <- src_sqlite("taylor.curated.sqlite3")
+
 pd_taylor <- collect(tbl("pd",src=db_taylor))
 fd_taylor <- collect(tbl("fd",src=db_taylor))
 exp_taylor <- tbl("expression",src=db_taylor)
-
+exp_taylor.curated <- tbl("expression",src=db_taylor.curated)
 
 db_varambally <- src_sqlite("varambally.sqlite3")
 pd_varambally <- collect(tbl("pd",src=db_varambally))
@@ -274,7 +279,7 @@ shinyServer(function(input, output,session){
   getGeneList <- reactive({inFile <- input$file1
   
   if (is.null(inFile))
-    return(c("STAT3","ESR1","AR"))
+    return(c("STAT3","ESR1","AR","MELK","HES6"))
   
   
   #    print(inFile$name)
@@ -448,8 +453,18 @@ shinyServer(function(input, output,session){
       
     } else if (dataset == "Stockholm"){
       
+      
+      if (all(genes %in% curated.genes)){
+        data<- collect(exp_stockholm.curated,n=Inf)  %>% filter(Symbol %in% genes)
+      } else {
+        data<- collect(exp_stockholm,n=Inf)  %>% filter(Symbol %in% genes)
+      }
+      
+      
       #      probes <- fd_stockholm %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-      data<- collect(exp_stockholm,n=Inf)  %>% filter(Symbol %in% genes)
+
+      
+      
       #        gather(geo_accession,Expression,-ID)
       fd <- fd_stockholm
       pd <-  mutate(pd_stockholm, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
@@ -461,7 +476,13 @@ shinyServer(function(input, output,session){
       #probes <- fd_taylor %>% filter(Gene %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
       #      data <- exp_taylor  %>% filter(ID %in% probes) %>% 
       #       gather(geo_accession,Expression,-ID)
-      data <- collect(exp_taylor,n=Inf) %>% filter(Gene %in% genes)
+      
+      if (all(genes %in% curated.genes)){
+        data <- collect(exp_taylor.curated,n=Inf) %>% filter(Gene %in% genes)
+      } else {
+        data <- collect(exp_taylor,n=Inf) %>% filter(Gene %in% genes)
+      }
+
       
       
       fd <- fd_taylor %>% mutate(Symbol = Gene)
@@ -706,11 +727,11 @@ shinyServer(function(input, output,session){
     
     if(dataset == "Cambridge"){
       df <- switch(var,
-             iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals"),
+             iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value),
              
-             Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals"),
+             Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value),
              
-             Sample_Group = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.))) %>% filter(term != "Residuals")
+             Sample_Group = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.))) %>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) 
              
       )
     }
@@ -719,9 +740,9 @@ shinyServer(function(input, output,session){
       
       
       df <-  switch(var,
-             iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals"),
+             iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.))) %>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value), 
              
-             Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals")
+             Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)
       )
       
     }
@@ -739,7 +760,7 @@ shinyServer(function(input, output,session){
       df <-  group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)
       
     }
-    
+    head(df)
     datatable(df)
     
     
@@ -911,7 +932,9 @@ shinyServer(function(input, output,session){
           
           ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
           ps  <- signif(ps2[1], digits = 3)
-          plot(ctree(surv.xfs~Expression, data=data))
+          #plot(ctree(surv.xfs~Expression, data=data))
+          p <- ggplot(data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=ps2[1],col="red",lty=2) + ggtitle("Partitioning using cut-off found by RP ")
+          print(p)
         }
         
         else {
@@ -925,7 +948,7 @@ shinyServer(function(input, output,session){
     
     } else ggplot()
     
-    
+
   }
   
   )
@@ -3196,8 +3219,8 @@ shinyServer(function(input, output,session){
       cat(file=file,as.name("library(GGally)\n"),append=TRUE)
       cat(file=file,as.name("library(RColorBrewer)\n"),append=TRUE)
       cat(file=file,as.name("iclusPal <- brewer.pal(5, 'Set1')\n"),append=TRUE)
+      dataset <- input$theDataset
       
-      dataset <- input$corDataset
       
       if(input$inputType_correlation == "Single Gene"){
         gene1 <- getCurrentGene()
@@ -3389,14 +3412,15 @@ shinyServer(function(input, output,session){
       cat(file=file,as.name("iclusPal <- brewer.pal(5, 'Set1')\n"),append=TRUE)
       
       
-      if(is.null(input$file1)) cat(file=file,as.name("genes <- c('STAT3', 'ESR1','AR')\n"),append=TRUE)
+      if(is.null(input$file1)) cat(file=file,as.name("genes <- c('STAT3', 'ESR1','AR','HES6','MELK')\n"),append=TRUE)
       else{
         inFile <- input$file1
         cat(file=file,as.name(paste0('myfile <- \"' , inFile$name, '\"\n')),append=TRUE)
         cat(file=file,as.name("genes <- read.delim(myfile)[,1]\n"),append=TRUE)
       }
       
-      dataset <- input$heatmapDataset
+      dataset <- input$theDataset
+      
       
       if(dataset == "MSKCC"){
         cat(file=file,as.name("if(!require(prostateCancerTaylor)) {\n source('http://www.bioconductor.org/biocLite.R') \n biocLite('prostateCancerTaylor')\n}\n"),append=TRUE)
