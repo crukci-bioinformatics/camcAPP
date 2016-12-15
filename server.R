@@ -1499,6 +1499,8 @@ shinyServer(function(input, output,session){
       
       if(dataset == "Cambridge"){
         
+        corfun <- function(x) cor(x)
+        
         if(covar == "iCluster"){
           
           data <- select(cordata, geo_accession,Expression, iCluster, Symbol) %>% 
@@ -1652,40 +1654,56 @@ shinyServer(function(input, output,session){
     }
     
     else {
+      
+      #http://stackoverflow.com/questions/7549694/ggplot2-adding-regression-line-equation-and-r2-on-graph#7549819
+      cor_eqn <- function(df){
+      fun <- input$corType 
+       cc <- ifelse(fun == "Pearson", cor(df$x,df$y,method="pearson"),cor(df$x,df$y,method="spearman"));
+        eq <- substitute(r^2~"="~r2, 
+                         list(r2 = format(cc^2, digits = 2)))
+        as.character(as.expression(eq));                 
+      }
+      
+      
       gene1 <- filter(cordata, Symbol == input$correlationGeneChoice) %>% mutate(Gene1 = Expression)
       
       genes.other <- setdiff(genes,input$correlationGeneChoice)
       plist <- NULL  
+      theme <- input$corTheme
+      
       for(i in 1:length(genes.other)){
         
         gene2 <- filter(cordata, Symbol == genes.other[i]) %>% mutate(Gene2 = Expression)
         df <- mutate(gene1,Gene2 = gene2$Gene2)
-        plist[[i]] <-  ggplot(df, aes(y = Expression, x=Gene2)) + geom_point() + ylab(input$correlationGeneChoice) + xlab(genes.other[i])
+        p <-  ggplot(df, aes(y = Expression, x=Gene2)) + geom_point() + ylab(input$correlationGeneChoice) + xlab(genes.other[i]) + geom_smooth(method="lm",se=FALSE,color="red",lty=2)
+        p <- switch(theme,
+                    ggplot2 = p,
+                    bw = p + theme_bw(),
+                    classic = p + theme_classic(),
+                    minimal = p + theme_minimal(),
+                    light = p + theme_light(),
+                    "Wall Street Journal" = p + theme_wsj(),
+                    Economist = p + theme_economist(),
+                    Excel = p + theme_excel(),
+                    solarized = p + theme_solarized(),
+                    stata = p + theme_stata(),
+                    calc = p + theme_calc(),
+                    dark = p + theme_dark(),
+                    fivethirtyeight = p + theme_fivethirtyeight(),
+                    tufte = p + theme_tufte()
+                    
+        )
+        
+        df$x <- df$Gene2
+        df$y <- df$Expression
+        plist[[i]] <- p + geom_text(size=5,x = min(df$x)+0.2, y = max(df$y), label = cor_eqn(df), parse = TRUE,col="red",alpha=0.7)
       }
       
       p <- do.call("grid.arrange",c(plist,ncol=2))
       
     }
-    theme <- input$corTheme
-    
-    p <- switch(theme,
-                ggplot2 = p,
-                bw = p + theme_bw(),
-                classic = p + theme_classic(),
-                minimal = p + theme_minimal(),
-                light = p + theme_light(),
-                "Wall Street Journal" = p + theme_wsj(),
-                Economist = p + theme_economist(),
-                Excel = p + theme_excel(),
-                solarized = p + theme_solarized(),
-                stata = p + theme_stata(),
-                calc = p + theme_calc(),
-                dark = p + theme_dark(),
-                fivethirtyeight = p + theme_fivethirtyeight(),
-                tufte = p + theme_tufte()
-                
-    )
-    
+
+
     p
     
     
@@ -1710,8 +1728,228 @@ shinyServer(function(input, output,session){
       if(input$correlationPlotFormat == "pdf") pdf(file, width=as.numeric(input$correlationWidth), height=as.numeric(input$correlationHeight))
       else png(file, width=as.numeric(input$correlationWidth),height=as.numeric(input$correlationHeight))
       
-      p <- doCorPlot()
-      print(p)
+      genes <- getGeneList()
+      
+      
+      dataset <- getDataset()
+      
+      #cordata <- filterByGene(dataset, genes)
+      
+      cordata <- prepareExpressionMatrix()
+      
+      covar <- input$clinvar_cor
+      
+      if(input$inputType_correlation == "All Pairwise"){
+        
+        if(dataset == "Cambridge"){
+          
+          corfun <- function(x) cor(x)
+          
+          if(covar == "iCluster"){
+            
+            data <- select(cordata, geo_accession,Expression, iCluster, Symbol) %>% 
+              filter(iCluster %in% c("clust1","clust2","clust3","clust4","clust5")) %>% 
+              #        mutate(Symbol=gsub(genes[1], "Gene1",Symbol)) %>% 
+              #       mutate(Symbol=gsub(genes[2], "Gene2",Symbol)) %>% 
+              spread(Symbol,Expression)
+            #      cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping= aes(col=iCluster))
+            
+            #        ggplot(data, aes(x = Gene1, y=Gene2,col=iCluster)) + geom_point() + xlab(genes[1]) + ylab(genes[2]) +  scale_fill_manual(values=iclusPal) + ggtitle(paste("Correlation = ",cor))
+            
+          }
+          
+          else if(covar == "Gleason"){
+            
+            data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Gleason))
+            
+          }
+          
+          else if(covar == "Sample_Group"){
+            
+            data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Sample_Group))
+            
+          }
+          
+          else {
+            
+            data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df))
+          }
+          
+          
+          
+        }
+        
+        else if (dataset == "Stockholm"){
+          
+          if(covar == "iCluster"){
+            
+            data <- select(cordata, geo_accession,Expression, iCluster, Symbol) %>% 
+              filter(iCluster %in% c("clust1","clust2","clust3","clust4","clust5")) %>% 
+              #        mutate(Symbol=gsub(genes[1], "Gene1",Symbol)) %>% 
+              #       mutate(Symbol=gsub(genes[2], "Gene2",Symbol)) %>% 
+              spread(Symbol,Expression)
+            #      cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=iCluster))
+            
+          }
+          
+          else if(covar == "Gleason"){
+            
+            data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),maping=aes(col=Gleason))
+            
+          }
+          
+          else {
+            
+            data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df))
+            
+          }
+          
+          
+        }
+        
+        else if (dataset=="MSKCC"){
+          
+          if(covar == "CopyNumberCluster"){
+            
+            data <- select(cordata, geo_accession,Expression, Copy.number.Cluster, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            #          cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Copy.number.Cluster))
+          }
+          else if(covar == "Gleason"){
+            
+            
+            data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Gleason))
+          }
+          
+          else {
+            
+            data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df))
+            
+          }
+          
+          
+        }
+        
+        else if (dataset == "Michigan2005"){
+          
+          if(covar == "Sample_Group"){
+            data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Sample_Group))
+            
+          }
+          else{
+            data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df))
+            
+          }
+          
+        }
+        
+        else if (dataset == "Michigan2012"){
+          
+          if(covar == "Sample_Group"){
+            data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Sample_Group))
+            
+          }
+          else{
+            data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df))
+            
+          }
+          
+        }
+        
+      }
+      
+      else {
+        
+        #http://stackoverflow.com/questions/7549694/ggplot2-adding-regression-line-equation-and-r2-on-graph#7549819
+        cor_eqn <- function(df){
+          fun <- input$corType 
+          cc <- ifelse(fun == "Pearson", cor(df$x,df$y,method="pearson"),cor(df$x,df$y,method="spearman"));
+          eq <- substitute(r^2~"="~r2, 
+                           list(r2 = format(cc^2, digits = 2)))
+          as.character(as.expression(eq));                 
+        }
+        
+        
+        gene1 <- filter(cordata, Symbol == input$correlationGeneChoice) %>% mutate(Gene1 = Expression)
+        
+        genes.other <- setdiff(genes,input$correlationGeneChoice)
+        plist <- NULL  
+        theme <- input$corTheme
+        
+        for(i in 1:length(genes.other)){
+          
+          gene2 <- filter(cordata, Symbol == genes.other[i]) %>% mutate(Gene2 = Expression)
+          df <- mutate(gene1,Gene2 = gene2$Gene2)
+          p <-  ggplot(df, aes(y = Expression, x=Gene2)) + geom_point() + ylab(input$correlationGeneChoice) + xlab(genes.other[i]) + geom_smooth(method="lm",se=FALSE,color="red",lty=2)
+          p <- switch(theme,
+                      ggplot2 = p,
+                      bw = p + theme_bw(),
+                      classic = p + theme_classic(),
+                      minimal = p + theme_minimal(),
+                      light = p + theme_light(),
+                      "Wall Street Journal" = p + theme_wsj(),
+                      Economist = p + theme_economist(),
+                      Excel = p + theme_excel(),
+                      solarized = p + theme_solarized(),
+                      stata = p + theme_stata(),
+                      calc = p + theme_calc(),
+                      dark = p + theme_dark(),
+                      fivethirtyeight = p + theme_fivethirtyeight(),
+                      tufte = p + theme_tufte()
+                      
+          )
+          
+          df$x <- df$Gene2
+          df$y <- df$Expression
+          plist[[i]] <- p + geom_text(size=5,x = min(df$x)+0.2, y = max(df$y), label = cor_eqn(df), parse = TRUE,col="red",alpha=0.7)
+        }
+        
+        p <- do.call("grid.arrange",c(plist,ncol=2))
+        
+      }
+      
+      
+      p
+      
       dev.off()
     }
     

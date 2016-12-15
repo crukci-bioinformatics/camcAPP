@@ -182,6 +182,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                    img(src="wait30trans.gif")
                  ),
                  radioButtons("inputType_correlation", "Plot correlations with a single gene, or all Pairwise Correlations?", choices=c("Single Gene","All Pairwise"),selected="Single Gene"),
+                  radioButtons("corType", "Type of correlation to compute", selected="Pearson",choices=c("Pearson","Spearman")),
                   selectInput("correlationGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR","HES6","MELK"),selected="STAT3"),
 #                 helpText("If you have selected Single Gene mode (above), now select a second gene to correlate with"),
 #                 selectInput("secondGene","Type a Gene Symbol",choices="A2M",selected = "A2M"),
