@@ -8,8 +8,7 @@ library(COSMIC.67)
 data(cgc_67, package = "COSMIC.67")
 
 curated.genes <- na.omit(cgc_67[,1])
-curated.genes <- c(curated.genes, "ESR1", "AR")
-
+curated.genes <- c(curated.genes, c('ESR1','AR','AARS','ACAD9','ACVR1','AFG3L2','AKAP11','ANKFY1','ANKRD46','ARF5','ATP6V1B2','BRF2','C18orf25','C8orf58','C8orf76','CCAR2','CDC16','CHMP4C','CHMP7','COL20A1','COPS7A','COX10','COX4I1','CPNE3','CTNS','CUEDC2','CXXC1','CYB5D2','DCTN2','DEF8','DMTN','EBAG9','EIF4G1','ELAC2','ELP3','ERCC3','ERI1','FAM160B2','FIG4','FSCN3','FUK','GALNT12','GHITM','GPR88','GTF2E2','GTF2F2','HDDC2','HDHD2','HMCES','HSBP1','IMPA1','INTS9','KAT6A','KCNK12','KLHDC4','LINC00938','LPPR1','LRRC31','LSM1','MAP3K7','MAPKAP1','MELK','MMS19','MPDU1','MTMR9','MYLK2','NSMCE2','NUDT16P1','PHF11','PIGN','PPP3CC','PQLC1','PTDSS1','PTK2B','R3HCC1','RALBP1','RARS2','RBFA','RCBTB2','RIPK2','RNGTT','RP11-60I3.5','SAT2','SCAF11','SCN4A','SETDB2','SFT2D3','SLC25A11','SORBS3','SPAG7','SPIDR','SUGT1','TCF25','TM2D2','TPD52','TRAPPC2L','TRIM13','WDR59','YEATS2','ZBTB34','ZBTB4','ZNF252P'))
 write.table(curated.genes, file="curated.genes.txt",row.names = FALSE,quote=FALSE)
 
 db <- src_sqlite("camcap.sqlite3", create=TRUE)
