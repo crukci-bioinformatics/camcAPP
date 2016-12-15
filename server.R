@@ -75,13 +75,17 @@ plotDendroAndColors.mod <- function (dendro, colors, groupLabels = NULL, rowText
 
 library(dplyr)
 
+curated.genes <- read.table("curated.genes.txt",stringsAsFactors = FALSE)[,1]
+
 db_camcap <- src_sqlite("camcap.sqlite3")
+db_camcap.curated <- src_sqlite("camcap.curated.sqlite3")
 
 pd_camcap <- collect(tbl("pd",src=db_camcap))
 fd_camcap <- collect(tbl("fd",src=db_camcap))
 
 
 exp_camcap <- tbl("expression",src=db_camcap)
+exp_camcap.curated <- tbl("expression",src=db_camcap.curated)
 
 db_stockholm <- src_sqlite("stockholm.sqlite3")
 pd_stockholm <- collect(tbl("pd",src=db_stockholm))
@@ -430,7 +434,13 @@ shinyServer(function(input, output,session){
     if(dataset == "Cambridge"){
       
       #      probes <- fd_camcap %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-      data <- collect(exp_camcap,n=Inf)  %>% filter(Symbol %in% genes)
+      
+      if (all(genes %in% curated.genes)){
+        data <- collect(exp_camcap.curated,n=Inf)  %>% filter(Symbol %in% genes)
+      } else {
+        data <- collect(exp_camcap,n=Inf)  %>% filter(Symbol %in% genes)
+      }
+      
       #gather(geo_accession,Expression,-ID)
       fd <- fd_camcap
       pd <-  mutate(pd_camcap, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 

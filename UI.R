@@ -66,7 +66,9 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      helpText("The uploaded gene list can be used to generate a heatmap from the chosen dataset. Control is given over the distance metric and clustering method. Samples can be partitioned into different groups based on the clustering, and the composition of each group can be interrogated"),
                      h2("Copy Number"),
                      helpText("For datasets with Copy number information (Cambridge, Stockholm and MSKCC), the frequency of alterations in different clinical covariates is displayed. A heatmap can also be generated"),
-                     helpText("We are very grateful to Emilie Lalonde from University of Toronto for supplying the data for these plots")
+                     helpText("We are very grateful to Emilie Lalonde from University of Toronto for supplying the data for these plots"),
+                     h2("Images"),
+                     helpText("Spinning Wait Icons by Andrew Davidson http://andrewdavidson.com/articles/spinning-wait-icons/")
 
                   )
                  )
@@ -81,7 +83,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      conditionalPanel(
                        condition="($('html').hasClass('shiny-busy'))",
                        p("Shiny is computing something.."),
-                       img(src="http://i.imgur.com/tbIq2nD.gif")
+                       img(src="wait30.gif")
                      ),
   #                   selectInput("boxplotDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
                      selectInput("clinvar_boxplot", "Choose a Clinical Covariate",choices=c("iCluster","Gleason","Sample_Group"),selected="iCluster"),
@@ -133,7 +135,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  conditionalPanel(
                     condition="($('html').hasClass('shiny-busy'))",
                     p("Shiny is computing something.."),
-                    img(src="http://i.imgur.com/tbIq2nD.gif")
+                    img(src="wait30.gif")
                   ),
 #                  radioButtons("inputType_survival", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
 #                  radioButtons("cutoffMethod","Type of partitioning?",choices=c("RP","Median","Manual"),selected="RP"),
@@ -174,7 +176,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                 conditionalPanel(
                    condition="($('html').hasClass('shiny-busy'))",
                    p("Shiny is computing something.."),
-                   img(src="http://i.imgur.com/tbIq2nD.gif")
+                   img(src="wait30.gif")
                  ),
                  radioButtons("inputType_correlation", "Plot correlations with a single gene, or all Pairwise Correlations?", choices=c("Single Gene","All Pairwise"),selected="Single Gene"),
                   selectInput("correlationGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3"),
@@ -205,7 +207,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
               conditionalPanel(
                  condition="($('html').hasClass('shiny-busy'))",
                  p("Shiny is computing something.."),
-                 img(src="http://i.imgur.com/tbIq2nD.gif")
+                 img(src="wait30.gif")
                ),
                  radioButtons("distfun","Method to calulate distances",choices=c("Euclidean","Correlation"),selected="Euclidean"),
                  radioButtons("hclustfun", "Method of hierachical clustering",choices=c("ward","single","complete","average","mcquitty","median","centroid"),selected="complete"),
@@ -242,7 +244,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
         conditionalPanel(
            condition="($('html').hasClass('shiny-busy'))",
            p("Shiny is computing something.."),
-           img(src="http://i.imgur.com/tbIq2nD.gif")
+           img(src="wait30.gif")
          ),
 #         radioButtons("inputType_cn", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),                 h2("Output options"),
          textInput("copyNumberBasename", label = "What to call the output files",value="example"),
@@ -276,7 +278,7 @@ tabPanel("Quick Analysis",
             conditionalPanel(
                condition="($('html').hasClass('shiny-busy'))",
                p("Shiny is computing something.."),
-               img(src="http://i.imgur.com/tbIq2nD.gif")
+               img(src="wait30.gif")
              ),
              textInput("currentGene", "Gene of Interest", value="A1BG"),
              selectInput("quickDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),

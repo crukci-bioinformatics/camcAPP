@@ -1,8 +1,20 @@
 library(dplyr)
 library(tidyr)
 library(Biobase)
+library(COSMIC.67)
+
+
+
+data(cgc_67, package = "COSMIC.67")
+
+curated.genes <- na.omit(cgc_67[,1])
+curated.genes <- c(curated.genes, "ESR1", "AR")
+
+write.table(curated.genes, file="curated.genes.txt",row.names = FALSE,quote=FALSE)
+
 db <- src_sqlite("camcap.sqlite3", create=TRUE)
-  
+db.curated <- src_sqlite("camcap.curated.sqlite3", create=TRUE)
+
 data(camcap,package = "prostateCancerCamcap")
 pd_camcap <- tbl_df(pData(camcap))
 fd_camcap <- tbl_df(fData(camcap))
@@ -11,11 +23,21 @@ expression <-
   gather(geo_accession,Expression,-ID)
 pd <- pd_camcap
 fd <- fd_camcap
-expression <- left_join(expression, select(fd, ID, Symbol))
+expression.all <- left_join(expression, select(fd, ID, Symbol))
+
+expression <- filter(expression.all, Symbol %in% curated.genes)
+  
+copy_to(db.curated, expression, temporary = FALSE, indexes = list("Symbol"))
+copy_to(db.curated, pd, temporary = FALSE, indexes = list("geo_accession"))
+copy_to(db.curated, fd, temporary = FALSE, indexes = list("ID"))
+
+expression <- expression.all
 
 copy_to(db, expression, temporary = FALSE, indexes = list("Symbol"))
 copy_to(db, pd, temporary = FALSE, indexes = list("geo_accession"))
 copy_to(db, fd, temporary = FALSE, indexes = list("ID"))
+
+
 
 copyNumber <- read.delim("data/2014-06-04_UK_OncoSNP_rank3_gene_matrix.txt") %>% 
   gather(Sample, Call, -(EntrezID:position)) %>% 
