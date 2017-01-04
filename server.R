@@ -1463,7 +1463,16 @@ shinyServer(function(input, output,session){
       new_pheno <- left_join(pd_camcap,newGrps) %>% filter(!is.na(Cluster))
       p0 <- ggplot(new_pheno, aes(x = Cluster,fill=Cluster)) + geom_bar() +  scale_fill_manual(values=as.character(rainbow(n=length(unique(kGrps))))) + coord_flip()
       p1 <- ggplot(new_pheno,aes(x=iCluster,fill=iCluster)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  +  scale_fill_manual(values=iclusPal) 
-      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  
+      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")   + scale_fill_manual(values = c("5=3+2"= gradeCols[1], 
+                                                                                                                                                                                                                                 "6=3+3"=gradeCols[2],
+                                                                                                                                                                                                                                 "6=2+4"= gradeCols[3], 
+                                                                                                                                                                                                                                 "7=3+4" = gradeCols[4],
+                                                                                                                                                                                                                                 "7=4+3" = gradeCols[5],
+                                                                                                                                                                                                                                 "8=3+5" = gradeCols[6],
+                                                                                                                                                                                                                                 "8=4+4"=gradeCols[7],
+                                                                                                                                                                                                                                 "9=4+5"=gradeCols[8],
+                                                                                                                                                                                                                                 "9=5+4"=gradeCols[9],
+                                                                                                                                                                                                                                 "10=5+5"=gradeCols[10]))
       grid.arrange(p0,p1,p2)
       
     } else if(dataset == "Stockholm"){
