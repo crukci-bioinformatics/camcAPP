@@ -1266,11 +1266,20 @@ shinyServer(function(input, output,session){
       colMatrix[,1] <- as.character(grp)
       
       grp <- pd$Gleason
-      cols <- brewer.pal(8,"Set2")[1:length(levels(factor(as.character(grp))))]
+      grp <- gsub("4+3", "8=5+3", grp,fixed=TRUE) 
+      grp <- gsub("3+4", "7=3+4", grp,fixed=TRUE) 
+      grp <- gsub("4+3", "7=4+3", grp,fixed=TRUE) 
+      grp <- gsub("3+3", "6=3+3", grp,fixed=TRUE) 
+      grp <- gsub("4+5", "9=4+5", grp,fixed=TRUE) 
+      grp <- gsub("3+5", "8=3+5", grp,fixed=TRUE) 
+      grp <- gsub("4+4", "8=4+4", grp,fixed=TRUE)
+        
+      cols <- gradeCols[1:10]
       
-      grp <- as.factor(as.character(grp))
+      grp <- factor(as.character(grp),levels=c("5=3+2","6=3+3","6=2+4","7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5"))
       levels(grp) <- cols
       colMatrix[,2] <- as.character(grp)
+      
       colnames(colMatrix) <- c("Copy Number Cluster", "Gleason")
       
     }
@@ -1495,11 +1504,29 @@ shinyServer(function(input, output,session){
     }
     
     else if (dataset == "MSKCC") {
+      pd_taylor <- mutate(pd_taylor,Gleason = gsub("4+3", "7=4+3", pd_taylor$Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+3", "8=5+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+4", "7=3+4", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+3", "7=4+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+3", "6=3+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+5", "9=4+5", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+5", "8=3+5", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+4", "8=4+4", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA)))
       
       new_pheno <- left_join(pd_taylor,newGrps) %>% filter(!is.na(Cluster))
       p0 <- ggplot(new_pheno, aes(x = Cluster,fill=Cluster)) + geom_bar() +  scale_fill_manual(values=as.character(rainbow(n=length(unique(kGrps))))) + coord_flip()
       p1 <- ggplot(new_pheno,aes(x=Copy.number.Cluster,fill=Copy.number.Cluster)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  
-      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none") 
+      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  + scale_fill_manual(values = c("5=3+2"= gradeCols[1], 
+                                                                                                                                                                                                                                "6=3+3"=gradeCols[2],
+                                                                                                                                                                                                                                "6=2+4"= gradeCols[3], 
+                                                                                                                                                                                                                                "7=3+4" = gradeCols[4],
+                                                                                                                                                                                                                                "7=4+3" = gradeCols[5],
+                                                                                                                                                                                                                                "8=3+5" = gradeCols[6],
+                                                                                                                                                                                                                                "8=4+4"=gradeCols[7],
+                                                                                                                                                                                                                                "9=4+5"=gradeCols[8],
+                                                                                                                                                                                                                                "9=5+4"=gradeCols[9],
+                                                                                                                                                                                                                                "10=5+5"=gradeCols[10]))
       grid.arrange(p0,p1,p2)
       
     }
