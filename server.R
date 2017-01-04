@@ -429,7 +429,13 @@ shinyServer(function(input, output,session){
   })
   
   
-  
+  updateClusterHeightLimits <- reactive({
+    
+    
+    
+    
+    
+  })
   
   prepareExpressionMatrix <- reactive({
     
@@ -1128,6 +1134,13 @@ shinyServer(function(input, output,session){
     
     clusObj <- hclustfun(dMat)
     
+    ## Change the limits of the h input to only allow between 2 and 10 clusters
+    ## Magic from the rect.hclust function
+    k <- 2
+    upperH <- round(mean(rev(clusObj$height)[(k - 1):k]),1)
+    k <- 10
+    lowerH <- round(mean(rev(clusObj$height)[(k - 1):k]),1)
+    updateSliderInput(session, inputId="hCut", min=lowerH,max=upperH,value=upperH)
     clusObj
     
   })
@@ -1293,9 +1306,9 @@ shinyServer(function(input, output,session){
       colMatrix[,1] <- as.character(grp)
       
       grp <- pd$Gleason
-      cols <- brewer.pal(8,"Set2")[1:length(levels(factor(as.character(grp))))]
+      cols <- gradeCols[1:10]
       
-      grp <- as.factor(as.character(grp))
+      grp <- factor(as.character(grp),levels=c("5=3+2","6=3+3","6=2+4","7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5"))
       levels(grp) <- cols
       colMatrix[,2] <- as.character(grp)
       
@@ -1306,7 +1319,7 @@ shinyServer(function(input, output,session){
       
       colnames(colMatrix) <- c("iCluster", "Gleason","BCR")
       
-      
+
       
       
       
@@ -1340,11 +1353,12 @@ shinyServer(function(input, output,session){
       colMatrix[,1] <- as.character(grp)
       
       grp <- pd$Gleason
-      cols <- brewer.pal(8,"Set2")[1:length(levels(factor(as.character(grp))))]
+      cols <- gradeCols[1:10]
       
-      grp <- as.factor(as.character(grp))
+      grp <- factor(as.character(grp),levels=c("5=3+2","6=3+3","6=2+4","7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5"))
       levels(grp) <- cols
       colMatrix[,2] <- as.character(grp)
+      
       
       
       grp <- pd$BCR
@@ -1449,7 +1463,7 @@ shinyServer(function(input, output,session){
       new_pheno <- left_join(pd_camcap,newGrps) %>% filter(!is.na(Cluster))
       p0 <- ggplot(new_pheno, aes(x = Cluster,fill=Cluster)) + geom_bar() +  scale_fill_manual(values=as.character(rainbow(n=length(unique(kGrps))))) + coord_flip()
       p1 <- ggplot(new_pheno,aes(x=iCluster,fill=iCluster)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  +  scale_fill_manual(values=iclusPal) 
-      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none") 
+      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  
       grid.arrange(p0,p1,p2)
       
     } else if(dataset == "Stockholm"){
@@ -1457,7 +1471,16 @@ shinyServer(function(input, output,session){
       new_pheno <- left_join(pd_stockholm,newGrps) %>% filter(!is.na(Cluster))
       p0 <- ggplot(new_pheno, aes(x = Cluster,fill=Cluster)) + geom_bar() +  scale_fill_manual(values=as.character(rainbow(n=length(unique(kGrps))))) + coord_flip()
       p1 <- ggplot(new_pheno,aes(x=iCluster,fill=iCluster)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  +  scale_fill_manual(values=iclusPal) 
-      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none") 
+      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none") + scale_fill_manual(values = c("5=3+2"= gradeCols[1], 
+                                                                                                                                                                                                                               "6=3+3"=gradeCols[2],
+                                                                                                                                                                                                                               "6=2+4"= gradeCols[3], 
+                                                                                                                                                                                                                               "7=3+4" = gradeCols[4],
+                                                                                                                                                                                                                               "7=4+3" = gradeCols[5],
+                                                                                                                                                                                                                               "8=3+5" = gradeCols[6],
+                                                                                                                                                                                                                               "8=4+4"=gradeCols[7],
+                                                                                                                                                                                                                               "9=4+5"=gradeCols[8],
+                                                                                                                                                                                                                               "9=5+4"=gradeCols[9],
+                                                                                                                                                                                                                               "10=5+5"=gradeCols[10]))
       grid.arrange(p0,p1,p2)
       
     }
