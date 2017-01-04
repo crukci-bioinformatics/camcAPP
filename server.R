@@ -320,6 +320,10 @@ shinyServer(function(input, output,session){
     input$clinvar_boxplot
   })
   
+  getQuickVariable <- reactive({
+    input$quick_clinvar_boxplot
+  })
+  
   
   getCambridgeZ <- reactive({
     input$z_cambridge
@@ -1279,7 +1283,7 @@ shinyServer(function(input, output,session){
       
       pd <- left_join(camcap,pd_camcap) %>% distinct(geo_accession,.keep_all=TRUE)
       
-      colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)
+      colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 3)
       grp <- pd$iCluster
       cols <- brewer.pal(5,"Set1")[1:length(levels(factor(as.character(grp))))]
       
@@ -1295,7 +1299,12 @@ shinyServer(function(input, output,session){
       levels(grp) <- cols
       colMatrix[,2] <- as.character(grp)
       
-      colnames(colMatrix) <- c("iCluster", "Gleason")
+      grp <- pd$BCR
+      grp <- ifelse(is.na(grp), "grey","white")
+      grp[pd$BCR == "Y"] <- "black"
+      colMatrix[,3] <- as.character(grp)
+      
+      colnames(colMatrix) <- c("iCluster", "Gleason","BCR")
       
       
       
@@ -1321,7 +1330,7 @@ shinyServer(function(input, output,session){
       
       pd <- left_join(stockholm,pd_stockholm) %>% distinct(geo_accession,.keep_all=TRUE)
       
-      colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)
+      colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 3)
       grp <- pd$iCluster
       cols <- brewer.pal(5,"Set1")[1:length(levels(factor(as.character(grp))))]
       
@@ -1336,7 +1345,14 @@ shinyServer(function(input, output,session){
       grp <- as.factor(as.character(grp))
       levels(grp) <- cols
       colMatrix[,2] <- as.character(grp)
-      colnames(colMatrix) <- c("iCluster", "Gleason")
+      
+      
+      grp <- pd$BCR
+      grp <- ifelse(is.na(grp), "grey","white")
+      grp[pd$BCR == "Y"] <- "black"
+      colMatrix[,3] <- as.character(grp)
+      
+      colnames(colMatrix) <- c("iCluster", "Gleason","BCR")
       
     }
     
@@ -3025,16 +3041,16 @@ shinyServer(function(input, output,session){
     
     if(plotType == "Boxplot"){
       
-      var <- getCambridgeVariable()
+      var <- getQuickVariable()
       
       
       if(dataset == "Cambridge"){
         df <- switch(var,
-                     iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals"),
+                     iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) ,
                      
-                     Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals"),
+                     Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) ,
                      
-                     Sample_Group = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.))) %>% filter(term != "Residuals")
+                     Sample_Group = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.))) %>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) 
                      
         )
       }
@@ -3043,9 +3059,9 @@ shinyServer(function(input, output,session){
         
         
         df <-  switch(var,
-                      iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals"),
+                      iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) ,
                       
-                      Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals")
+                      Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) 
         )
         
       }
@@ -3053,14 +3069,14 @@ shinyServer(function(input, output,session){
       else if (dataset == "MSKCC"){
         
         df <-  switch(var,
-                      CopyNumberCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Copy.number.Cluster,data=.)))%>% filter(term != "Residuals"),
-                      Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals")
+                      CopyNumberCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Copy.number.Cluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) ,
+                      Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) 
         )
         
       }
       
       else{
-        df <-  group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)
+        df <-  group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) %>% select(Symbol, term, statistic,p.value) 
         
       }
       
