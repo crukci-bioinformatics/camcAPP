@@ -5,23 +5,14 @@ library(shiny)
 
 shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                   
-    tags$head(includeScript("google-analytics.js")),               
-    #    tabPanel("MSKCC",
-     #            sidebarLayout(
-      #             sidebarPanel(
-       #              selectInput("currentGene","Type a Gene Symbol",choices=keys(revmap(org.Hs.egSYMBOL)),selected = "")
-        #           ),
-         #          mainPanel(
-                  #   plotOutput("boxplotMSKCC"),verbatimTextOutput("anovaMSKCC")
-          #         )
-                   
-           #      )
-                 
-            #     ),
+    
+
+    
+    
         tabPanel("Data Input",
                  sidebarLayout(
                    sidebarPanel(
-                     
+                     tags$head(includeScript("google-analytics.js")),           
                    
                      #),
   #                   radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
