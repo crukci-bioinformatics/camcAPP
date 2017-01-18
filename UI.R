@@ -5,7 +5,7 @@ library(shiny)
 
 shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                   
-    tags$head(includeScript("google-analytics.js"))               
+    tags$head(includeScript("google-analytics.js")),               
     #    tabPanel("MSKCC",
      #            sidebarLayout(
       #             sidebarPanel(
