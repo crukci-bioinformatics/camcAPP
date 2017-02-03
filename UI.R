@@ -5,22 +5,14 @@ library(shiny)
 
 shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                   
-    #    tabPanel("MSKCC",
-     #            sidebarLayout(
-      #             sidebarPanel(
-       #              selectInput("currentGene","Type a Gene Symbol",choices=keys(revmap(org.Hs.egSYMBOL)),selected = "")
-        #           ),
-         #          mainPanel(
-                  #   plotOutput("boxplotMSKCC"),verbatimTextOutput("anovaMSKCC")
-          #         )
-                   
-           #      )
-                 
-            #     ),
+    
+
+    
+    
         tabPanel("Data Input",
                  sidebarLayout(
                    sidebarPanel(
-                     
+                     tags$head(includeScript("google-analytics.js")),           
                    
                      #),
   #                   radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
@@ -66,7 +58,9 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      helpText("The uploaded gene list can be used to generate a heatmap from the chosen dataset. Control is given over the distance metric and clustering method. Samples can be partitioned into different groups based on the clustering, and the composition of each group can be interrogated"),
                      h2("Copy Number"),
                      helpText("For datasets with Copy number information (Cambridge, Stockholm and MSKCC), the frequency of alterations in different clinical covariates is displayed. A heatmap can also be generated"),
-                     helpText("We are very grateful to Emilie Lalonde from University of Toronto for supplying the data for these plots")
+                     helpText("We are very grateful to Emilie Lalonde from University of Toronto for supplying the data for these plots"),
+                     h2("Images"),
+                     helpText("Spinning Wait Icons by Andrew Davidson http://andrewdavidson.com/articles/spinning-wait-icons/")
 
                   )
                  )
@@ -81,21 +75,23 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      conditionalPanel(
                        condition="($('html').hasClass('shiny-busy'))",
                        p("Shiny is computing something.."),
-                       img(src="http://i.imgur.com/tbIq2nD.gif")
+                       img(src="wait30trans.gif")
                      ),
   #                   selectInput("boxplotDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
                      selectInput("clinvar_boxplot", "Choose a Clinical Covariate",choices=c("iCluster","Gleason","Sample_Group"),selected="iCluster"),
                      helpText("The covariates you can plot will be different for the various datasets"),
                      radioButtons("z_cambridge","Z-Score transform?",choices=c("Yes","No"),selected="Yes"),
+                    helpText("The z-score transformation is recommended to put the expression values for each gene onto comparable scales"),
                      radioButtons("overlay_cambridge","Overlay individual points?",choices=c("Yes","No"),selected="Yes"),
                      h2("Gene List plotting options"),
                      helpText("You can choose whether to plot all genes in the gene list on the same plot"),
                      radioButtons("cambridgeCombPlot","Composite plot?",choices=c("Yes","No"),selected="Yes"),
                      helpText("If No is selected above, a particular gene from the list can be displayed"),
-                     selectInput("cambridgeGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3"),
+                     selectInput("cambridgeGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR","HES6","MELK"),selected="STAT3"),
                      h2("Output options"),
                      textInput("profileBasename", label = "What to call the output files",value="boxplot"),
                      selectInput("boxplotTheme", "Pick a plot style",choices=c("ggplot2","bw","classic","minimal","light","Wall Street Journal","Economist", "Excel","solarized","stata","calc","dark","fivethirtyeight","tufte"),selected="ggplot2"),
+                    helpText("For more information on the different plot styles see the documentation for the", a("ggthemes", href="https://github.com/jrnold/ggthemes"),"package"),
                      radioButtons("profilePlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
                      helpText("PDF can be imported into Illustrator (or similar) for editing. PNG plots are suitable for presentation"),
                      helpText("PDF dimensions are measured in inches, and PNG dimensions are measured in pixels"),
@@ -117,6 +113,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                      verbatimTextOutput("profileMapping"),
                      plotOutput("displayBoxplot",width = 1200,height=600),
                      h1("ANOVA analysis"),
+                     helpText("Here we show the results of an ANOVA (analysis of variance) analysis to assess whether there are changes in expression level between the defined groups"),
                      DT::dataTableOutput("anovaResult")
 
                    )
@@ -133,13 +130,13 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                  conditionalPanel(
                     condition="($('html').hasClass('shiny-busy'))",
                     p("Shiny is computing something.."),
-                    img(src="http://i.imgur.com/tbIq2nD.gif")
+                    img(src="wait30trans.gif")
                   ),
 #                  radioButtons("inputType_survival", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
 #                  radioButtons("cutoffMethod","Type of partitioning?",choices=c("RP","Median","Manual"),selected="RP"),
 
                   helpText("You can select which gene to display the results for"),
-                  selectInput("survivalGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3"),
+                  selectInput("survivalGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR","HES6","MELK"),selected="STAT3"),
                   h2("Output options"),
                   textInput("survivalBasename", label = "What to call the output files",value="survival"),
                   radioButtons("survivalPlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
@@ -158,7 +155,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                   helpText("A recursive partitioning (RP) analysis [1] is performed to determine if the samples can be split into groups based on the expression data from your chosen gene(s). An RP p-value < 0.05 indicates a significant split. The p-value from RP and cut-off corresponding to a split are shown in the table below"),
                   helpText("If no cut-off can be found with RP, the samples will be divided according to median expression level in the plots below"),
                   DT::dataTableOutput("rpSummary"),
-                  helpText("If a significant split of samples can be found using RP, the expression cut-off and number of samples in each group will be shown below. Othewise, a histogram of expression level will be shown with a line to indicate the median expression level"),
+                  helpText("A histogram of expression level will be shown with a line to indicate the median expression level or RP cut-off"),
                   plotOutput("rpPlot"),
                   helpText("The grouping of samples found by RP, or using median expression level, is used to construct a Kaplan-Meier plot"),
                   plotOutput("survivalPlot"),helpText("The Kaplan-Meier plot is a useful way of summarising survival data. There is one curve for each group. Each curve starts at 100% probability of survival. The probability of freedom from biochemical recurrence is shown on the y axis and the time (in years) is shown on the x axis. The curve drops each time there is an 'event'. A cross is shown on each curve where a 'censoring'' event takes place. This is where someone drops out of the study for a reason not related to the study, e.g. the study ends before an event has occurred. These subjects are no longer included in any calculations. The lower the survival curve the worse prognosis the patients in that group have.")
@@ -174,17 +171,18 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                 conditionalPanel(
                    condition="($('html').hasClass('shiny-busy'))",
                    p("Shiny is computing something.."),
-                   img(src="http://i.imgur.com/tbIq2nD.gif")
+                   img(src="wait30trans.gif")
                  ),
                  radioButtons("inputType_correlation", "Plot correlations with a single gene, or all Pairwise Correlations?", choices=c("Single Gene","All Pairwise"),selected="Single Gene"),
-                  selectInput("correlationGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR"),selected="STAT3"),
+                  radioButtons("corType", "Type of correlation to compute", selected="Pearson",choices=c("Pearson","Spearman")),
+                  selectInput("correlationGeneChoice","Gene to plot", choices=c("STAT3","ESR1","AR","HES6","MELK"),selected="STAT3"),
 #                 helpText("If you have selected Single Gene mode (above), now select a second gene to correlate with"),
 #                 selectInput("secondGene","Type a Gene Symbol",choices="A2M",selected = "A2M"),
                  selectInput("clinvar_cor", "Choose a Clinical Covariate to colour by...",choices=c("None", "iCluster","Gleason","Sample_Group"),selected="None"),
                  h2("Output options"),
                  textInput("correlationBasename", label = "What to call the output files",value="correlation"),
                 selectInput("corTheme", "Pick a plot style",choices=c("ggplot2","bw","classic","minimal","light","Wall Street Journal","Economist", "Excel","solarized","stata","calc","dark","fivethirtyeight","tufte"),selected="ggplot2"),
-
+helpText("For more information on the different plot styles see the documentation for the", a("ggthemes", href="https://github.com/jrnold/ggthemes"),"package"),
                  radioButtons("correlationPlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
                   helpText("PDF can be imported into Illustrator (or similar) for editing. PNG plots are suitable for presentation"),
                   helpText("PDF dimensions are measured in inches, and PNG dimensions are measured in pixels"),
@@ -205,15 +203,15 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
               conditionalPanel(
                  condition="($('html').hasClass('shiny-busy'))",
                  p("Shiny is computing something.."),
-                 img(src="http://i.imgur.com/tbIq2nD.gif")
+                 img(src="wait30trans.gif")
                ),
                  radioButtons("distfun","Method to calulate distances",choices=c("Euclidean","Correlation"),selected="Euclidean"),
                  radioButtons("hclustfun", "Method of hierachical clustering",choices=c("ward","single","complete","average","mcquitty","median","centroid"),selected="complete"),
                  radioButtons("reordRows", "Re-order Rows?", choices = c("Yes","No"),selected = "Yes"),
                  radioButtons("scale","Scaling?",choices = c("row", "column", "none"),selected="row"),
                  radioButtons("cutType","Cut the dendrogram into k groups, or h(eight)",choices=c("k","h"),selected = "k"),
-                 sliderInput("kGrps","Select k groups from the dendrogram",min=2,max = 7,value=2),
-                 textInput("hCut","Select a height to cut the dendrogram",value = 10),
+                 sliderInput("kGrps","Select k groups from the dendrogram",min=2,max = 10,value=2),
+                 sliderInput("hCut","Select a height to cut the dendrogram",value = 3.8,min=1.8, max=3.8,step=0.1),
                  h2("Output options"),
                  textInput("heatmapBasename", label = "What to call the output files",value="example"),
                  radioButtons("heatmapPlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
@@ -242,7 +240,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
         conditionalPanel(
            condition="($('html').hasClass('shiny-busy'))",
            p("Shiny is computing something.."),
-           img(src="http://i.imgur.com/tbIq2nD.gif")
+           img(src="wait30trans.gif")
          ),
 #         radioButtons("inputType_cn", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),                 h2("Output options"),
          textInput("copyNumberBasename", label = "What to call the output files",value="example"),
@@ -252,7 +250,8 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
          helpText("Frequency in Dataset", "Frequency of alterations in a given covariate of interest in the chosen dataset"),
          helpText("Heatmap: Heatmap using the dataset that is currently selected"),
          selectInput("cnTheme", "Pick a plot style",choices=c("ggplot2","bw","classic","minimal","light","Wall Street Journal","Economist", "Excel","solarized","stata","calc","dark","fivethirtyeight","tufte"),selected="ggplot2"),
-         radioButtons("copyNumberPlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
+helpText("For more information on the different plot styles see the documentation for the", a("ggthemes", href="https://github.com/jrnold/ggthemes"),"package"),         
+radioButtons("copyNumberPlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
          helpText("PDF can be imported into Illustrator (or similar) for editing. PNG plots are suitable for presentation"),
          helpText("PDF dimensions are measured in inches, and PNG dimensions are measured in pixels"),
          textInput("copyNumberWidth", label="Width of plot",value=12),
@@ -276,7 +275,7 @@ tabPanel("Quick Analysis",
             conditionalPanel(
                condition="($('html').hasClass('shiny-busy'))",
                p("Shiny is computing something.."),
-               img(src="http://i.imgur.com/tbIq2nD.gif")
+               img(src="wait30trans.gif")
              ),
              textInput("currentGene", "Gene of Interest", value="A1BG"),
              selectInput("quickDataset","Choose a Dataset",choices=c("Cambridge","Stockholm","MSKCC", "Michigan2005","Michigan2012"),selected = "Cambridge"),
@@ -290,6 +289,7 @@ tabPanel("Quick Analysis",
              radioButtons("quick_overlay_cambridge","Overlay individual points?",choices=c("Yes","No"),selected="Yes"),
              h2("Output options"),
              selectInput("quickTheme", "Pick a plot style",choices=c("ggplot2","bw","classic","minimal","light"),selected="ggplot2"),
+            helpText("For more information on the different plot styles see the documentation for the", a("ggthemes", href="https://github.com/jrnold/ggthemes"),"package"),
              textInput("geneBasename", label = "What to call the output files",value="example"),
              radioButtons("genePlotFormat", "File format for plots", choices=c("pdf","png"), selected="pdf"),
              helpText("PDF can be imported into Illustrator (or similar) for editing. PNG plots are suitable for presentation"),

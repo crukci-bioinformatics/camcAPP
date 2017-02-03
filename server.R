@@ -75,28 +75,37 @@ plotDendroAndColors.mod <- function (dendro, colors, groupLabels = NULL, rowText
 
 library(dplyr)
 
+curated.genes <- read.table("curated.genes.txt",stringsAsFactors = FALSE)[,1]
+
 db_camcap <- src_sqlite("camcap.sqlite3")
+db_camcap.curated <- src_sqlite("camcap.curated.sqlite3")
 
 pd_camcap <- collect(tbl("pd",src=db_camcap))
 fd_camcap <- collect(tbl("fd",src=db_camcap))
 
 
 exp_camcap <- tbl("expression",src=db_camcap)
+exp_camcap.curated <- tbl("expression",src=db_camcap.curated)
 
 db_stockholm <- src_sqlite("stockholm.sqlite3")
+
+db_stockholm.curated <- src_sqlite("stockholm.curated.sqlite3")
 pd_stockholm <- collect(tbl("pd",src=db_stockholm))
 fd_stockholm <- collect(tbl("fd",src=db_stockholm))
 
 
 exp_stockholm <- tbl("expression",src=db_stockholm)
+exp_stockholm.curated <- tbl("expression",src=db_stockholm.curated)
 
 
 
 db_taylor <- src_sqlite("taylor.sqlite3")
+db_taylor.curated <- src_sqlite("taylor.curated.sqlite3")
+
 pd_taylor <- collect(tbl("pd",src=db_taylor))
 fd_taylor <- collect(tbl("fd",src=db_taylor))
 exp_taylor <- tbl("expression",src=db_taylor)
-
+exp_taylor.curated <- tbl("expression",src=db_taylor.curated)
 
 db_varambally <- src_sqlite("varambally.sqlite3")
 pd_varambally <- collect(tbl("pd",src=db_varambally))
@@ -270,7 +279,7 @@ shinyServer(function(input, output,session){
   getGeneList <- reactive({inFile <- input$file1
   
   if (is.null(inFile))
-    return(c("STAT3","ESR1","AR"))
+    return(c("STAT3","ESR1","AR","MELK","HES6"))
   
   
   #    print(inFile$name)
@@ -309,6 +318,10 @@ shinyServer(function(input, output,session){
   
   getCambridgeVariable <- reactive({
     input$clinvar_boxplot
+  })
+  
+  getQuickVariable <- reactive({
+    input$quick_clinvar_boxplot
   })
   
   
@@ -416,7 +429,13 @@ shinyServer(function(input, output,session){
   })
   
   
-  
+  updateClusterHeightLimits <- reactive({
+    
+    
+    
+    
+    
+  })
   
   prepareExpressionMatrix <- reactive({
     
@@ -430,7 +449,13 @@ shinyServer(function(input, output,session){
     if(dataset == "Cambridge"){
       
       #      probes <- fd_camcap %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-      data <- collect(exp_camcap,n=Inf)  %>% filter(Symbol %in% genes)
+      
+      if (all(genes %in% curated.genes)){
+        data <- collect(exp_camcap.curated,n=Inf)  %>% filter(Symbol %in% genes)
+      } else {
+        data <- collect(exp_camcap,n=Inf)  %>% filter(Symbol %in% genes)
+      }
+      
       #gather(geo_accession,Expression,-ID)
       fd <- fd_camcap
       pd <-  mutate(pd_camcap, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
@@ -438,8 +463,18 @@ shinyServer(function(input, output,session){
       
     } else if (dataset == "Stockholm"){
       
+      
+      if (all(genes %in% curated.genes)){
+        data<- collect(exp_stockholm.curated,n=Inf)  %>% filter(Symbol %in% genes)
+      } else {
+        data<- collect(exp_stockholm,n=Inf)  %>% filter(Symbol %in% genes)
+      }
+      
+      
       #      probes <- fd_stockholm %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-      data<- collect(exp_stockholm,n=Inf)  %>% filter(Symbol %in% genes)
+
+      
+      
       #        gather(geo_accession,Expression,-ID)
       fd <- fd_stockholm
       pd <-  mutate(pd_stockholm, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
@@ -451,7 +486,13 @@ shinyServer(function(input, output,session){
       #probes <- fd_taylor %>% filter(Gene %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
       #      data <- exp_taylor  %>% filter(ID %in% probes) %>% 
       #       gather(geo_accession,Expression,-ID)
-      data <- collect(exp_taylor,n=Inf) %>% filter(Gene %in% genes)
+      
+      if (all(genes %in% curated.genes)){
+        data <- collect(exp_taylor.curated,n=Inf) %>% filter(Gene %in% genes)
+      } else {
+        data <- collect(exp_taylor,n=Inf) %>% filter(Gene %in% genes)
+      }
+
       
       
       fd <- fd_taylor %>% mutate(Symbol = Gene)
@@ -696,11 +737,11 @@ shinyServer(function(input, output,session){
     
     if(dataset == "Cambridge"){
       df <- switch(var,
-             iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals"),
+             iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value),
              
-             Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals"),
+             Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value),
              
-             Sample_Group = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.))) %>% filter(term != "Residuals")
+             Sample_Group = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.))) %>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) 
              
       )
     }
@@ -709,9 +750,9 @@ shinyServer(function(input, output,session){
       
       
       df <-  switch(var,
-             iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals"),
+             iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.))) %>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value), 
              
-             Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals")
+             Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)
       )
       
     }
@@ -729,7 +770,7 @@ shinyServer(function(input, output,session){
       df <-  group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)
       
     }
-    
+    head(df)
     datatable(df)
     
     
@@ -901,7 +942,9 @@ shinyServer(function(input, output,session){
           
           ps2 <- party:::cutpoints_list(ctree_xfs@tree, variableID=1)
           ps  <- signif(ps2[1], digits = 3)
-          plot(ctree(surv.xfs~Expression, data=data))
+          #plot(ctree(surv.xfs~Expression, data=data))
+          p <- ggplot(data, aes(x=Expression)) + geom_histogram() + geom_vline(xintercept=ps2[1],col="red",lty=2) + ggtitle("Partitioning using cut-off found by RP ")
+          print(p)
         }
         
         else {
@@ -915,7 +958,7 @@ shinyServer(function(input, output,session){
     
     } else ggplot()
     
-    
+
   }
   
   )
@@ -1091,6 +1134,13 @@ shinyServer(function(input, output,session){
     
     clusObj <- hclustfun(dMat)
     
+    ## Change the limits of the h input to only allow between 2 and 10 clusters
+    ## Magic from the rect.hclust function
+    k <- 2
+    upperH <- round(mean(rev(clusObj$height)[(k - 1):k]),1)
+    k <- 10
+    lowerH <- round(mean(rev(clusObj$height)[(k - 1):k]),1)
+    updateSliderInput(session, inputId="hCut", min=lowerH,max=upperH,value=upperH)
     clusObj
     
   })
@@ -1216,11 +1266,20 @@ shinyServer(function(input, output,session){
       colMatrix[,1] <- as.character(grp)
       
       grp <- pd$Gleason
-      cols <- brewer.pal(8,"Set2")[1:length(levels(factor(as.character(grp))))]
+      grp <- gsub("4+3", "8=5+3", grp,fixed=TRUE) 
+      grp <- gsub("3+4", "7=3+4", grp,fixed=TRUE) 
+      grp <- gsub("4+3", "7=4+3", grp,fixed=TRUE) 
+      grp <- gsub("3+3", "6=3+3", grp,fixed=TRUE) 
+      grp <- gsub("4+5", "9=4+5", grp,fixed=TRUE) 
+      grp <- gsub("3+5", "8=3+5", grp,fixed=TRUE) 
+      grp <- gsub("4+4", "8=4+4", grp,fixed=TRUE)
+        
+      cols <- gradeCols[1:10]
       
-      grp <- as.factor(as.character(grp))
+      grp <- factor(as.character(grp),levels=c("5=3+2","6=3+3","6=2+4","7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5"))
       levels(grp) <- cols
       colMatrix[,2] <- as.character(grp)
+      
       colnames(colMatrix) <- c("Copy Number Cluster", "Gleason")
       
     }
@@ -1246,7 +1305,7 @@ shinyServer(function(input, output,session){
       
       pd <- left_join(camcap,pd_camcap) %>% distinct(geo_accession,.keep_all=TRUE)
       
-      colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)
+      colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 3)
       grp <- pd$iCluster
       cols <- brewer.pal(5,"Set1")[1:length(levels(factor(as.character(grp))))]
       
@@ -1256,15 +1315,20 @@ shinyServer(function(input, output,session){
       colMatrix[,1] <- as.character(grp)
       
       grp <- pd$Gleason
-      cols <- brewer.pal(8,"Set2")[1:length(levels(factor(as.character(grp))))]
+      cols <- gradeCols[1:10]
       
-      grp <- as.factor(as.character(grp))
+      grp <- factor(as.character(grp),levels=c("5=3+2","6=3+3","6=2+4","7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5"))
       levels(grp) <- cols
       colMatrix[,2] <- as.character(grp)
       
-      colnames(colMatrix) <- c("iCluster", "Gleason")
+      grp <- pd$BCR
+      grp <- ifelse(is.na(grp), "grey","white")
+      grp[pd$BCR == "Y"] <- "black"
+      colMatrix[,3] <- as.character(grp)
       
+      colnames(colMatrix) <- c("iCluster", "Gleason","BCR")
       
+
       
       
       
@@ -1288,7 +1352,7 @@ shinyServer(function(input, output,session){
       
       pd <- left_join(stockholm,pd_stockholm) %>% distinct(geo_accession,.keep_all=TRUE)
       
-      colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 2)
+      colMatrix <- matrix(nrow = ncol(geneMatrix),ncol = 3)
       grp <- pd$iCluster
       cols <- brewer.pal(5,"Set1")[1:length(levels(factor(as.character(grp))))]
       
@@ -1298,12 +1362,20 @@ shinyServer(function(input, output,session){
       colMatrix[,1] <- as.character(grp)
       
       grp <- pd$Gleason
-      cols <- brewer.pal(8,"Set2")[1:length(levels(factor(as.character(grp))))]
+      cols <- gradeCols[1:10]
       
-      grp <- as.factor(as.character(grp))
+      grp <- factor(as.character(grp),levels=c("5=3+2","6=3+3","6=2+4","7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5"))
       levels(grp) <- cols
       colMatrix[,2] <- as.character(grp)
-      colnames(colMatrix) <- c("iCluster", "Gleason")
+      
+      
+      
+      grp <- pd$BCR
+      grp <- ifelse(is.na(grp), "grey","white")
+      grp[pd$BCR == "Y"] <- "black"
+      colMatrix[,3] <- as.character(grp)
+      
+      colnames(colMatrix) <- c("iCluster", "Gleason","BCR")
       
     }
     
@@ -1400,7 +1472,16 @@ shinyServer(function(input, output,session){
       new_pheno <- left_join(pd_camcap,newGrps) %>% filter(!is.na(Cluster))
       p0 <- ggplot(new_pheno, aes(x = Cluster,fill=Cluster)) + geom_bar() +  scale_fill_manual(values=as.character(rainbow(n=length(unique(kGrps))))) + coord_flip()
       p1 <- ggplot(new_pheno,aes(x=iCluster,fill=iCluster)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  +  scale_fill_manual(values=iclusPal) 
-      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none") 
+      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")   + scale_fill_manual(values = c("5=3+2"= gradeCols[1], 
+                                                                                                                                                                                                                                 "6=3+3"=gradeCols[2],
+                                                                                                                                                                                                                                 "6=2+4"= gradeCols[3], 
+                                                                                                                                                                                                                                 "7=3+4" = gradeCols[4],
+                                                                                                                                                                                                                                 "7=4+3" = gradeCols[5],
+                                                                                                                                                                                                                                 "8=3+5" = gradeCols[6],
+                                                                                                                                                                                                                                 "8=4+4"=gradeCols[7],
+                                                                                                                                                                                                                                 "9=4+5"=gradeCols[8],
+                                                                                                                                                                                                                                 "9=5+4"=gradeCols[9],
+                                                                                                                                                                                                                                 "10=5+5"=gradeCols[10]))
       grid.arrange(p0,p1,p2)
       
     } else if(dataset == "Stockholm"){
@@ -1408,17 +1489,44 @@ shinyServer(function(input, output,session){
       new_pheno <- left_join(pd_stockholm,newGrps) %>% filter(!is.na(Cluster))
       p0 <- ggplot(new_pheno, aes(x = Cluster,fill=Cluster)) + geom_bar() +  scale_fill_manual(values=as.character(rainbow(n=length(unique(kGrps))))) + coord_flip()
       p1 <- ggplot(new_pheno,aes(x=iCluster,fill=iCluster)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  +  scale_fill_manual(values=iclusPal) 
-      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none") 
+      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none") + scale_fill_manual(values = c("5=3+2"= gradeCols[1], 
+                                                                                                                                                                                                                               "6=3+3"=gradeCols[2],
+                                                                                                                                                                                                                               "6=2+4"= gradeCols[3], 
+                                                                                                                                                                                                                               "7=3+4" = gradeCols[4],
+                                                                                                                                                                                                                               "7=4+3" = gradeCols[5],
+                                                                                                                                                                                                                               "8=3+5" = gradeCols[6],
+                                                                                                                                                                                                                               "8=4+4"=gradeCols[7],
+                                                                                                                                                                                                                               "9=4+5"=gradeCols[8],
+                                                                                                                                                                                                                               "9=5+4"=gradeCols[9],
+                                                                                                                                                                                                                               "10=5+5"=gradeCols[10]))
       grid.arrange(p0,p1,p2)
       
     }
     
     else if (dataset == "MSKCC") {
+      pd_taylor <- mutate(pd_taylor,Gleason = gsub("4+3", "7=4+3", pd_taylor$Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+3", "8=5+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+4", "7=3+4", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+3", "7=4+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+3", "6=3+3", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+5", "9=4+5", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("3+5", "8=3+5", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason = gsub("4+4", "8=4+4", Gleason,fixed=TRUE)) %>% 
+        mutate(Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA)))
       
       new_pheno <- left_join(pd_taylor,newGrps) %>% filter(!is.na(Cluster))
       p0 <- ggplot(new_pheno, aes(x = Cluster,fill=Cluster)) + geom_bar() +  scale_fill_manual(values=as.character(rainbow(n=length(unique(kGrps))))) + coord_flip()
       p1 <- ggplot(new_pheno,aes(x=Copy.number.Cluster,fill=Copy.number.Cluster)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  
-      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none") 
+      p2 <- ggplot(new_pheno,aes(x=Gleason,fill=Gleason)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  + scale_fill_manual(values = c("5=3+2"= gradeCols[1], 
+                                                                                                                                                                                                                                "6=3+3"=gradeCols[2],
+                                                                                                                                                                                                                                "6=2+4"= gradeCols[3], 
+                                                                                                                                                                                                                                "7=3+4" = gradeCols[4],
+                                                                                                                                                                                                                                "7=4+3" = gradeCols[5],
+                                                                                                                                                                                                                                "8=3+5" = gradeCols[6],
+                                                                                                                                                                                                                                "8=4+4"=gradeCols[7],
+                                                                                                                                                                                                                                "9=4+5"=gradeCols[8],
+                                                                                                                                                                                                                                "9=5+4"=gradeCols[9],
+                                                                                                                                                                                                                                "10=5+5"=gradeCols[10]))
       grid.arrange(p0,p1,p2)
       
     }
@@ -1465,6 +1573,8 @@ shinyServer(function(input, output,session){
     if(input$inputType_correlation == "All Pairwise"){
       
       if(dataset == "Cambridge"){
+        
+        corfun <- function(x) cor(x)
         
         if(covar == "iCluster"){
           
@@ -1554,7 +1664,7 @@ shinyServer(function(input, output,session){
           data <- select(cordata, geo_accession,Expression, Copy.number.Cluster, Symbol) %>% 
             spread(Symbol,Expression)
           df <- as.data.frame(data)
-          cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
+#          cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
           p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Copy.number.Cluster))
         }
         else if(covar == "Gleason"){
@@ -1619,40 +1729,56 @@ shinyServer(function(input, output,session){
     }
     
     else {
+      
+      #http://stackoverflow.com/questions/7549694/ggplot2-adding-regression-line-equation-and-r2-on-graph#7549819
+      cor_eqn <- function(df){
+      fun <- input$corType 
+       cc <- ifelse(fun == "Pearson", cor(df$x,df$y,method="pearson"),cor(df$x,df$y,method="spearman"));
+        eq <- substitute(r^2~"="~r2, 
+                         list(r2 = format(cc^2, digits = 2)))
+        as.character(as.expression(eq));                 
+      }
+      
+      
       gene1 <- filter(cordata, Symbol == input$correlationGeneChoice) %>% mutate(Gene1 = Expression)
       
       genes.other <- setdiff(genes,input$correlationGeneChoice)
       plist <- NULL  
+      theme <- input$corTheme
+      
       for(i in 1:length(genes.other)){
         
         gene2 <- filter(cordata, Symbol == genes.other[i]) %>% mutate(Gene2 = Expression)
         df <- mutate(gene1,Gene2 = gene2$Gene2)
-        plist[[i]] <-  ggplot(df, aes(y = Expression, x=Gene2)) + geom_point() + ylab(input$correlationGeneChoice) + xlab(genes.other[i])
+        p <-  ggplot(df, aes(y = Expression, x=Gene2)) + geom_point() + ylab(input$correlationGeneChoice) + xlab(genes.other[i]) + geom_smooth(method="lm",se=FALSE,color="red",lty=2)
+        p <- switch(theme,
+                    ggplot2 = p,
+                    bw = p + theme_bw(),
+                    classic = p + theme_classic(),
+                    minimal = p + theme_minimal(),
+                    light = p + theme_light(),
+                    "Wall Street Journal" = p + theme_wsj(),
+                    Economist = p + theme_economist(),
+                    Excel = p + theme_excel(),
+                    solarized = p + theme_solarized(),
+                    stata = p + theme_stata(),
+                    calc = p + theme_calc(),
+                    dark = p + theme_dark(),
+                    fivethirtyeight = p + theme_fivethirtyeight(),
+                    tufte = p + theme_tufte()
+                    
+        )
+        
+        df$x <- df$Gene2
+        df$y <- df$Expression
+        plist[[i]] <- p + geom_text(size=5,x = min(df$x)+0.2, y = max(df$y), label = cor_eqn(df), parse = TRUE,col="red",alpha=0.7)
       }
       
       p <- do.call("grid.arrange",c(plist,ncol=2))
       
     }
-    theme <- input$corTheme
-    
-    p <- switch(theme,
-                ggplot2 = p,
-                bw = p + theme_bw(),
-                classic = p + theme_classic(),
-                minimal = p + theme_minimal(),
-                light = p + theme_light(),
-                "Wall Street Journal" = p + theme_wsj(),
-                Economist = p + theme_economist(),
-                Excel = p + theme_excel(),
-                solarized = p + theme_solarized(),
-                stata = p + theme_stata(),
-                calc = p + theme_calc(),
-                dark = p + theme_dark(),
-                fivethirtyeight = p + theme_fivethirtyeight(),
-                tufte = p + theme_tufte()
-                
-    )
-    
+
+
     p
     
     
@@ -1677,8 +1803,228 @@ shinyServer(function(input, output,session){
       if(input$correlationPlotFormat == "pdf") pdf(file, width=as.numeric(input$correlationWidth), height=as.numeric(input$correlationHeight))
       else png(file, width=as.numeric(input$correlationWidth),height=as.numeric(input$correlationHeight))
       
-      p <- doCorPlot()
-      print(p)
+      genes <- getGeneList()
+      
+      
+      dataset <- getDataset()
+      
+      #cordata <- filterByGene(dataset, genes)
+      
+      cordata <- prepareExpressionMatrix()
+      
+      covar <- input$clinvar_cor
+      
+      if(input$inputType_correlation == "All Pairwise"){
+        
+        if(dataset == "Cambridge"){
+          
+          corfun <- function(x) cor(x)
+          
+          if(covar == "iCluster"){
+            
+            data <- select(cordata, geo_accession,Expression, iCluster, Symbol) %>% 
+              filter(iCluster %in% c("clust1","clust2","clust3","clust4","clust5")) %>% 
+              #        mutate(Symbol=gsub(genes[1], "Gene1",Symbol)) %>% 
+              #       mutate(Symbol=gsub(genes[2], "Gene2",Symbol)) %>% 
+              spread(Symbol,Expression)
+            #      cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping= aes(col=iCluster))
+            
+            #        ggplot(data, aes(x = Gene1, y=Gene2,col=iCluster)) + geom_point() + xlab(genes[1]) + ylab(genes[2]) +  scale_fill_manual(values=iclusPal) + ggtitle(paste("Correlation = ",cor))
+            
+          }
+          
+          else if(covar == "Gleason"){
+            
+            data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Gleason))
+            
+          }
+          
+          else if(covar == "Sample_Group"){
+            
+            data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Sample_Group))
+            
+          }
+          
+          else {
+            
+            data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df))
+          }
+          
+          
+          
+        }
+        
+        else if (dataset == "Stockholm"){
+          
+          if(covar == "iCluster"){
+            
+            data <- select(cordata, geo_accession,Expression, iCluster, Symbol) %>% 
+              filter(iCluster %in% c("clust1","clust2","clust3","clust4","clust5")) %>% 
+              #        mutate(Symbol=gsub(genes[1], "Gene1",Symbol)) %>% 
+              #       mutate(Symbol=gsub(genes[2], "Gene2",Symbol)) %>% 
+              spread(Symbol,Expression)
+            #      cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=iCluster))
+            
+          }
+          
+          else if(covar == "Gleason"){
+            
+            data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),maping=aes(col=Gleason))
+            
+          }
+          
+          else {
+            
+            data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df))
+            
+          }
+          
+          
+        }
+        
+        else if (dataset=="MSKCC"){
+          
+          if(covar == "CopyNumberCluster"){
+            
+            data <- select(cordata, geo_accession,Expression, Copy.number.Cluster, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            #          cor <- round(cor(data$Gene1,data$Gene2,method=getCorType()),3)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Copy.number.Cluster))
+          }
+          else if(covar == "Gleason"){
+            
+            
+            data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Gleason))
+          }
+          
+          else {
+            
+            data <- select(cordata, geo_accession,Expression, Gleason, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df))
+            
+          }
+          
+          
+        }
+        
+        else if (dataset == "Michigan2005"){
+          
+          if(covar == "Sample_Group"){
+            data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Sample_Group))
+            
+          }
+          else{
+            data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df))
+            
+          }
+          
+        }
+        
+        else if (dataset == "Michigan2012"){
+          
+          if(covar == "Sample_Group"){
+            data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df),mapping=aes(col=Sample_Group))
+            
+          }
+          else{
+            data <- select(cordata, geo_accession,Expression, Sample_Group, Symbol) %>% 
+              spread(Symbol,Expression)
+            df <- as.data.frame(data)
+            p <- ggpairs(df, columns = 3:ncol(df))
+            
+          }
+          
+        }
+        
+      }
+      
+      else {
+        
+        #http://stackoverflow.com/questions/7549694/ggplot2-adding-regression-line-equation-and-r2-on-graph#7549819
+        cor_eqn <- function(df){
+          fun <- input$corType 
+          cc <- ifelse(fun == "Pearson", cor(df$x,df$y,method="pearson"),cor(df$x,df$y,method="spearman"));
+          eq <- substitute(r^2~"="~r2, 
+                           list(r2 = format(cc^2, digits = 2)))
+          as.character(as.expression(eq));                 
+        }
+        
+        
+        gene1 <- filter(cordata, Symbol == input$correlationGeneChoice) %>% mutate(Gene1 = Expression)
+        
+        genes.other <- setdiff(genes,input$correlationGeneChoice)
+        plist <- NULL  
+        theme <- input$corTheme
+        
+        for(i in 1:length(genes.other)){
+          
+          gene2 <- filter(cordata, Symbol == genes.other[i]) %>% mutate(Gene2 = Expression)
+          df <- mutate(gene1,Gene2 = gene2$Gene2)
+          p <-  ggplot(df, aes(y = Expression, x=Gene2)) + geom_point() + ylab(input$correlationGeneChoice) + xlab(genes.other[i]) + geom_smooth(method="lm",se=FALSE,color="red",lty=2)
+          p <- switch(theme,
+                      ggplot2 = p,
+                      bw = p + theme_bw(),
+                      classic = p + theme_classic(),
+                      minimal = p + theme_minimal(),
+                      light = p + theme_light(),
+                      "Wall Street Journal" = p + theme_wsj(),
+                      Economist = p + theme_economist(),
+                      Excel = p + theme_excel(),
+                      solarized = p + theme_solarized(),
+                      stata = p + theme_stata(),
+                      calc = p + theme_calc(),
+                      dark = p + theme_dark(),
+                      fivethirtyeight = p + theme_fivethirtyeight(),
+                      tufte = p + theme_tufte()
+                      
+          )
+          
+          df$x <- df$Gene2
+          df$y <- df$Expression
+          plist[[i]] <- p + geom_text(size=5,x = min(df$x)+0.2, y = max(df$y), label = cor_eqn(df), parse = TRUE,col="red",alpha=0.7)
+        }
+        
+        p <- do.call("grid.arrange",c(plist,ncol=2))
+        
+      }
+      
+      
+      p
+      
       dev.off()
     }
     
@@ -2754,16 +3100,16 @@ shinyServer(function(input, output,session){
     
     if(plotType == "Boxplot"){
       
-      var <- getCambridgeVariable()
+      var <- getQuickVariable()
       
       
       if(dataset == "Cambridge"){
         df <- switch(var,
-                     iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals"),
+                     iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) ,
                      
-                     Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals"),
+                     Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) ,
                      
-                     Sample_Group = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.))) %>% filter(term != "Residuals")
+                     Sample_Group = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.))) %>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) 
                      
         )
       }
@@ -2772,9 +3118,9 @@ shinyServer(function(input, output,session){
         
         
         df <-  switch(var,
-                      iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals"),
+                      iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) ,
                       
-                      Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals")
+                      Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) 
         )
         
       }
@@ -2782,14 +3128,14 @@ shinyServer(function(input, output,session){
       else if (dataset == "MSKCC"){
         
         df <-  switch(var,
-                      CopyNumberCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Copy.number.Cluster,data=.)))%>% filter(term != "Residuals"),
-                      Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals")
+                      CopyNumberCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Copy.number.Cluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) ,
+                      Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) 
         )
         
       }
       
       else{
-        df <-  group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)
+        df <-  group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) %>% select(Symbol, term, statistic,p.value) 
         
       }
       
@@ -3186,8 +3532,8 @@ shinyServer(function(input, output,session){
       cat(file=file,as.name("library(GGally)\n"),append=TRUE)
       cat(file=file,as.name("library(RColorBrewer)\n"),append=TRUE)
       cat(file=file,as.name("iclusPal <- brewer.pal(5, 'Set1')\n"),append=TRUE)
+      dataset <- input$theDataset
       
-      dataset <- input$corDataset
       
       if(input$inputType_correlation == "Single Gene"){
         gene1 <- getCurrentGene()
@@ -3379,14 +3725,15 @@ shinyServer(function(input, output,session){
       cat(file=file,as.name("iclusPal <- brewer.pal(5, 'Set1')\n"),append=TRUE)
       
       
-      if(is.null(input$file1)) cat(file=file,as.name("genes <- c('STAT3', 'ESR1','AR')\n"),append=TRUE)
+      if(is.null(input$file1)) cat(file=file,as.name("genes <- c('STAT3', 'ESR1','AR','HES6','MELK')\n"),append=TRUE)
       else{
         inFile <- input$file1
         cat(file=file,as.name(paste0('myfile <- \"' , inFile$name, '\"\n')),append=TRUE)
         cat(file=file,as.name("genes <- read.delim(myfile)[,1]\n"),append=TRUE)
       }
       
-      dataset <- input$heatmapDataset
+      dataset <- input$theDataset
+      
       
       if(dataset == "MSKCC"){
         cat(file=file,as.name("if(!require(prostateCancerTaylor)) {\n source('http://www.bioconductor.org/biocLite.R') \n biocLite('prostateCancerTaylor')\n}\n"),append=TRUE)
