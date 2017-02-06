@@ -1,8 +1,11 @@
 ---
-title: "Supplementary Materials for 'Mining human prostate cancer datasets: The camcAPP shiny app' "
-author: "Mark Dunning"
+title: 'Supplementary Materials for ''Mining human prostate cancer datasets: The camcAPP
+  shiny app'' '
+author: "Mark Dunning and Andy Lynch"
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
-output: pdf_document
+output:
+  word_document: default
+  pdf_document: default
 bibliography: bibliography.bib
 ---
 
@@ -62,7 +65,7 @@ runApp("../camcAPP")
 
 There are two tasks to complete in the Data Input panel: Specification of a set of genes to study, and specification of the data set in which to study them (expression analyses only). The data set is specified via the *Choose a Dataset* drop down menu in the obvious manner.
 
-![Figure 1: Data Input Panel](Figure1.png)
+![Data Input Panel](Figure1.png)
 
 ### Uploading a gene list for interrogation
 
@@ -76,7 +79,7 @@ The gene-list must be presented in a tab-delimited file assumed to have a column
 
 In this panel one can produce boxplots of the expression levels of the chosen gene list across a particular study. A clinical covariate is used to split the samples into different groups (choice of covariates will depend on dataset).  The default settings will show the Cambridge gene-expression stratified by the subgroups identified in [@Ross-Adams] (**Figure 2**). 
 
-![Figure 2: Gene Profile Panel](Figure2.png)
+![Gene Profile Panel](Figure2.png)
 
 One can choose to tile images for all genes at once in a grid-like display. By clicking *Composite plot?* to *No* you can view a particular gene, where the gene to be plotted is given in the *Gene to Plot* dropdown box.
 
@@ -89,7 +92,7 @@ An analysis of variance is also performed for each gene to see if there is evide
 The `party` R package [@party] is first used on a gene-by-gene basis to see if the samples can be partitioned into (typically, two) groups with distinct (p-value of $<0.05$) survival profiles based on the expression levels. If no signficant partitioning is identified, samples are assigned to low or high expression level groups based on the median expression level of the gene. 
 
 
-![Figure 3: Survival Panel](Figure3.png)
+![Survival Panel](Figure3.png)
 
 The histogram (**Figure 3. Top Right**) shows the distribution of expression levels for a chosen gene (defined by the *Gene to plot* drop-down) and vertical line to show the cut-off to be used to assign samples to groups (either median expression level, or the cut-off identified by recursive partitioning)
 
@@ -105,7 +108,7 @@ Alternatively, a single gene can be selected from the gene list and the panel wi
 
 ## Heatmap
 
-![Figure 4: Heatmap Panel](Figure4.png)
+![Heatmap Panel](Figure4.png)
 
 The entire gene-list is used to cluster the samples in the chosen study, and the resulting ordering of samples is displayed using a heatmap (**Figure 4**). Cells in the heatmaps are coloured blue for under-expressed genes and red for over-expressed. The default option generate a heatmap by computing Euclidean distances and applying hierachical clustering with complete linkage. However, other popular methods (e.g. correlation-based distance) are supported. Furthermore, the rows of the heatmap (i.e. the genes in the gene-list) can be ordered according to the results of the clustering, or left in the order in which they occur in the gene-list (option *Re-order Rows?*).
 
@@ -116,7 +119,7 @@ We also some basic exploratory analysis of the sample clustering. The dendrogram
 
 This panel allows the visualisation of copy-number calls from Cambridge 2015, Stockholm and MSKCC datasets [@CopyNumber]. Firstly (*Frequency* option in the *Type of plot to show* drop-down menu ), one can see, on a per-gene basis the percentage of samples in each of the cohorts that have an amplification or deletion of the given gene. Alternatively (*Frequency by Dataset* option in *Type of plot to show*), for a selected cohort, the number of samples may be split into different clinical subgroups and the number of per-gene deletions and amplifcations for each subgroup can be tabulated.
 
-![Figure 4: Copy Number Panel](Figure5.png)
+![Copy Number Panel](Figure5.png)
 
 Finally (the *Heatmap* option in *Type of plot to show*), a heatmap can be generated from the copy-number calls of all selected genes in the selected cohort. Thus, allowing the user to assess whether certain genes are amplified or deleted in the same samples (**Figure 5**).
 
