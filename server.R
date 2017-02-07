@@ -162,6 +162,9 @@ shinyServer(function(input, output,session){
 #    input$currentGene
 #  })
   
+
+  
+  
   observeEvent(input$profilePlotFormat,{
     
     if(input$profilePlotFormat == "pdf"){
@@ -520,10 +523,10 @@ shinyServer(function(input, output,session){
     }
     
     else {
-      #probes <- fd_grasso %>% filter(GENE_SYMBOL %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-      #data <- exp_grasso  %>% filter(ID %in% probes) %>% 
-      #  gather(geo_accession,Expression,-ID)
+      # there's a typo in the group names for this dataset
+      
       data <- collect(exp_grasso,n=Inf) %>% filter(GENE_SYMBOL %in% genes)
+      pd_grasso <- mutate(pd_grasso, Group = str_replace_all(Group,"HormomeDependant", "HormoneDependant"))
       fd <- mutate(fd_grasso, Symbol = GENE_SYMBOL)
       pd <- mutate(pd_grasso, Sample_Group = Group) 
       
@@ -668,12 +671,16 @@ shinyServer(function(input, output,session){
    else if(dataset == "Michigan2005"){
      
      
-     p1 <- data %>% ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+     p1 <- data %>% 
+       mutate(Sample_Group = factor(Sample_Group, levels = c("Benign", "Tumour", "Metastatic"))) %>% 
+       ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()  + scale_fill_manual(values = c("darkseagreen1","darkorange1","firebrick1"))
    }
    
    else if(dataset == "Michigan2012"){
      
-     p1 <- data %>% ggplot(aes(x = Group, y = Expression, fill=Group)) + geom_boxplot()
+     p1 <- data %>% 
+       mutate(Sample_Group = factor(Sample_Group, levels = c("Benign", "HormoneDependant", "CastrateResistant"))) %>% 
+       ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()  + scale_fill_manual(values = c("darkseagreen1","darkorange1","firebrick1"))
      
    }
    
@@ -737,11 +744,11 @@ shinyServer(function(input, output,session){
     
     if(dataset == "Cambridge"){
       df <- switch(var,
-             iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value),
+             iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)  %>% mutate_each(funs(signif(.,5)),statistic,p.value),
              
-             Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value),
+             Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)  %>% mutate_each(funs(signif(.,5)),statistic,p.value),
              
-             Sample_Group = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.))) %>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) 
+             Sample_Group = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.))) %>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)  %>% mutate_each(funs(signif(.,5)),statistic,p.value)
              
       )
     }
@@ -750,9 +757,9 @@ shinyServer(function(input, output,session){
       
       
       df <-  switch(var,
-             iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.))) %>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value), 
+             iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.))) %>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) %>% mutate_each(funs(signif(.,5)),statistic,p.value), 
              
-             Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)
+             Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) %>% mutate_each(funs(signif(.,5)),statistic,p.value)
       )
       
     }
@@ -760,14 +767,14 @@ shinyServer(function(input, output,session){
     else if (dataset == "MSKCC"){
       
       df <-  switch(var,
-             CopyNumberCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Copy.number.Cluster,data=.)))%>% filter(term != "Residuals"),
-             Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals")
+             CopyNumberCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Copy.number.Cluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) %>% mutate_each(funs(signif(.,5)),statistic,p.value),
+             Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) %>% mutate_each(funs(signif(.,5)),statistic,p.value)
       )
       
     }
     
     else{
-      df <-  group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)
+      df <-  group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) %>% mutate_each(funs(signif(.,5)),statistic,p.value)
       
     }
     head(df)
@@ -2229,7 +2236,7 @@ shinyServer(function(input, output,session){
       dataset <- getDataset()
       cn.all <- filter(cn.all, Symbol %in% genes)
       theme <- input$cnTheme
-      p <- ggplot(cn.all, aes(x = Event, y=Percentage,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
+      p <- ggplot(cn.all, aes(x = Event, y=Percentage,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort,ncol=3) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
       
 
       
@@ -2494,6 +2501,7 @@ shinyServer(function(input, output,session){
     
     else {
       data <- collect(exp_grasso,n=Inf) %>% filter(GENE_SYMBOL %in% genes)
+      pd_grasso <- mutate(pd_grasso, Group = str_replace_all(Group,"HormomeDependant", "HormoneDependant"))
       fd <- mutate(fd_grasso, Symbol = GENE_SYMBOL)
       pd <- mutate(pd_grasso, Sample_Group = Group) 
       
@@ -2626,13 +2634,17 @@ shinyServer(function(input, output,session){
       
       else if(dataset == "Michigan2005"){
         
+        p1 <- data %>% 
+          mutate(Sample_Group = factor(Sample_Group, levels = c("Benign", "Tumour", "Metastatic"))) %>% 
+          ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()  + scale_fill_manual(values = c("darkseagreen1","darkorange1","firebrick1"))
         
-        p1 <- data %>% ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
       }
       
       else if(dataset == "Michigan2012"){
         
-        p1 <- data %>% ggplot(aes(x = Group, y = Expression, fill=Group)) + geom_boxplot()
+        p1 <- data %>% 
+          mutate(Sample_Group = factor(Sample_Group, levels = c("Benign", "HormoneDependant", "CastrateResistant"))) %>% 
+          ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()  + scale_fill_manual(values = c("darkseagreen1","darkorange1","firebrick1"))
         
       }
       
@@ -2752,7 +2764,7 @@ shinyServer(function(input, output,session){
       cn.all <- bind_rows(camcap.cnts,stockholm.cnts,taylor.cnts) %>% 
         mutate(Event = factor(Event, levels=c("DEL","NEUTRAL","AMP")))
       
-      p <- ggplot(cn.all, aes(x = Event, y=Percentage,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
+      p <- ggplot(cn.all, aes(x = Event, y=Percentage,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort,ncol=3) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
       theme <- input$quickTheme
       
 
@@ -2919,12 +2931,16 @@ shinyServer(function(input, output,session){
           else if(dataset == "Michigan2005"){
             
             
-            p1 <- data %>% ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()
+            p1 <- data %>% 
+              mutate(Sample_Group = factor(Sample_Group, levels = c("Benign", "Tumour", "Metastatic"))) %>% 
+              ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()  + scale_fill_manual(values = c("darkseagreen1","darkorange1","firebrick1"))
           }
           
           else if(dataset == "Michigan2012"){
             
-            p1 <- data %>% ggplot(aes(x = Group, y = Expression, fill=Group)) + geom_boxplot()
+            p1 <- data %>% 
+              mutate(Sample_Group = factor(Sample_Group, levels = c("Benign", "HormoneDependant", "CastrateResistant"))) %>% 
+              ggplot(aes(x = Sample_Group, y = Expression, fill=Sample_Group)) + geom_boxplot()  + scale_fill_manual(values = c("darkseagreen1","darkorange1","firebrick1"))
             
           }
           
@@ -3044,7 +3060,7 @@ shinyServer(function(input, output,session){
           cn.all <- bind_rows(camcap.cnts,stockholm.cnts,taylor.cnts) %>% 
             mutate(Event = factor(Event, levels=c("DEL","NEUTRAL","AMP")))
           
-          p <- ggplot(cn.all, aes(x = Event, y=Percentage,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
+          p <- ggplot(cn.all, aes(x = Event, y=Percentage,fill=Event)) + geom_bar(stat="identity") + facet_wrap(Symbol~Cohort,ncol=3) + scale_fill_manual(values=c("dodgerblue4", "grey","firebrick3"))
           theme <- input$quickTheme
           
           
@@ -3105,11 +3121,11 @@ shinyServer(function(input, output,session){
       
       if(dataset == "Cambridge"){
         df <- switch(var,
-                     iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) ,
+                     iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) %>% mutate_each(funs(signif(.,5)),statistic,p.value) ,
                      
-                     Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) ,
+                     Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)  %>% mutate_each(funs(signif(.,5)),statistic,p.value),
                      
-                     Sample_Group = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.))) %>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) 
+                     Sample_Group = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.))) %>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)  %>% mutate_each(funs(signif(.,5)),statistic,p.value) 
                      
         )
       }
@@ -3118,9 +3134,9 @@ shinyServer(function(input, output,session){
         
         
         df <-  switch(var,
-                      iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) ,
+                      iCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~iCluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)  %>% mutate_each(funs(signif(.,5)),statistic,p.value),
                       
-                      Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) 
+                      Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)  %>% mutate_each(funs(signif(.,5)),statistic,p.value)
         )
         
       }
@@ -3128,14 +3144,14 @@ shinyServer(function(input, output,session){
       else if (dataset == "MSKCC"){
         
         df <-  switch(var,
-                      CopyNumberCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Copy.number.Cluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) ,
-                      Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) 
+                      CopyNumberCluster = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Copy.number.Cluster,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)  %>% mutate_each(funs(signif(.,5)),statistic,p.value),
+                      Gleason = group_by(data, Symbol)  %>% do(tidy(aov(Expression~Gleason,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value)  %>% mutate_each(funs(signif(.,5)),statistic,p.value)
         )
         
       }
       
       else{
-        df <-  group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) %>% select(Symbol, term, statistic,p.value) 
+        df <-  group_by(data, Symbol)  %>% do(tidy(aov(Expression~Sample_Group,data=.)))%>% filter(term != "Residuals") %>% select(Symbol, term, statistic,p.value) %>% select(Symbol, term, statistic,p.value)  %>% mutate_each(funs(signif(.,5)),statistic,p.value)
         
       }
       
