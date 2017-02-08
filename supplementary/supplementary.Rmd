@@ -1,6 +1,7 @@
 ---
-title: "Re: Mining human prostate cancer datasets: The $\"$camcAPP$\"$ shiny app"
-author: "Mark J. Dunning$^1$, Sarah L. Vowler$^1$, Emilie Lalonde$^{2,3}$, Helen Ross-Adams$^4$, Paul C. Boutros$^{2,3}$, Ian G. Mills$^5$, Andy G. Lynch$^1$ and Alastair D. Lamb$^{1,6}$"
+title: 'Re: Mining human prostate cancer datasets: The $"$camcAPP$"$ shiny app'
+author: Mark J. Dunning$^1$, Sarah L. Vowler$^1$, Emilie Lalonde$^{2,3}$, Helen Ross-Adams$^4$,
+  Paul C. Boutros$^{2,3}$, Ian G. Mills$^5$, Andy G. Lynch$^1$ and Alastair D. Lamb$^{1,6}$
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
   pdf_document: default
@@ -14,8 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction
 
-The camcAPP is implemented as a Shiny application [@shiny] in R. Shiny allows the non-specialist Bioinformatician to create publication-ready figures and tables through an intuitive online interface to the underlying R code. 
-
+The camcAPP is implemented in R as a Shiny application [@shiny]. Shiny allows for the development of data applications with no need for web-development skills. CamCaPP enables the creation of publication-ready figures and tables for a number of prostate cancer data sets through an intuitive online interface to the underlying R code.
 
 # Details of specific panels and functionality
 
@@ -122,7 +122,8 @@ Table: Summary of each dataset accessible through camcAPP, its GEO accession num
 
 ## Reproducible analyses using docker
 
-Docker is a system that facilitates easy deployment and sharing of software as containers to alleviate the common headache of "dependancy hell" when trying to install Bioinformatics software [@Boettiger:2015:IDR:2723872.2723882]. We provide a docker container for those that want easy access to all the R code, packages and datasets used in the app. The latest version of Docker is available for Windows 10 and Mac OSX 10.11 or newer. Once Docker is install, the container to run camcAPP can be installed and run from a terminal window as follows.
+
+Docker is a system that facilitates the sharing of software in a manner that removes dependencies on additional software (that may not be available) and enables consistent, reproducible, research [@Boettiger:2015:IDR:2723872.2723882]. We provide a docker container for those that want easy access to all the R code, packages and datasets used in the app. The latest version of Docker is available for Windows 10 and Mac OSX 10.11 or newer. Once Docker is install, the container to run camcAPP can be installed and run from a terminal window as follows.
 
 ```{bash eval=FALSE}
 docker pull markdunning/camcapp
