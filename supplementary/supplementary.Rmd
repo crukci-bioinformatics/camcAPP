@@ -1,10 +1,13 @@
 ---
 title: 'Re: Mining human prostate cancer datasets: The $"$camcAPP$"$ shiny app'
 author: Mark J. Dunning$^1$, Sarah L. Vowler$^1$, Emilie Lalonde$^{2,3}$, Helen Ross-Adams$^4$,
-  Paul C. Boutros$^{2,3}$, Ian G. Mills$^5$, Andy G. Lynch$^1$ and Alastair D. Lamb$^{1,6}$
-date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+  Paul C. Boutros$^{2,3}$, Ian G. Mills$^5$, Andy G. Lynch$^1$ and Alastair D. Lamb$^{1,6}$, on behalf of the CamCaP Study Group
+#date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+header-includes:
+   - \usepackage[labelfont=bf]{caption} 
 output:
-  pdf_document: default
+  pdf_document: 
+    keep_tex: yes
   word_document: default
 bibliography: bibliography.bib
 ---
@@ -15,14 +18,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction
 
-The camcAPP is implemented in R as a Shiny application [@shiny]. Shiny allows for the development of data applications with no need for web-development skills. CamCaPP enables the creation of publication-ready figures and tables for a number of prostate cancer data sets through an intuitive online interface to the underlying R code.
+The camcAPP is implemented in R as a Shiny application [@shiny]. Shiny allows for the development of data applications with no need for web-development skills. camcAPP enables the creation of publication-ready figures and tables for a number of prostate cancer data sets through an intuitive online interface to the underlying R code.
 
 # Details of specific panels and functionality
 
 
 ## Data Input Panel
 
-There are two tasks to complete in the Data Input panel: Specification of a set of genes to study, and specification of the data set in which to study them (expression analyses only). The data set is specified via the *Choose a Dataset* drop down menu in the obvious manner.
+There are two tasks to complete in the Data Input panel: Specification of a set of genes to study, and specification of the data set in which to study them (expression analyses only). The data set is specified via the ***Choose a Dataset*** drop down menu in the obvious manner.
 
 ![Entry point to camcAPP, including the upload point for gene lists, selecting a cohort and citation information](Figure1.png)
 
@@ -36,11 +39,11 @@ The gene-list must be presented in a tab-delimited file assumed to have a column
 
 ## Gene Profile
 
-In this panel one can produce boxplots of the expression levels of the chosen gene list across a particular study. A clinical covariate is used to split the samples into different groups (choice of covariates will depend on dataset).  The default settings will show the Cambridge gene-expression stratified by the subgroups identified in [@Ross-Adams] (**Figure 2**). 
+In this panel one can produce boxplots of the expression levels of the chosen gene list across a particular study. A clinical covariate is used to split the samples into different groups (choice of covariates will depend on dataset).  The default settings will show the Cambridge gene-expression stratified by the subgroups identified in the CamCap Study Group paper [@Ross-Adams] (**Figure 2**). 
 
-![Boxplots for gene expression can be created for a list of genes. This example shows the expression profile of selected genes in the five subgroups identified in the analysis of [@Ross-Adams].](Figure2.png)
+![Boxplots for gene expression can be created for a list of genes. This example shows the expression profile of selected genes in the five subgroups identified in the analysis of the CamCap Study Group paper [@Ross-Adams].](Figure2.png)
 
-One can choose to tile images for all genes at once in a grid-like display. By clicking *Composite plot?* to *No* you can view a particular gene, where the gene to be plotted is given in the *Gene to Plot* dropdown box.
+One can choose to tile images for all genes at once in a grid-like display. By clicking ***Composite plot?*** to ***No*** you can view a particular gene, where the gene to be plotted is given in the ***Gene to Plot*** dropdown box.
 
 The z-score transformation will scale all genes to an average expression level of $0$ and standard deviation of $1$; thus making it easier to compare the trends of different genes. 
 
@@ -53,7 +56,7 @@ The `party` R package [@party] is first used on a gene-by-gene basis to see if t
 
 ![Kaplan-Meier biochemical relapse-free survival plots can be created for any selected gene from the input list in an selected dataset.](Figure3.png)
 
-The histogram (**Figure 3. Top Right**) shows the distribution of expression levels for a chosen gene (defined by the *Gene to plot* drop-down) and vertical line to show the cut-off to be used to assign samples to groups (either median expression level, or the cut-off identified by recursive partitioning)
+The histogram (**Figure 3. Top Right**) shows the distribution of expression levels for a chosen gene (defined by the ***Gene to plot*** drop-down) and vertical line to show the cut-off to be used to assign samples to groups (either median expression level, or the cut-off identified by recursive partitioning)
 
 A Kaplan-Meier curve is then generated from the biochemical relapse-free times of samples in the different groups (**Figure 3. Bottom Right**).
 
@@ -70,7 +73,7 @@ Alternatively, a single gene can be selected from the gene list and the panel wi
 
 ## Heatmap
 
-The entire gene-list is used to cluster the samples in the chosen study, and the resulting ordering of samples is displayed using a heatmap (**Figure 5**). Cells in the heatmaps are coloured blue for under-expressed genes and red for over-expressed. The default option generate a heatmap by computing Euclidean distances and applying hierachical clustering with complete linkage. However, other popular methods (e.g. correlation-based distance) are supported. Furthermore, the rows of the heatmap (i.e. the genes in the gene-list) can be ordered according to the results of the clustering, or left in the order in which they occur in the gene-list (option *Re-order Rows?*).
+The entire gene-list is used to cluster the samples in the chosen study, and the resulting ordering of samples is displayed using a heatmap (**Figure 5**). Cells in the heatmaps are coloured blue for under-expressed genes and red for over-expressed. The default option generate a heatmap by computing Euclidean distances and applying hierachical clustering with complete linkage. However, other popular methods (e.g. correlation-based distance) are supported. Furthermore, the rows of the heatmap (i.e. the genes in the gene-list) can be ordered according to the results of the clustering, or left in the order in which they occur in the gene-list (option ***Re-order Rows?***).
 
 ![Heatmaps for gene expression can be created from any of the datasets.](Figure5.png)
 
@@ -78,15 +81,15 @@ We also include some basic exploratory analysis of the sample clustering. The de
 
 ## Copy Number
 
-This panel allows the visualisation of copy-number calls from Cambridge 2015, Stockholm and MSKCC datasets. The processing of these datasets has been previously described [@CopyNumber]. Firstly (*Frequency* option in the *Type of plot to show* drop-down menu ), one can see, on a per-gene basis the percentage of samples in each of the cohorts that have an amplification or deletion of the given gene. Alternatively (*Frequency by Dataset* option in *Type of plot to show*), for a selected cohort, the number of samples may be split into different clinical subgroups and the number of per-gene deletions and amplifcations for each subgroup can be tabulated.
+This panel allows the visualisation of copy-number calls from Cambridge, Stockholm and MSKCC datasets. The processing of these datasets has been previously described [@CopyNumber]. The type of visualisation is controlled by the ***Type of plot to show*** drop-down menu. Firstly, the ***Frequency*** option allows one to see, on a per-gene basis, the percentage of samples in each of the cohorts that have an amplification or deletion of the given gene. Alternatively, the ***Frequency by Dataset*** option splits the number of samples into different clinical subgroups and tabulates the number of per-gene deletions and amplifcations for each subgroup.
 
 ![Copy Number (CN) plots depicting CN gain or loss can also be created.](Figure6.png)
 
-Finally (the *Heatmap* option in *Type of plot to show*), a heatmap can be generated from the copy-number calls of all selected genes in the selected cohort. Thus, allowing the user to assess whether certain genes are amplified or deleted in the same samples (**Figure 6**).
+Finally, the ***Heatmap*** option generates a heatmap  from the copy-number calls of all selected genes in the selected cohort. This therefore allows the user to assess whether certain genes are amplified or deleted in the same samples (**Figure 6**).
 
 ## Quick Analysis
 
-This panel allows the boxplots, survival and copy-number analysis listed above to be performed on a single-gene rather than a gene list. The gene name must be entered into the text box, and the user can check whether the name entered is a valid gene name before clicking *Go!* to proceed with the analysis.
+This panel allows the boxplots, survival and copy-number analysis listed above to be performed on a single-gene rather than a gene list. The gene name must be entered into the text box, and the user can check whether the name entered is a valid gene name before clicking ***Go!*** to proceed with the analysis.
 
 ![The Quick Analysis tab allows for rapid spot checks for single genes of interest focussing on relative gene expression, copy number, and survival curves. The example shown here is a boxplot showing relative gene expression in CRPC (castrate resistant prostate cancer), tumour and benign tissue for HES6, a known driver of castration in resistance (@Hes6)](Figure7.png)
 
@@ -94,7 +97,7 @@ This panel allows the boxplots, survival and copy-number analysis listed above t
 
 # Implementation 
 
-The source code for camcAPP is available through github [@github-repo]. The `dplyr` [@dplyr] package is used throughout for efficient data manipulation and graphics are generated using `ggplot2` [@ggplot2]. Plots can be exported as PDF or PNG file with configurable height, width and file name. Some configuration of the background colour and grid style is also possible with the *Pick a plot style* drop-down box, which changes the overall appearance of the plot using pre-defined themes in `ggplot2` and the `ggthemes` package [@ggthemes].
+The source code for camcAPP is available through github [@github-repo]. The `dplyr` [@dplyr] package is used throughout for efficient data manipulation and graphics are generated using `ggplot2` [@ggplot2]. Plots can be exported as PDF or PNG file with configurable height, width and file name. Some configuration of the background colour and grid style is also possible with the ***Pick a plot style*** drop-down box, which changes the overall appearance of the plot using pre-defined themes in `ggplot2` and the `ggthemes` package [@ggthemes].
 
 
 # Data Availability
