@@ -16,7 +16,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                    
                      #),
   #                   radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
-                      img(src="Logo no lion_Final.jpg"),
+                      img(src="camcAPP logo_Final.jpg"),
                       fileInput('file1', 'Gene List',
                                accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')),helpText("Your gene list must tab-delimited, with gene names in the first column"),
                       helpText("If no gene list is uploaded, the genes ESR1, AR and STAT3 will be used"),
