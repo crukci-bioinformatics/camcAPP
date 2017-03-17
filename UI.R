@@ -114,7 +114,8 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
        #              helpText("Also available as the "), a("prostateCancerCamcap",href="http://bioconductor.org/packages/devel/data/experiment/html/prostateCancerCamcap.html"), helpText(" Bioconductor package"),
                      h1("Gene Profile"),
                      verbatimTextOutput("profileMapping"),
-                     plotOutput("displayBoxplot",width = 1200,height=600),
+#                     plotOutput("displayBoxplot",width = 1200,height=600),
+                     imageOutput("displayBoxplot"),
                      h1("ANOVA analysis"),
                      helpText("Here we show the results of an ANOVA (analysis of variance) analysis to assess whether there are changes in expression level between the defined groups"),
                      DT::dataTableOutput("anovaResult")
@@ -159,10 +160,11 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
                   helpText("If no cut-off can be found with RP, the samples will be divided according to median expression level in the plots below"),
                   DT::dataTableOutput("rpSummary"),
                   helpText("A histogram of expression level will be shown with a line to indicate the median expression level or RP cut-off"),
-                  plotOutput("rpPlot"),
+#                  plotOutput("rpPlot"),
+                  imageOutput("rpPlot"),
                   helpText("The grouping of samples found by RP, or using median expression level, is used to construct a Kaplan-Meier plot"),
-                  plotOutput("survivalPlot"),helpText("The Kaplan-Meier plot is a useful way of summarising survival data. There is one curve for each group. Each curve starts at 100% probability of survival. The probability of freedom from biochemical recurrence is shown on the y axis and the time (in years) is shown on the x axis. The curve drops each time there is an 'event'. A cross is shown on each curve where a 'censoring'' event takes place. This is where someone drops out of the study for a reason not related to the study, e.g. the study ends before an event has occurred. These subjects are no longer included in any calculations. The lower the survival curve the worse prognosis the patients in that group have.")
-
+ #                 plotOutput("survivalPlot"),helpText("The Kaplan-Meier plot is a useful way of summarising survival data. There is one curve for each group. Each curve starts at 100% probability of survival. The probability of freedom from biochemical recurrence is shown on the y axis and the time (in years) is shown on the x axis. The curve drops each time there is an 'event'. A cross is shown on each curve where a 'censoring'' event takes place. This is where someone drops out of the study for a reason not related to the study, e.g. the study ends before an event has occurred. These subjects are no longer included in any calculations. The lower the survival curve the worse prognosis the patients in that group have.")
+                  imageOutput("survivalPlot"),helpText("The Kaplan-Meier plot is a useful way of summarising survival data. There is one curve for each group. Each curve starts at 100% probability of survival. The probability of freedom from biochemical recurrence is shown on the y axis and the time (in years) is shown on the x axis. The curve drops each time there is an 'event'. A cross is shown on each curve where a 'censoring'' event takes place. This is where someone drops out of the study for a reason not related to the study, e.g. the study ends before an event has occurred. These subjects are no longer included in any calculations. The lower the survival curve the worse prognosis the patients in that group have.")
                 )
                 
              )
@@ -195,7 +197,8 @@ helpText("For more information on the different plot styles see the documentatio
                  downloadButton("correlationScript","Download R script....")
                ),
                mainPanel(
-                 plotOutput("corPlot",width = 1200,height=600)
+               #  plotOutput("corPlot",width = 1200,height=600)
+                 imageOutput("corPlot")
                )
              )
     ),
@@ -228,11 +231,14 @@ helpText("For more information on the different plot styles see the documentatio
                mainPanel(
                  helpText("Construcing a heatmap from the gene list you uploaded in the Analysis Parameters tab. If you haven't uploaded a gene list, an example gene list of three genes will be used"),
                  verbatimTextOutput("heatmapMapping"),
-                 plotOutput("heatmap",width = 1200,height=600),
+                 #plotOutput("heatmap",width = 1200,height=600),
+                 imageOutput("heatmap"),
                  helpText("Sample Clustering"),
-                 plotOutput("dendrogram",width = 1200,height=600),
+                 #plotOutput("dendrogram",width = 1200,height=600),
+                 imageOutput("dendrogram"),
                  helpText("Select the number of clusters, k, from the slider"),
-                 plotOutput("sampleBreakown")
+                 #plotOutput("sampleBreakown")
+                 imageOutput("sampleBreakdown")
                )
                
              )
@@ -264,7 +270,8 @@ radioButtons("copyNumberPlotFormat", "File format for plots", choices=c("pdf","p
         mainPanel(
           verbatimTextOutput("cnWarn"),
           helpText("The Proportion of amplifications and deletions will be shown for your chosen gene(s)."),
-          plotOutput("copyNumber",width=1200,height=600),
+          #plotOutput("copyNumber",width=1200,height=600),
+          imageOutput("copyNumber"),
           DT::dataTableOutput("copyNumberTable")
         )
         
@@ -304,7 +311,8 @@ tabPanel("Quick Analysis",
            ),
            mainPanel(
              verbatimTextOutput("geneCheck"),
-             plotOutput("quickPlot",width=1200,height=600),
+#             plotOutput("quickPlot",width=1200,height=600),
+              imageOutput("quickPlot"),
              DT::dataTableOutput("quickTable")
            )
            

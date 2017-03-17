@@ -720,12 +720,28 @@ shinyServer(function(input, output,session){
   
   
   
-  output$displayBoxplot <- renderPlot({
-    
+#  output$displayBoxplot <- renderPlot({
+  
+  output$displayBoxplot <- renderImage({
     p1 <- prepareBoxplot()
+    width  <- session$clientData$output_displayBoxplot_width
+    height <- session$clientData$output_displayBoxplot_height
     
+    # For high-res displays, this will be greater than 1
+    pixelratio <- session$clientData$pixelratio
+    
+    # A temp file to save the output.
+    outfile <- tempfile(fileext='.png')
+    
+    # Generate the image file
+    png(outfile, width=width*pixelratio, height=height*pixelratio,
+        res=72*pixelratio)
     print(p1)
-    
+    dev.off()
+    list(src = outfile,
+         width = width,
+         height = height,
+         alt = "This is alternate text")
   }
   )
   
@@ -904,8 +920,20 @@ shinyServer(function(input, output,session){
     
   }
   
-  output$rpPlot <- renderPlot({
+  output$rpPlot <- renderImage({
     
+    width  <- session$clientData$output_rpPlot_width
+    height <- session$clientData$output_rpPlot_height
+    
+    # For high-res displays, this will be greater than 1
+    pixelratio <- session$clientData$pixelratio
+    
+    # A temp file to save the output.
+    outfile <- tempfile(fileext='.png')
+    
+    # Generate the image file
+    png(outfile, width=width*pixelratio, height=height*pixelratio,
+        res=72*pixelratio)
     
     dataset <- getDataset()
     
@@ -964,15 +992,33 @@ shinyServer(function(input, output,session){
 
     
     } else ggplot()
-    
+    dev.off()
+    list(src = outfile,
+         width = width,
+         height = height,
+         alt = "This is alternate text")
 
   }
+
   
   )
   
   
   
-  output$survivalPlot <- renderPlot({
+  output$survivalPlot <- renderImage({
+    
+    width  <- session$clientData$output_survivalPlot_width
+    height <- session$clientData$output_survivalPlot_height
+    
+    # For high-res displays, this will be greater than 1
+    pixelratio <- session$clientData$pixelratio
+    
+    # A temp file to save the output.
+    outfile <- tempfile(fileext='.png')
+    
+    # Generate the image file
+    png(outfile, width=width*pixelratio, height=height*pixelratio,
+        res=72*pixelratio)
     
     dataset <- getDataset()
     
@@ -1048,6 +1094,13 @@ shinyServer(function(input, output,session){
 
     } else plot(1:10, type="n", axes=FALSE,xlab="",ylab="")
       
+    dev.off()
+    
+    # Return a list containing the filename
+    list(src = outfile,
+         width = width,
+         height = height,
+         alt = "This is alternate text")
   })
   
   
@@ -1152,7 +1205,19 @@ shinyServer(function(input, output,session){
     
   })
   
-  output$heatmap<- renderPlot({
+  output$heatmap<- renderImage({
+    width  <- session$clientData$output_heatmap_width
+    height <- session$clientData$output_heatmap_height
+    
+    # For high-res displays, this will be greater than 1
+    pixelratio <- session$clientData$pixelratio
+    
+    # A temp file to save the output.
+    outfile <- tempfile(fileext='.png')
+    
+    # Generate the image file
+    png(outfile, width=width*pixelratio, height=height*pixelratio,
+        res=72*pixelratio)
     
     hm <- prepareHeatmap()
     geneMatrix <- hm[[1]]
@@ -1172,6 +1237,14 @@ shinyServer(function(input, output,session){
     
     if(getReordRows() == "Yes") heatmap.2(geneMatrix,Colv = as.dendrogram(clusObj),col=hmcol,distfun=distfun,hclustfun = hclustfun,scale=scale,trace="none",cexRow = 0.9)
     else heatmap.2(geneMatrix,Colv = as.dendrogram(clusObj),col=hmcol,distfun=distfun,Rowv=NA,hclustfun = hclustfun,scale=scale,trace="none",cexRow = 0.9)
+    
+    dev.off()
+    
+    # Return a list containing the filename
+    list(src = outfile,
+         width = width,
+         height = height,
+         alt = "This is alternate text")
   }
   )
   
@@ -1204,6 +1277,10 @@ shinyServer(function(input, output,session){
       else heatmap.2(geneMatrix,Colv = as.dendrogram(clusObj),col=hmcol,distfun=distfun,Rowv=NA,hclustfun = hclustfun,scale=scale,trace="none",cexRow = 0.9)
       
       dev.off()   
+      list(src = outfile,
+           width = width,
+           height = height,
+           alt = "This is alternate text")
       
     }
     
@@ -1211,11 +1288,24 @@ shinyServer(function(input, output,session){
   
   
   
-  output$dendrogram <- renderPlot({
+  output$dendrogram <- renderImage({
     library(WGCNA)
     hm <- prepareHeatmap()
     colMatrix <- hm[[2]]
     clusObj <- doClustering()
+    
+    width  <- session$clientData$output_dendrogram_width
+    height <- session$clientData$output_dendrogram_height
+    
+    # For high-res displays, this will be greater than 1
+    pixelratio <- session$clientData$pixelratio
+    
+    # A temp file to save the output.
+    outfile <- tempfile(fileext='.png')
+    
+    # Generate the image file
+    png(outfile, width=width*pixelratio, height=height*pixelratio,
+        res=72*pixelratio)
     
     
     h <- min(as.numeric(input$hCut),max(clusObj$height))
@@ -1229,9 +1319,14 @@ shinyServer(function(input, output,session){
     
     colMatrix <- data.frame(colMatrix, SampleCluster=as.character(newLabs))
     
-    plotDendroAndColors.mod(clusObj,colors = as.matrix(colMatrix),abHeight = h,k=k,cutType=input$cutType)    
+    plotDendroAndColors.mod(clusObj,colors = as.matrix(colMatrix),abHeight = h,k=k,cutType=input$cutType)
+    dev.off()
+    list(src = outfile,
+         width = width,
+         height = height,
+         alt = "This is alternate text")
   }
-  
+
   )
   
   
@@ -1456,7 +1551,19 @@ shinyServer(function(input, output,session){
   
   
   
-  output$sampleBreakown <- renderPlot({
+  output$sampleBreakdown <- renderImage({
+    width  <- session$clientData$output_sampleBreakdown_width
+    height <- session$clientData$output_sampleBreakdown_height
+    
+    # For high-res displays, this will be greater than 1
+    pixelratio <- session$clientData$pixelratio
+    
+    # A temp file to save the output.
+    outfile <- tempfile(fileext='.png')
+    
+    # Generate the image file
+    png(outfile, width=width*pixelratio, height=height*pixelratio,
+        res=72*pixelratio)
     
     hm <- prepareHeatmap()
     colMatrix <- hm[[2]]
@@ -1554,7 +1661,13 @@ shinyServer(function(input, output,session){
       p1 <- ggplot(new_pheno,aes(x=Group,fill=Group)) + geom_bar() + facet_wrap(~Cluster,nrow=1) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")  
       grid.arrange(p0,p1)
     }
+    dev.off()
     
+    # Return a list containing the filename
+    list(src = outfile,
+         width = width,
+         height = height,
+         alt = "This is alternate text")
   }
   )
   
@@ -1793,11 +1906,26 @@ shinyServer(function(input, output,session){
   
 
   
-  output$corPlot <- renderPlot({
+  output$corPlot <- renderImage({
+    width  <- session$clientData$output_corPlot_width
+    height <- session$clientData$output_corPlot_height
     
+    # For high-res displays, this will be greater than 1
+    pixelratio <- session$clientData$pixelratio
+    
+    # A temp file to save the output.
+    outfile <- tempfile(fileext='.png')
+    
+    # Generate the image file
+    png(outfile, width=width*pixelratio, height=height*pixelratio,
+        res=72*pixelratio)
     p <- doCorPlot()
-    p
-    
+    p    
+    dev.off()
+    list(src = outfile,
+         width = width,
+         height = height,
+         alt = "This is alternate text")
   })
   
   
@@ -2333,9 +2461,29 @@ shinyServer(function(input, output,session){
   
   )
   
-  output$copyNumber <- renderPlot({
+  output$copyNumber <- renderImage({
+    width  <- session$clientData$output_copyNumber_width
+    height <- session$clientData$output_copyNumber_height
+    
+    # For high-res displays, this will be greater than 1
+    pixelratio <- session$clientData$pixelratio
+    
+    # A temp file to save the output.
+    outfile <- tempfile(fileext='.png')
+    
+    # Generate the image file
+    png(outfile, width=width*pixelratio, height=height*pixelratio,
+        res=72*pixelratio)
+    
     doCopyNumberPlot()
     
+    dev.off()
+    
+    # Return a list containing the filename
+    list(src = outfile,
+         width = width,
+         height = height,
+         alt = "This is alternate text")
     
   })
   
@@ -2445,10 +2593,29 @@ shinyServer(function(input, output,session){
   
   ##########################################
   
-  output$quickPlot <- renderPlot({
+ ## output$quickPlot <- renderPlot({
+ ## switching to use renderImage, hopefully allowing for dynamic image size?
+  
+  output$quickPlot <- renderImage({
+    width  <- session$clientData$output_quickPlot_width
     
+    height <- session$clientData$output_quickPlot_height
+    
+    # For high-res displays, this will be greater than 1
+    pixelratio <- session$clientData$pixelratio
+    
+    # A temp file to save the output.
+    outfile <- tempfile(fileext='.png')
+    
+    # Generate the image file
+    png(outfile, width=width*pixelratio, height=height*pixelratio,
+        res=72*pixelratio)  
    doQuickPlot()
-    
+  dev.off()
+  list(src = outfile,
+       width = width,
+       height = height,
+       alt = "You have changed the size of your window. Please press Go! to re-load the plot")
   }
   )
   
