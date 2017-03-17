@@ -2221,7 +2221,7 @@ shinyServer(function(input, output,session){
         gather(Event,Percentage,-Symbol) %>% 
         mutate(Cohort = "MSKCC") 
   
-      cn.all <- bind_rows(camcap.cnts,stockholm.cnts,taylor.cnts) %>% 
+      cn.all <- bind_rows(camcap.cnts,taylor.cnts,stockholm.cnts) %>% 
         mutate(Event = factor(Event, levels=c("DEL","NEUTRAL","AMP"))) %>% 
         mutate(Percentage = round(Percentage,1))
       
