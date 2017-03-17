@@ -197,8 +197,8 @@ helpText("For more information on the different plot styles see the documentatio
                  downloadButton("correlationScript","Download R script....")
                ),
                mainPanel(
-               #  plotOutput("corPlot",width = 1200,height=600)
-                 imageOutput("corPlot")
+                plotOutput("corPlot",width = "100%")
+                # imageOutput("corPlot")
                )
              )
     ),
@@ -270,8 +270,8 @@ radioButtons("copyNumberPlotFormat", "File format for plots", choices=c("pdf","p
         mainPanel(
           verbatimTextOutput("cnWarn"),
           helpText("The Proportion of amplifications and deletions will be shown for your chosen gene(s)."),
-          #plotOutput("copyNumber",width=1200,height=600),
-          imageOutput("copyNumber"),
+          plotOutput("copyNumber",width="100%"),
+          #imageOutput("copyNumber"),
           DT::dataTableOutput("copyNumberTable")
         )
         
@@ -311,8 +311,7 @@ tabPanel("Quick Analysis",
            ),
            mainPanel(
              verbatimTextOutput("geneCheck"),
-#             plotOutput("quickPlot",width=1200,height=600),
-              imageOutput("quickPlot"),
+             plotOutput("quickPlot",width="100%"),
              DT::dataTableOutput("quickTable")
            )
            

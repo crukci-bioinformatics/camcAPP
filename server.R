@@ -1906,26 +1906,9 @@ shinyServer(function(input, output,session){
   
 
   
-  output$corPlot <- renderImage({
-    width  <- session$clientData$output_corPlot_width
-    height <- session$clientData$output_corPlot_height
-    
-    # For high-res displays, this will be greater than 1
-    pixelratio <- session$clientData$pixelratio
-    
-    # A temp file to save the output.
-    outfile <- tempfile(fileext='.png')
-    
-    # Generate the image file
-    png(outfile, width=width*pixelratio, height=height*pixelratio,
-        res=72*pixelratio)
+  output$corPlot <- renderPlot({
     p <- doCorPlot()
     p    
-    dev.off()
-    list(src = outfile,
-         width = width,
-         height = height,
-         alt = "This is alternate text")
   })
   
   
@@ -2461,29 +2444,9 @@ shinyServer(function(input, output,session){
   
   )
   
-  output$copyNumber <- renderImage({
-    width  <- session$clientData$output_copyNumber_width
-    height <- session$clientData$output_copyNumber_height
-    
-    # For high-res displays, this will be greater than 1
-    pixelratio <- session$clientData$pixelratio
-    
-    # A temp file to save the output.
-    outfile <- tempfile(fileext='.png')
-    
-    # Generate the image file
-    png(outfile, width=width*pixelratio, height=height*pixelratio,
-        res=72*pixelratio)
-    
+  output$copyNumber <- renderPlot({
+
     doCopyNumberPlot()
-    
-    dev.off()
-    
-    # Return a list containing the filename
-    list(src = outfile,
-         width = width,
-         height = height,
-         alt = "This is alternate text")
     
   })
   
@@ -2596,26 +2559,9 @@ shinyServer(function(input, output,session){
  ## output$quickPlot <- renderPlot({
  ## switching to use renderImage, hopefully allowing for dynamic image size?
   
-  output$quickPlot <- renderImage({
-    width  <- session$clientData$output_quickPlot_width
-    
-    height <- session$clientData$output_quickPlot_height
-    
-    # For high-res displays, this will be greater than 1
-    pixelratio <- session$clientData$pixelratio
-    
-    # A temp file to save the output.
-    outfile <- tempfile(fileext='.png')
-    
-    # Generate the image file
-    png(outfile, width=width*pixelratio, height=height*pixelratio,
-        res=72*pixelratio)  
+  output$quickPlot <- renderPlot({
    doQuickPlot()
-  dev.off()
-  list(src = outfile,
-       width = width,
-       height = height,
-       alt = "You have changed the size of your window. Please press Go! to re-load the plot")
+
   }
   )
   
