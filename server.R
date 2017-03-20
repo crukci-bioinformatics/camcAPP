@@ -453,11 +453,14 @@ shinyServer(function(input, output,session){
       
       #      probes <- fd_camcap %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
       
-      if (all(genes %in% curated.genes)){
-        data <- collect(exp_camcap.curated,n=Inf)  %>% filter(Symbol %in% genes)
-      } else {
-        data <- collect(exp_camcap,n=Inf)  %>% filter(Symbol %in% genes)
-      }
+  #    if (all(genes %in% curated.genes)){
+        #data <- collect(exp_camcap.curated,n=Inf)  %>% filter(Symbol %in% genes)
+  #      data <- filter(exp_camcap.curated, Symbol %in% genes) %>% collect(n=Inf)
+        
+  #    } else {
+        #data <- collect(exp_camcap,n=Inf)  %>% filter(Symbol %in% genes)
+        data <- filter(exp_camcap, Symbol %in% genes) %>% collect(n=Inf)
+  #    }
       
       #gather(geo_accession,Expression,-ID)
       fd <- fd_camcap
@@ -467,11 +470,13 @@ shinyServer(function(input, output,session){
     } else if (dataset == "Stockholm"){
       
       
-      if (all(genes %in% curated.genes)){
-        data<- collect(exp_stockholm.curated,n=Inf)  %>% filter(Symbol %in% genes)
-      } else {
-        data<- collect(exp_stockholm,n=Inf)  %>% filter(Symbol %in% genes)
-      }
+ #     if (all(genes %in% curated.genes)){
+        #data<- collect(exp_stockholm.curated,n=Inf)  %>% filter(Symbol %in% genes)
+#      } else {
+#        data <- filter(exp_stockholm.curated, Symbol %in% genes) %>% collect(n=Inf)
+        #data<- collect(exp_stockholm,n=Inf)  %>% filter(Symbol %in% genes)
+        data <- filter(exp_stockholm, Symbol %in% genes) %>% collect(n=Inf)
+#      }
       
       
       #      probes <- fd_stockholm %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
@@ -490,11 +495,13 @@ shinyServer(function(input, output,session){
       #      data <- exp_taylor  %>% filter(ID %in% probes) %>% 
       #       gather(geo_accession,Expression,-ID)
       
-      if (all(genes %in% curated.genes)){
-        data <- collect(exp_taylor.curated,n=Inf) %>% filter(Gene %in% genes)
-      } else {
-        data <- collect(exp_taylor,n=Inf) %>% filter(Gene %in% genes)
-      }
+#      if (all(genes %in% curated.genes)){
+        #data <- collect(exp_taylor.curated,n=Inf) %>% filter(Gene %in% genes)
+#        data <- filter(exp_taylor.curated, Symbol %in% genes) %>% collect(n=Inf)
+#      } else {
+        #data <- collect(exp_taylor,n=Inf) %>% filter(Gene %in% genes)
+        data <- filter(exp_taylor, Symbol %in% genes) %>% collect(n=Inf)
+#      }
 
       
       
@@ -516,8 +523,8 @@ shinyServer(function(input, output,session){
       #probes <- fd_varambally %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
       #data <- exp_varambally  %>% filter(ID %in% probes) %>% 
       # gather(geo_accession,Expression,-ID)
-      data <- collect(exp_varambally,n=Inf) %>% filter(Symbol %in% genes)
-      
+      #data <- collect(exp_varambally,n=Inf) %>% filter(Symbol %in% genes)
+      data <- filter(exp_varambally, Symbol %in% genes) %>% collect(n=Inf)
       fd <- fd_varambally
       pd <- pd_varambally 
     }
@@ -525,7 +532,9 @@ shinyServer(function(input, output,session){
     else {
       # there's a typo in the group names for this dataset
       
-      data <- collect(exp_grasso,n=Inf) %>% filter(GENE_SYMBOL %in% genes)
+      #data <- collect(exp_grasso,n=Inf) %>% filter(GENE_SYMBOL %in% genes)
+      data <- filter(exp_grasso, Symbol %in% genes) %>% collect(n=Inf)
+      
       pd_grasso <- mutate(pd_grasso, Group = str_replace_all(Group,"HormomeDependant", "HormoneDependant"))
       fd <- mutate(fd_grasso, Symbol = GENE_SYMBOL)
       pd <- mutate(pd_grasso, Sample_Group = Group) 
@@ -2166,19 +2175,27 @@ shinyServer(function(input, output,session){
     genes <- getGeneList()
     if(dataset == "Cambridge"){
       
-      cn <- collect(tbl("copyNumber",src=db_camcap),n=Inf)
-      cnMat <- filter(cn, Symbol %in% genes) 
-      
+      #cn <- collect(tbl("copyNumber",src=db_camcap),n=Inf)
+      #cnMat <- filter(cn, Symbol %in% genes) 
+      cnMat <- tbl("copyNumber", sr=db_camcap) %>% 
+        filter(Symbol %in% genes) %>% 
+        collect(n=Inf)
       
     } else if (dataset == "Stockholm"){
       
-      cn <- collect(tbl("copyNumber",src=db_stockholm),n=Inf)
-      cnMat <- filter(cn, Symbol %in% genes) 
+      #cn <- collect(tbl("copyNumber",src=db_stockholm),n=Inf)
+      #cnMat <- filter(cn, Symbol %in% genes) 
+      cnMat <- tbl("copyNumber", sr=db_stockholm) %>% 
+        filter(Symbol %in% genes) %>% 
+        collect(n=Inf)
       
     } else if (dataset == "MSKCC"){
       
-      cn <- collect(tbl("copyNumber",src=db_taylor),n=Inf)
-      cnMat <- filter(cn, Symbol %in% genes) 
+      #cn <- collect(tbl("copyNumber",src=db_taylor),n=Inf)
+      #cnMat <- filter(cn, Symbol %in% genes) 
+      cnMat <- tbl("copyNumber", sr=db_taylor) %>% 
+        filter(Symbol %in% genes) %>% 
+        collect(n=Inf)
       
     }
     
@@ -2199,23 +2216,26 @@ shinyServer(function(input, output,session){
       
       message("Retrieving copy-number data....")
       
-      camcap.cn <- collect(tbl("copyNumber",src=db_camcap),n=Inf)
-      stockholm.cn <- collect(tbl("copyNumber",src=db_stockholm),n=Inf)
-      taylor.cn <- collect(tbl("copyNumber",src=db_taylor),n=Inf)
+      camcap.cn <- tbl("copyNumber",src=db_camcap)
+      stockholm.cn <- tbl("copyNumber",src=db_stockholm)
+      taylor.cn <- tbl("copyNumber",src=db_taylor)
       
       camcap.cnts <- filter(camcap.cn, Symbol %in% genes) %>% 
+        collect(n=Inf) %>% 
         group_by(Symbol) %>% 
         summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
         gather(Event,Percentage,-Symbol) %>% 
         mutate(Cohort = "Cambridge")
       
       stockholm.cnts <- filter(stockholm.cn, Symbol %in% genes) %>% 
+        collect(n=Inf) %>% 
         group_by(Symbol) %>% 
         summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
         gather(Event,Percentage,-Symbol) %>% 
         mutate(Cohort = "Stockholm")
       
       taylor.cnts <- filter(taylor.cn, Symbol %in% genes) %>% 
+        collect(n=Inf) %>% 
         group_by(Symbol) %>% 
         summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
         gather(Event,Percentage,-Symbol) %>% 
@@ -2234,8 +2254,9 @@ shinyServer(function(input, output,session){
       
       if (dataset == "Cambridge"){
         
-        cn <- collect(tbl("copyNumber",src=db_camcap),n=Inf)
-        cnts <- filter(cn, Symbol %in% genes) 
+        cnts <- tbl("copyNumber", sr=db_camcap) %>% 
+          filter(Symbol %in% genes) %>% 
+          collect(n=Inf)
         
         pd <-  mutate(pd_camcap, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
           mutate(Time = as.numeric(FollowUpTime), Event = ifelse(BCR=="Y",1,0)) %>% 
@@ -2253,8 +2274,9 @@ shinyServer(function(input, output,session){
            
       } else if (dataset == "Stockholm"){
         
-        cn <- collect(tbl("copyNumber",src=db_stockholm),n=Inf)
-        cnts <- filter(cn, Symbol %in% genes) 
+        cnts <- tbl("copyNumber", sr=db_stockholm) %>% 
+          filter(Symbol %in% genes) %>% 
+          collect(n=Inf)
 
         pd <-  mutate(pd_stockholm, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
           mutate(Time = as.numeric(FollowUpTime), Event = ifelse(BCR=="Y",1,0))
@@ -2271,8 +2293,9 @@ shinyServer(function(input, output,session){
         
 
         
-        cn <- collect(tbl("copyNumber",src=db_taylor),n=Inf)
-        cnts <- filter(cn, Symbol %in% genes) 
+        cnts <- tbl("copyNumber", sr=db_taylor) %>% 
+          filter(Symbol %in% genes) %>% 
+          collect(n=Inf)
         
         pd <- mutate(pd_taylor,Gleason = gsub("4+3", "7=4+3", pd_taylor$Gleason,fixed=TRUE)) %>% 
           mutate(Gleason = gsub("4+3", "8=5+3", Gleason,fixed=TRUE)) %>% 
@@ -2573,14 +2596,19 @@ shinyServer(function(input, output,session){
     
     if(dataset == "Cambridge"){
       
-      data <- collect(exp_camcap,n=Inf)  %>% filter(Symbol %in% genes)
+      #data <- collect(exp_camcap,n=Inf)  %>% filter(Symbol %in% genes)
+      
+      data <- filter(exp_camcap,Symbol == genes) %>% collect(n=Inf)
+      
       fd <- fd_camcap
       pd <-  mutate(pd_camcap, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
         mutate(Time = as.numeric(FollowUpTime), Event = ifelse(BCR=="Y",1,0))
       
     } else if (dataset == "Stockholm"){
       
-      data<- collect(exp_stockholm,n=Inf)  %>% filter(Symbol %in% genes)
+      #data<- collect(exp_stockholm,n=Inf)  %>% filter(Symbol %in% genes)
+      data <- filter(exp_stockholm,Symbol == genes) %>% collect(n=Inf)
+      
       fd <- fd_stockholm
       pd <-  mutate(pd_stockholm, Gleason=factor(Gleason,levels=c("5=3+2","6=2+4","6=3+3", "7=3+4","7=4+3","8=3+5","8=4+4","9=4+5","9=5+4","10=5+5",NA))) %>% 
         mutate(Time = as.numeric(FollowUpTime), Event = ifelse(BCR=="Y",1,0))
@@ -2588,8 +2616,8 @@ shinyServer(function(input, output,session){
     
     else if(dataset == "MSKCC"){
       
-      data <- collect(exp_taylor,n=Inf) %>% filter(Gene %in% genes)
-      
+      #data <- collect(exp_taylor,n=Inf) %>% filter(Gene %in% genes)
+      data <- filter(exp_taylor,Symbol == genes) %>% collect(n=Inf)
       
       fd <- fd_taylor %>% mutate(Symbol = Gene)
       pd <- mutate(pd_taylor,Gleason = gsub("4+3", "7=4+3", pd_taylor$Gleason,fixed=TRUE)) %>% 
@@ -2606,14 +2634,17 @@ shinyServer(function(input, output,session){
     
     else if(dataset == "Michigan2005"){
       
-      data <- collect(exp_varambally,n=Inf) %>% filter(Symbol %in% genes)
+      #data <- collect(exp_varambally,n=Inf) %>% filter(Symbol %in% genes)
+      data <- filter(exp_varambally,Symbol == genes) %>% collect(n=Inf)
       
       fd <- fd_varambally
       pd <- pd_varambally 
     }
     
     else {
-      data <- collect(exp_grasso,n=Inf) %>% filter(GENE_SYMBOL %in% genes)
+      #data <- collect(exp_grasso,n=Inf) %>% filter(GENE_SYMBOL %in% genes)
+      data <- filter(exp_grasso,GENE_SYMBOL == genes) %>% collect(n=Inf)
+      
       pd_grasso <- mutate(pd_grasso, Group = str_replace_all(Group,"HormomeDependant", "HormoneDependant"))
       fd <- mutate(fd_grasso, Symbol = GENE_SYMBOL)
       pd <- mutate(pd_grasso, Sample_Group = Group) 
@@ -2852,23 +2883,26 @@ shinyServer(function(input, output,session){
       
     } else if (plotType == "Copy Number"){
       
-      camcap.cn <- collect(tbl("copyNumber",src=db_camcap),n=Inf)
-      stockholm.cn <- collect(tbl("copyNumber",src=db_stockholm),n=Inf)
-      taylor.cn <- collect(tbl("copyNumber",src=db_taylor),n=Inf)
+      camcap.cn <- tbl("copyNumber",src=db_camcap)
+      stockholm.cn <- tbl("copyNumber",src=db_stockholm)
+      taylor.cn <- tbl("copyNumber",src=db_taylor)
       
-      camcap.cnts <- filter(camcap.cn, Symbol %in% genes) %>% 
+      camcap.cnts <- filter(camcap.cn, Symbol == genes) %>% 
+        collect(n=Inf) %>% 
         group_by(Symbol) %>% 
         summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
         gather(Event,Percentage,-Symbol) %>% 
         mutate(Cohort = "Cambridge")
       
-      stockholm.cnts <- filter(stockholm.cn, Symbol %in% genes) %>% 
+      stockholm.cnts <- filter(stockholm.cn, Symbol == genes) %>% 
+        collect(n=Inf) %>% 
         group_by(Symbol) %>% 
         summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
         gather(Event,Percentage,-Symbol) %>% 
         mutate(Cohort = "Stockholm")
       
-      taylor.cnts <- filter(taylor.cn, Symbol %in% genes) %>% 
+      taylor.cnts <- filter(taylor.cn, Symbol == genes) %>% 
+        collect(n=Inf) %>% 
         group_by(Symbol) %>% 
         summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
         gather(Event,Percentage,-Symbol) %>% 
@@ -3148,23 +3182,26 @@ shinyServer(function(input, output,session){
           
         } else if (plotType == "Copy Number"){
           
-          camcap.cn <- collect(tbl("copyNumber",src=db_camcap),n=Inf)
-          stockholm.cn <- collect(tbl("copyNumber",src=db_stockholm),n=Inf)
-          taylor.cn <- collect(tbl("copyNumber",src=db_taylor),n=Inf)
+          camcap.cn <- tbl("copyNumber",src=db_camcap)
+          stockholm.cn <- tbl("copyNumber",src=db_stockholm)
+          taylor.cn <- tbl("copyNumber",src=db_taylor)
           
-          camcap.cnts <- filter(camcap.cn, Symbol %in% genes) %>% 
+          camcap.cnts <- filter(camcap.cn, Symbol == genes) %>% 
+            collect(n=Inf) %>% 
             group_by(Symbol) %>% 
             summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
             gather(Event,Percentage,-Symbol) %>% 
             mutate(Cohort = "Cambridge")
           
-          stockholm.cnts <- filter(stockholm.cn, Symbol %in% genes) %>% 
+          stockholm.cnts <- filter(stockholm.cn, Symbol == genes) %>% 
+            collect(n=Inf) %>% 
             group_by(Symbol) %>% 
             summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
             gather(Event,Percentage,-Symbol) %>% 
             mutate(Cohort = "Stockholm")
           
-          taylor.cnts <- filter(taylor.cn, Symbol %in% genes) %>% 
+          taylor.cnts <- filter(taylor.cn, Symbol == genes) %>% 
+            collect(n=Inf) %>% 
             group_by(Symbol) %>% 
             summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
             gather(Event,Percentage,-Symbol) %>% 
@@ -3295,32 +3332,35 @@ shinyServer(function(input, output,session){
       
     } else if (plotType == "Copy Number"){
       
-      camcap.cn <- collect(tbl("copyNumber",src=db_camcap),n=Inf)
-      stockholm.cn <- collect(tbl("copyNumber",src=db_stockholm),n=Inf)
-      taylor.cn <- collect(tbl("copyNumber",src=db_taylor),n=Inf)
+      camcap.cn <- tbl("copyNumber",src=db_camcap)
+      stockholm.cn <- tbl("copyNumber",src=db_stockholm)
+      taylor.cn <- tbl("copyNumber",src=db_taylor)
       
-      camcap.cnts <- filter(camcap.cn, Symbol %in% genes) %>% 
+      camcap.cnts <- filter(camcap.cn, Symbol == genes) %>% 
+        collect(n=Inf) %>% 
         group_by(Symbol) %>% 
         summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
         gather(Event,Percentage,-Symbol) %>% 
         mutate(Cohort = "Cambridge")
       
-      stockholm.cnts <- filter(stockholm.cn, Symbol %in% genes) %>% 
+      stockholm.cnts <- filter(stockholm.cn, Symbol == genes) %>% 
+        collect(n=Inf) %>% 
         group_by(Symbol) %>% 
         summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
         gather(Event,Percentage,-Symbol) %>% 
         mutate(Cohort = "Stockholm")
       
-      taylor.cnts <- filter(taylor.cn, Symbol %in% genes) %>% 
+      taylor.cnts <- filter(taylor.cn, Symbol == genes) %>% 
+        collect(n=Inf) %>% 
         group_by(Symbol) %>% 
         summarise(NEUTRAL = 100*sum(Call==0)/n(),DEL = -100*sum(Call==-1)/n(), AMP = 100*sum(Call==1)/n())  %>% 
         gather(Event,Percentage,-Symbol) %>% 
         mutate(Cohort = "MSKCC")
       
-      cn.all <- bind_rows(camcap.cnts,stockholm.cnts,taylor.cnts) %>% 
+      cn.all <- bind_rows(camcap.cnts,taylor.cnts,stockholm.cnts) %>% 
         mutate(Event = factor(Event, levels=c("DEL","NEUTRAL","AMP")))
       
-      df <- filter(cn.all, Symbol %in% genes) %>% 
+      df <- filter(cn.all, Symbol == genes) %>% 
         mutate(Percentage = abs(Percentage))
       
     }
