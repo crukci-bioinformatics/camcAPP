@@ -453,14 +453,14 @@ shinyServer(function(input, output,session){
       
       #      probes <- fd_camcap %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
       
-  #    if (all(genes %in% curated.genes)){
+      if (all(genes %in% curated.genes)){
         #data <- collect(exp_camcap.curated,n=Inf)  %>% filter(Symbol %in% genes)
-  #      data <- filter(exp_camcap.curated, Symbol %in% genes) %>% collect(n=Inf)
+        data <- filter(exp_camcap.curated, Symbol %in% genes) %>% collect(n=Inf)
         
-  #    } else {
+      } else {
         #data <- collect(exp_camcap,n=Inf)  %>% filter(Symbol %in% genes)
         data <- filter(exp_camcap, Symbol %in% genes) %>% collect(n=Inf)
-  #    }
+      }
       
       #gather(geo_accession,Expression,-ID)
       fd <- fd_camcap
@@ -470,13 +470,12 @@ shinyServer(function(input, output,session){
     } else if (dataset == "Stockholm"){
       
       
- #     if (all(genes %in% curated.genes)){
-        #data<- collect(exp_stockholm.curated,n=Inf)  %>% filter(Symbol %in% genes)
-#      } else {
-#        data <- filter(exp_stockholm.curated, Symbol %in% genes) %>% collect(n=Inf)
+      if (all(genes %in% curated.genes)){
+        data<- collect(exp_stockholm.curated,n=Inf)  %>% filter(Symbol %in% genes)
+      } else {
         #data<- collect(exp_stockholm,n=Inf)  %>% filter(Symbol %in% genes)
         data <- filter(exp_stockholm, Symbol %in% genes) %>% collect(n=Inf)
-#      }
+      }
       
       
       #      probes <- fd_stockholm %>% filter(Symbol %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
@@ -491,17 +490,15 @@ shinyServer(function(input, output,session){
     
     else if(dataset == "MSKCC"){
       
-      #probes <- fd_taylor %>% filter(Gene %in% genes) %>% select(ID) %>% unique %>% as.matrix %>%  as.character
-      #      data <- exp_taylor  %>% filter(ID %in% probes) %>% 
-      #       gather(geo_accession,Expression,-ID)
+
       
-#      if (all(genes %in% curated.genes)){
+      if (all(genes %in% curated.genes)){
         #data <- collect(exp_taylor.curated,n=Inf) %>% filter(Gene %in% genes)
-#        data <- filter(exp_taylor.curated, Symbol %in% genes) %>% collect(n=Inf)
-#      } else {
+        data <- filter(exp_taylor.curated, Gene %in% genes) %>% collect(n=Inf)
+      } else {
         #data <- collect(exp_taylor,n=Inf) %>% filter(Gene %in% genes)
-        data <- filter(exp_taylor, Symbol %in% genes) %>% collect(n=Inf)
-#      }
+        data <- filter(exp_taylor, Gene %in% genes) %>% collect(n=Inf)
+      }
 
       
       
@@ -2617,7 +2614,7 @@ shinyServer(function(input, output,session){
     else if(dataset == "MSKCC"){
       
       #data <- collect(exp_taylor,n=Inf) %>% filter(Gene %in% genes)
-      data <- filter(exp_taylor,Symbol == genes) %>% collect(n=Inf)
+      data <- filter(exp_taylor,Gene == genes) %>% collect(n=Inf)
       
       fd <- fd_taylor %>% mutate(Symbol = Gene)
       pd <- mutate(pd_taylor,Gleason = gsub("4+3", "7=4+3", pd_taylor$Gleason,fixed=TRUE)) %>% 
