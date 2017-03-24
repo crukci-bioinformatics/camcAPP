@@ -1286,10 +1286,7 @@ shinyServer(function(input, output,session){
       else heatmap.2(geneMatrix,Colv = as.dendrogram(clusObj),col=hmcol,distfun=distfun,Rowv=NA,hclustfun = hclustfun,scale=scale,trace="none",cexRow = 0.9)
       
       dev.off()   
-      list(src = outfile,
-           width = width,
-           height = height,
-           alt = "This is alternate text")
+
       
     }
     
