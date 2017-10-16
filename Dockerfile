@@ -27,6 +27,7 @@ RUN R -e 'source("https://bioconductor.org/biocLite.R"); biocLite("GO.db")'
 RUN R -e 'install.packages("WGCNA", repos = "https://cloud.r-project.org")'
 
 RUN mkdir /srv/shiny-server/camcAPP
+RUN mkdir /srv/shiny-server/camcAPP/data
 RUN mkdir /srv/shiny-server/camcAPP/www
 
 RUN chmod -R ugo+rx /srv/shiny-server/camcAPP
@@ -34,7 +35,7 @@ RUN chmod -R ugo+rx /srv/shiny-server/camcAPP
 COPY server.R /srv/shiny-server/camcAPP/
 COPY UI.R /srv/shiny-server/camcAPP/
 COPY google-analytics.js /srv/shiny-server/camcAPP/
-COPY curated.genes.txt /srv/shiny-server/camcAPP/
+COPY data/curated.genes.txt /srv/shiny-server/camcAPP/data/
 COPY www/* /srv/shiny-server/camcAPP/www/
 
 RUN chmod -R ugo+r /srv/shiny-server/camcAPP

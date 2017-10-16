@@ -75,10 +75,10 @@ plotDendroAndColors.mod <- function (dendro, colors, groupLabels = NULL, rowText
 
 library(dplyr)
 
-curated.genes <- read.table("curated.genes.txt",stringsAsFactors = FALSE)[,1]
+curated.genes <- read.table("data/curated.genes.txt",stringsAsFactors = FALSE)[,1]
 
-db_camcap <- src_sqlite("camcap.sqlite3")
-db_camcap.curated <- src_sqlite("camcap.curated.sqlite3")
+db_camcap <- src_sqlite("data/camcap.sqlite3")
+db_camcap.curated <- src_sqlite("data/camcap.curated.sqlite3")
 
 pd_camcap <- collect(tbl("pd",src=db_camcap))
 fd_camcap <- collect(tbl("fd",src=db_camcap))
@@ -87,9 +87,9 @@ fd_camcap <- collect(tbl("fd",src=db_camcap))
 exp_camcap <- tbl("expression",src=db_camcap)
 exp_camcap.curated <- tbl("expression",src=db_camcap.curated)
 
-db_stockholm <- src_sqlite("stockholm.sqlite3")
+db_stockholm <- src_sqlite("data/stockholm.sqlite3")
 
-db_stockholm.curated <- src_sqlite("stockholm.curated.sqlite3")
+db_stockholm.curated <- src_sqlite("data/stockholm.curated.sqlite3")
 pd_stockholm <- collect(tbl("pd",src=db_stockholm))
 fd_stockholm <- collect(tbl("fd",src=db_stockholm))
 
@@ -99,22 +99,22 @@ exp_stockholm.curated <- tbl("expression",src=db_stockholm.curated)
 
 
 
-db_taylor <- src_sqlite("taylor.sqlite3")
-db_taylor.curated <- src_sqlite("taylor.curated.sqlite3")
+db_taylor <- src_sqlite("data/taylor.sqlite3")
+db_taylor.curated <- src_sqlite("data/taylor.curated.sqlite3")
 
 pd_taylor <- collect(tbl("pd",src=db_taylor))
 fd_taylor <- collect(tbl("fd",src=db_taylor))
 exp_taylor <- tbl("expression",src=db_taylor)
 exp_taylor.curated <- tbl("expression",src=db_taylor.curated)
 
-db_varambally <- src_sqlite("varambally.sqlite3")
+db_varambally <- src_sqlite("data/varambally.sqlite3")
 pd_varambally <- collect(tbl("pd",src=db_varambally))
 fd_varambally <- collect(tbl("fd",src=db_varambally))
 
 exp_varambally <- tbl("expression",src=db_varambally)
 
 
-db_grasso <- src_sqlite("grasso.sqlite3")
+db_grasso <- src_sqlite("data/grasso.sqlite3")
 pd_grasso <- collect(tbl("pd",src=db_grasso))
 fd_grasso <- collect(tbl("fd",src=db_grasso))
 
