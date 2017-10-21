@@ -28,3 +28,17 @@ The following datasets are accessible through the interface. Each of which has b
 
 The code to run particular analyses and produce plots can be downloaded from the Shiny interface. Details of the R packages required are given in the file [installBioCPkgs.R](https://raw.githubusercontent.com/crukci-bioinformatics/camcAPP/master/installBioCPkgs.R). 
 
+Once docker is installed, you can get the container required to re-run the analysis with:-
+
+`docker pull markdunning/camcapp`
+
+The container is then run using:-
+
+`docker run -p 8787:8787 markdunning/camcap`
+
+Now in a web browser you can navigate to:-
+
+`http://localhost:8787`
+
+entering the username and password `rstudio` will open an RStudio session in your web browser.
+
