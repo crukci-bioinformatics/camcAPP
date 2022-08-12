@@ -3318,10 +3318,10 @@ shinyServer(function(input, output,session){
         ps  <- signif(ps2[1], digits = 3)
         cOffs <- ps  
         
-        if(length(ps2)==2) cOffs <- paste(ps2[1], ps2[2], sep=":")
+        if (length(ps2) == 2) cOffs <- str_c(round(ps2, 2), collapse = ":")
         
       } else cOffs <- NA
-      cOffs <- round(cOffs,2)
+
       df <- data.frame(Gene = genes,RP_p.value=pVals, "RP_Cut.off(s)" = cOffs)
       
     } else if (plotType == "Copy Number"){
