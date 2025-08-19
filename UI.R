@@ -12,7 +12,7 @@ shinyUI(navbarPage("Explore Prostate Cancer Datasets", id = "nav",
         tabPanel("Data Input",
                  sidebarLayout(
                    sidebarPanel(
-                     tags$head(includeScript("google-analytics.js")),           
+                     #tags$head(includeScript("google-analytics.js")),           
                    
                      #),
   #                   radioButtons("inputType", "Use Single or Gene List as input?", choices=c("Single Gene","Gene List"),selected="Single Gene"),
